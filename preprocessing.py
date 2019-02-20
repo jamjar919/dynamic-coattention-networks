@@ -2,8 +2,9 @@
 
 import tensorflow as tf
 import pandas as pd 
+import csv
 
-GLOVE_DATA_FILE = 'data/glove.840B.300d.txt'
+GLOVE_DATA_FILE = 'data/glove.6B.300d.txt'
 words = pd.read_table(GLOVE_DATA_FILE, sep=" ", index_col=0, header=None, quoting=csv.QUOTE_NONE)
 
 def vec(w):
