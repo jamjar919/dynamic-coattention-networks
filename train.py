@@ -7,33 +7,35 @@ import json
 import random
 
 # custom imports
-from preprocessing import text_to_vector
+from preprocessing import text_to_vector, load_embedding
 
 # open the training file 
 TRAINING_FILE_NAME = 'data/dev.json'
+GLOVE_DATA_FILE = 'data/glove.6B.300d.txt'
 
 with open(TRAINING_FILE_NAME, "r") as f:
     data = json.loads(f.read())
     assert data["version"] == "1.1"
     categories = data["data"]
 
-questions = [
-    {"question": "something", "answers":["something","else"]}
-];
+questions = [];
 
-print("Loaded test data. Categories:")
 for category in categories:
-    print(category["title"] + ": " + str(len(category["paragraphs"])), end=", ")
     for paragraph in category["paragraphs"]:
-        paragraph["context"] = text_to_vector(paragraph["context"])
+        paragraph["context"] = paragraph["context"]
         for qas in paragraph["qas"]:
             questions.append({
                 "context": paragraph["context"],
-                "question": text_to_vector(qas["question"]),
+                "question": qas["question"],
                 "answer": random.choice(qas["answers"])["text"]
-            })      
-    
-print(questions)
+            })
+
+print("Loaded test data")
+
+# load GLoVE vectors 
+word2index, index2embedding = load_embedding(GLOVE_DATA_FILE)
+vocab_size, embedding_dim = index2embedding.shape
+print("Vocab Size:"+str(vocab_size)+" Embedding Dim:"+str(embedding_dim))
 
 
 i = tf.global_variables_initializer()
