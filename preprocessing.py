@@ -7,21 +7,16 @@ import csv
 import sys
 from collections import defaultdict  
 
-def vec(w):
-  return words.loc[w].to_array()
+def word_to_index(w, word2index):
+    try:
+        result = word2index[w]
+        return result
+    except KeyError:
+        return len(word2index) - 1 # defined to be all zeros
 
-def text_to_vector(text):
+def text_to_index(text, word2index):
     tokens = tf.keras.preprocessing.text.text_to_word_sequence(text, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True, split=' ')
-    vector = np.zeros((len(tokens), 300), dtype=np.float32)
-    for i in range(0, len(tokens)):
-        try:
-            vector[i] = vec(tokens[i])
-        except KeyError: 
-            pass;
-    
-    print(vector);
-    print(vector.shape)
-    return vector;
+    return list(map(lambda tok: word_to_index(tok, word2index), tokens));
 
 #https://github.com/guillaume-chevalier/GloVe-as-a-TensorFlow-Embedding-Layer/blob/master/GloVe-as-TensorFlow-Embedding-Tutorial.ipynb
 def load_embedding(glove):
