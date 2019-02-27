@@ -8,6 +8,7 @@ import random
 import pickle
 import os
 from collections import defaultdict  
+import sys
 
 # custom imports
 from preprocessing import text_to_index, load_embedding
@@ -18,8 +19,15 @@ GLOVE_DATA_FILE = 'data/glove.6B.300d.txt'
 PRESAVED_QUESTIONS_FILE = 'generated/encoded_questions.pickle'
 PRESAVED_EMBEDDING_FILE = 'generated/embedding.pickle'
 
+
+
 def main(args):
-    print(args)
+    '''
+        Main function for training the network. 
+        Pass command line option --regenerateEmbeddings to force write the embeddings to file
+    '''
+    REGENERATE_CACHE = '--regenerateEmbeddings' in args
+
     # read SQuAD data
     with open(TRAINING_FILE_NAME, "r") as f:
         data = json.loads(f.read())
@@ -29,7 +37,7 @@ def main(args):
     questions = [];
 
     # load GLoVE vectors
-    if not os.path.isfile(PRESAVED_EMBEDDING_FILE):
+    if (not os.path.isfile(PRESAVED_EMBEDDING_FILE)) or REGENERATE_CACHE:
         print("Generating embedding...")
         word2index, index2embedding = load_embedding(GLOVE_DATA_FILE)
         with open(PRESAVED_EMBEDDING_FILE, "wb") as embedding_file:
@@ -46,7 +54,7 @@ def main(args):
     print("Vocab Size:"+str(vocab_size)+" Embedding Dim:"+str(embedding_dim))
 
     # Generate question encoding
-    if not os.path.isfile(PRESAVED_QUESTIONS_FILE):
+    if (not os.path.isfile(PRESAVED_QUESTIONS_FILE)) or REGENERATE_CACHE:
         print("Generating question encoding...")
         for category in categories:
             for paragraph in category["paragraphs"]:
