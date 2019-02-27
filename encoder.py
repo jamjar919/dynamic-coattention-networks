@@ -1,24 +1,18 @@
 import tensorflow as tf
 from keras import layers
 
-# encoder for questions and document
-def encoder(question,context,embeddings,hidden_units_size=200):
-    batch_size = tf.shape(question)[0]
+def encoder(questions,contexts,embeddings,hidden_units_size=200):
+    '''
+        Build the model for the document encoder
+        questions: Tensor of questions
+        contexts: Tensor of contexts
+        embeddings: Mappings from encoded questions to GLoVE vectors
+    '''
+    batch_size = tf.shape(questions)[0]
 
-    # Set up LSTM for encoding the document and question embeddings
-    lstm_cell = tf.nn.rnn_cell.LSTMCell(hidden_units_size)
-
-    print("get embeddings")
-    # Get embedding for question
-    q_embedding = tf.nn.embedding_lookup(embeddings,question)
-    d_embedding = tf.nn.embedding_lookup(embeddings,context)
-
-    print("got embeddings")
-
-    with tf.variable_scope('document_encoder') as document_scope:
-        document_states, _ = layers.RNN(lstm_cell)
-
-    with tf.variable_scope('question_encoder') as question_scope:
-        question_states, _ = layers.RNN(lstm_cell)
+    with tf.variable_scope('embedding') as scope:
+        # Vectorise the contexts and questions
+        context_vector = tf.map_fn(lambda x: tf.nn.embedding_lookup(embedding, x), contexts)
+        question_vector = tf.map_fn(lambda x: tf.nn.embedding_lookup(embedding, x), questions)
 
     print(q_embedding)

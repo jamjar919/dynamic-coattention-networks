@@ -88,18 +88,26 @@ def main(args):
 
     print("Loaded test data")
 
+    batch_size = 10
+
+
     tf.reset_default_graph()
     i = tf.global_variables_initializer()
 
     embeddings = tf.constant(index2embedding, dtype=tf.float32)
-    question = tf.placeholder(dtype=tf.int32,shape=[None,max_length_question])
-    context = tf.placeholder(dtype=tf.int32,shape=[None,max_length_context])
+    questions = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='questions')
+    contexts = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='contexts')
 
-    encoder_states = encoder(question,context,embeddings)
+    batch = questions[0:batch_size]
 
+    question_batch = list(map(lambda qas: (qas["question"]), batch))
+    context_batch = list(map(lambda qas: (qas["context"]), batch))
+
+    encoder_states = encoder(question_batch,context_text,embeddings)
+
+    '''
     with tf.Session() as sess:
         sess.run(i)
-        batch_size = 10
         counter = 0
         for epochs in range(len(questions) // batch_size):
             batch = questions[counter:(counter+batch_size)]
@@ -112,6 +120,7 @@ def main(args):
                 question = tf.constant(question_batch[i], shape=(max_length_questions, 300))
                 context = tf.constant(context_batch[i], shape=(max_length_context, 300))
                 encoder_states = encoder(question, context, embeddings)
+    '''
 
 if __name__ == "__main__":
     main(sys.argv[1:])
