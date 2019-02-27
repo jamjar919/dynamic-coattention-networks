@@ -53,7 +53,6 @@ def main(args):
 
     print("Loaded embeddings")
     vocab_size, embedding_dim = index2embedding.shape
-    embeddings = tf.constant(index2embedding, dtype=tf.float32)
     print("Vocab Size:"+str(vocab_size)+" Embedding Dim:"+str(embedding_dim))
 
     # Generate question encoding
@@ -68,17 +67,6 @@ def main(args):
                         "question": text_to_index(qas["question"], word2index),
                         "answer": text_to_index(random.choice(qas["answers"])["text"], word2index)
                     })
-
-        max_length_questions = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["question"], questions))))
-        max_length_context = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["context"], questions))))
-
-        questions = list(map(lambda q: {
-            "question": pad_to(q["question"], max_length_questions, pad_char),
-            "context": pad_to(q["context"], max_length_questions, pad_char),
-            "answer": q["answer"]
-        }, question_batch))
-
-
         with open(PRESAVED_QUESTIONS_FILE, "wb") as question_file:
             pickle.dump(questions, question_file)
     else:
@@ -86,22 +74,33 @@ def main(args):
         with open(PRESAVED_QUESTIONS_FILE, "rb") as question_file:
             questions = pickle.load(question_file)
 
+    # Pad questions and contexts
+    pad_char = vocab_size - 1
+    max_length_question = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["question"], questions))))
+    max_length_context = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["context"], questions))))
+
+    questions = list(map(lambda q: {
+        "question": pad_to(q["question"], max_length_question, pad_char),
+        "context": pad_to(q["context"], max_length_context, pad_char),
+        "answer": q["answer"]
+    }, questions))
+
+
     print("Loaded test data")
-    print(questions[0])
-    print(".....")
 
     tf.reset_default_graph()
     i = tf.global_variables_initializer()
 
-    question = tf.placeholder(dtype=tf.int32,shape=[None,max_l_question])
-    context = tf.placeholder(dtype=tf.int32,shape=[None,max_l_context])
+    embeddings = tf.constant(index2embedding, dtype=tf.float32)
+    question = tf.placeholder(dtype=tf.int32,shape=[None,max_length_question])
+    context = tf.placeholder(dtype=tf.int32,shape=[None,max_length_context])
+
     encoder_states = encoder(question,context,embeddings)
 
     with tf.Session() as sess:
         sess.run(i)
         batch_size = 10
         counter = 0
-        pad_char = vocab_size - 1
         for epochs in range(len(questions) // batch_size):
             batch = questions[counter:(counter+batch_size)]
 

@@ -8,8 +8,7 @@ import sys
 from collections import defaultdict  
 
 def pad_to(sequence, length, char):
-    print(sequence, len(sequence), length)
-    if len(sequence) == length:
+    if len(sequence) >= length:
         return sequence
     else:
         sequence.append(char)
