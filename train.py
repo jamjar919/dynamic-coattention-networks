@@ -13,7 +13,7 @@ from functools import reduce
 
 
 # custom imports
-from preprocessing import text_to_index, load_embedding, pad_to
+from preprocessing import text_to_index, load_embedding, pad_data
 from encoder import encoder
 
 # open the training file 
@@ -37,7 +37,7 @@ def main(args):
         assert data["version"] == "1.1"
         categories = data["data"]
 
-    questions = [];
+    data = [];
 
     # load GLoVE vectors
     if (not os.path.isfile(PRESAVED_EMBEDDING_FILE)) or REGENERATE_CACHE:
@@ -62,48 +62,40 @@ def main(args):
             for paragraph in category["paragraphs"]:
                 paragraph["context"] = paragraph["context"]
                 for qas in paragraph["qas"]:
-                    questions.append({
+                    data.append({
                         "context": text_to_index(paragraph["context"], word2index),
                         "question": text_to_index(qas["question"], word2index),
                         "answer": text_to_index(random.choice(qas["answers"])["text"], word2index)
                     })
         with open(PRESAVED_QUESTIONS_FILE, "wb") as question_file:
-            pickle.dump(questions, question_file)
+            pickle.dump(data, question_file)
     else:
         print("Loading question encoding from file")
         with open(PRESAVED_QUESTIONS_FILE, "rb") as question_file:
-            questions = pickle.load(question_file)
+            data = pickle.load(question_file)
 
     # Pad questions and contexts
     pad_char = vocab_size - 1
-    max_length_question = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["question"], questions))))
-    max_length_context = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["context"], questions))))
-
-    questions = list(map(lambda q: {
-        "question": pad_to(q["question"], max_length_question, pad_char),
-        "context": pad_to(q["context"], max_length_context, pad_char),
-        "answer": q["answer"]
-    }, questions))
-
+    #data = pad_data(data, pad_char)
 
     print("Loaded test data")
 
     batch_size = 10
 
-
     tf.reset_default_graph()
     i = tf.global_variables_initializer()
 
-    embeddings = tf.constant(index2embedding, dtype=tf.float32)
+    embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable=False)
     questions = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='questions')
     contexts = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='contexts')
 
-    batch = questions[0:batch_size]
+    # running on an example batch to debug encoder
+    batch, (max_length_question, max_length_context) = pad_data(data[0:batch_size], pad_char)
 
-    question_batch = list(map(lambda qas: (qas["question"]), batch))
-    context_batch = list(map(lambda qas: (qas["context"]), batch))
+    question_batch = tf.constant(list(map(lambda qas: (qas["question"]), batch)), dtype=tf.int32, shape=[batch_size, max_length_question])
+    context_batch = tf.constant(list(map(lambda qas: (qas["context"]), batch)), dtype=tf.int32, shape=[batch_size, max_length_context])
 
-    encoder_states = encoder(question_batch,context_text,embeddings)
+    encoder_states = encoder(question_batch,context_batch,embedding)
 
     '''
     with tf.Session() as sess:

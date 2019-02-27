@@ -6,6 +6,17 @@ import numpy as np
 import csv
 import sys
 from collections import defaultdict  
+from functools import reduce
+
+def pad_data(data, pad_char):
+    max_length_question = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["question"], data))))
+    max_length_context = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["context"], data))))
+
+    return (list(map(lambda q: {
+        "question": pad_to(q["question"], max_length_question, pad_char),
+        "context": pad_to(q["context"], max_length_context, pad_char),
+        "answer": q["answer"]
+    }, data)), (max_length_question, max_length_context))
 
 def pad_to(sequence, length, char):
     if len(sequence) >= length:
