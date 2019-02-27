@@ -70,7 +70,14 @@ def main(args):
                     })
 
         max_length_questions = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["question"], questions))))
-        max_length_context = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["context"], questions)))
+        max_length_context = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["context"], questions))))
+
+        questions = list(map(lambda q: {
+            "question": pad_to(q["question"], max_length_questions, pad_char),
+            "context": pad_to(q["context"], max_length_questions, pad_char),
+            "answer": q["answer"]
+        }, question_batch))
+
 
         with open(PRESAVED_QUESTIONS_FILE, "wb") as question_file:
             pickle.dump(questions, question_file)
@@ -82,10 +89,6 @@ def main(args):
     print("Loaded test data")
     print(questions[0])
     print(".....")
-
-    question_batch = list(map(lambda q: pad_to(q, max_length_questions, pad_char), question_batch))
-    context_batch = list(map(lambda c: pad_to(c, max_length_context, pad_char), context_batch))
-
 
     tf.reset_default_graph()
     i = tf.global_variables_initializer()
