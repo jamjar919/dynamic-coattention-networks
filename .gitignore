@@ -104,4 +104,6 @@ venv.bak/
 .mypy_cache/
 
 # massive glove vector
-data/glove.840B.300d.txt
+data/glove.*
+generated/
+.vscode/
