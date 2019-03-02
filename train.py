@@ -96,6 +96,7 @@ def main(args):
     context_batch = tf.constant(list(map(lambda qas: (qas["context"]), batch)), dtype=tf.int32, shape=[batch_size, max_length_context])
 
     encoder_states = encoder(question_batch,context_batch,embedding)
+    return encoder_states
 
     '''
     with tf.Session() as sess:
@@ -115,4 +116,5 @@ def main(args):
     '''
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    encoder_states, emb = main(sys.argv[1:])
+    
