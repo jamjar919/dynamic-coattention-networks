@@ -62,12 +62,26 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
         # Q = tanh(W^{Q} Q' + b^{Q})
         W_q = tf.Variable(tf.random_uniform([hidden_units_size, hidden_units_size]), [hidden_units_size, hidden_units_size], dtype=tf.float32)
         b_q = tf.Variable(tf.random_uniform([hidden_units_size, questions_size+1]),  [hidden_units_size, questions_size+1], dtype=tf.float32)
-        Q = tf.map_fn(lambda x: math_ops.add(
-            math_ops.matmul(W_q, x),
+        Q = tf.map_fn(lambda x: tf.math.add(
+            tf.matmul(W_q, x),
             b_q
         ), question_encoding, dtype=tf.float32)
         Q = tf.tanh(question_encoding)
         print("Q shape: ",Q.get_shape())
+        L = tf.matmul(transpose(context_encoding),Q)
+        print("L shape: ",L.get_shape())
+        # attention weights for questions A^{Q} = softmax(L)
+        A_q = tf.nn.softmax(L)
+        print("A_q shape: ",A_q.get_shape())
+        # attention weights for documents A^{D} = softmax(L')
+        A_d = tf.nn.softmax(transpose(L))
+        print("A_d shape: ",A_d.get_shape())
+        # Attention Context C^{Q}
+        C_q = tf.matmul(context_encoding,A_q)
+        print("C_q shape: ",C_q.get_shape())
+        # C^{D} = [Q ; C^{Q}] A^{D}
+        C_d = tf.matmul(tf.concat((Q,C_q), axis=1),A_d)
+        print("C_d shape: ",C_d.get_shape())
         return Q
 
  
