@@ -12,7 +12,7 @@ def transpose(tensor):
     return tf.transpose(tensor,perm=[0,2,1])
 
 # https://github.com/marshmelloX/dynamic-coattention-network/blob/master/selector.py
-def encoder(questions,contexts,embedding,hidden_units_size=300):
+def encoder(questions,contexts,embedding,embedding_size=300):
     '''
         Build the model for the document encoder
         questions: Tensor of questions
@@ -40,13 +40,13 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
         print("Question embedding shape : ",question_embedding.get_shape())
 
     with tf.variable_scope('context_embedding') as scope:
-        lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_units_size)
+        lstm_enc = tf.nn.rnn_cell.LSTMCell(embedding_size)
         # https://stackoverflow.com/questions/48238113/tensorflow-dynamic-rnn-state/48239320#48239320
         context_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, transpose(context_embedding), dtype=tf.float32)
         context_encoding = transpose(context_encoding)
         # Append sentinel vector
         # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
-        sentinel_vec = tf.constant(0, shape=[batch_size,hidden_units_size, 1], dtype = tf.float32)
+        sentinel_vec = tf.constant(0, shape=[batch_size,embedding_size, 1], dtype = tf.float32)
         context_encoding = tf.concat((context_encoding, sentinel_vec), axis=-1)
         print("Context encoding shape : ",context_encoding.get_shape())
 
@@ -54,13 +54,13 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
         question_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, transpose(question_embedding), dtype=tf.float32)
         question_encoding = transpose(question_encoding)
         # Append sentinel vector
-        sentinel_vec = tf.constant(0, shape=[batch_size,hidden_units_size, 1], dtype = tf.float32)
+        sentinel_vec = tf.constant(0, shape=[batch_size,embedding_size, 1], dtype = tf.float32)
         question_encoding = tf.concat((question_encoding,sentinel_vec), axis = -1)
         print("Question encoding shape : ", question_encoding.get_shape())
         # Append "non linear projection layer" on top of the question encoding
         # Q = tanh(W^{Q} Q' + b^{Q})
-        W_q = tf.Variable(tf.random_uniform([hidden_units_size, hidden_units_size]), [hidden_units_size, hidden_units_size], dtype=tf.float32)
-        b_q = tf.Variable(tf.random_uniform([hidden_units_size, questions_size+1]),  [hidden_units_size, questions_size+1], dtype=tf.float32)
+        W_q = tf.Variable(tf.random_uniform([embedding_size, embedding_size]), [embedding_size, embedding_size], dtype=tf.float32)
+        b_q = tf.Variable(tf.random_uniform([embedding_size, questions_size+1]),  [embedding_size, questions_size+1], dtype=tf.float32)
         Q = tf.map_fn(lambda x: tf.math.add(
             tf.matmul(W_q, x),
             b_q
@@ -87,8 +87,8 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
     
     with tf.variable_scope('coattention'):
         # Bi-LSTM
-        cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_units_size)  
-        cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_units_size)
+        cell_fw = tf.nn.rnn_cell.LSTMCell(embedding_size)  
+        cell_bw = tf.nn.rnn_cell.LSTMCell(embedding_size)
         u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw,dtype=tf.float32,inputs= transpose(C))
         U = transpose(tf.concat(u_states,axis = 2))
         # Ignore u_{m+1}
