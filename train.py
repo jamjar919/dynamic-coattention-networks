@@ -116,5 +116,5 @@ def main(args):
     '''
 
 if __name__ == "__main__":
-    encoder_states, emb = main(sys.argv[1:])
+    Q = main(sys.argv[1:])
     

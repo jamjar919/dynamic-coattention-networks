@@ -49,7 +49,7 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
         # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
         sentinel_vec = tf.constant(0, shape=[batch_size,hidden_units_size, 1], dtype = tf.float32)
         context_encoding = tf.concat((context_encoding, sentinel_vec), axis=-1)
-        print("Context encoding shape : ",context_encoding.get_shape)
+        print("Context encoding shape : ",context_encoding.get_shape())
 
     with tf.variable_scope('question_embedding') as scope:
         question_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, transpose(question_embedding), dtype=tf.float32)
@@ -58,21 +58,16 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
         sentinel_vec = tf.constant(0, shape=[batch_size,hidden_units_size, 1], dtype = tf.float32)
         question_encoding = tf.concat((question_encoding,sentinel_vec), axis = -1)
         print("Question encoding shape : ", question_encoding.get_shape())
-    #     # Append "non linear projection layer" on top of the question encoding
-    #     # Q = tanh(W^{Q} Q' + b^{Q})
-    #     # Essentially more weights and more biases, yay.
-    #     print(question_encoding)
-    #     question_weights = tf.Variable(tf.random_uniform([hidden_units_size, hidden_units_size]), [hidden_units_size, hidden_units_size], dtype=tf.float32)
-    #     question_biases = tf.Variable(tf.random_uniform([hidden_units_size, hidden_units_size]),  [hidden_units_size, hidden_units_size], dtype=tf.float32)
-    #     question_encoding = tf.map_fn(lambda x: math_ops.add(
-    #         math_ops.matmul(question_weights, x),
-    #         question_biases
-    #     ), question_encoding, dtype=tf.float32)
-    #     question_encoding = tf.tanh(question_encoding)
-    #     print(question_encoding)
-    #     return question_encoding
-    #     # TODO fix this 
-
-    return context_encoding, length(context_embedding)
+        # Append "non linear projection layer" on top of the question encoding
+        # Q = tanh(W^{Q} Q' + b^{Q})
+        W_q = tf.Variable(tf.random_uniform([hidden_units_size, hidden_units_size]), [hidden_units_size, hidden_units_size], dtype=tf.float32)
+        b_q = tf.Variable(tf.random_uniform([hidden_units_size, questions_size+1]),  [hidden_units_size, questions_size+1], dtype=tf.float32)
+        Q = tf.map_fn(lambda x: math_ops.add(
+            math_ops.matmul(W_q, x),
+            b_q
+        ), question_encoding, dtype=tf.float32)
+        Q = tf.tanh(question_encoding)
+        print("Q shape: ",Q.get_shape())
+        return Q
 
  
