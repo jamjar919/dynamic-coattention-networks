@@ -45,16 +45,19 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
         # https://stackoverflow.com/questions/48238113/tensorflow-dynamic-rnn-state/48239320#48239320
         context_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, transpose(context_embedding), sequence_length = length(context_embedding), dtype=tf.float32)
         context_encoding = transpose(context_encoding)
+        # Append sentinel vector
+        # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
+        sentinel_vec = tf.constant(0, shape=[batch_size,hidden_units_size, 1], dtype = tf.float32)
+        context_encoding = tf.concat((context_encoding, sentinel_vec), axis=-1)
         print("Context encoding shape : ",context_encoding.get_shape)
-        # TODO append sentinel here 
-    return context_encoding, length(context_embedding)
+
     with tf.variable_scope('question_embedding') as scope:
         question_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, transpose(question_embedding), 
             sequence_length = length(question_embedding), dtype=tf.float32)
         question_encoding = transpose(question_encoding)
-        print("Question encoding shape : ",context_encoding.get_shape())
-    #     # TODO append sentinel here
-
+        sentinel_vec = tf.constant(0, shape=[batch_size,hidden_units_size, 1], dtype = tf.float32)
+        question_encoding = tf.concat((question_encoding,sentinel_vec), axis = -1)
+        print("Question encoding shape : ", question_encoding.get_shape())
     #     # Append "non linear projection layer" on top of the question encoding
     #     # Q = tanh(W^{Q} Q' + b^{Q})
     #     # Essentially more weights and more biases, yay.
@@ -69,5 +72,7 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
     #     print(question_encoding)
     #     return question_encoding
     #     # TODO fix this 
+
+    return context_encoding, length(context_embedding)
 
  
