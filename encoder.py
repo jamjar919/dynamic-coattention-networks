@@ -11,7 +11,6 @@ def length(sequence):
 def transpose(tensor):
     return tf.transpose(tensor,perm=[0,2,1])
 
-# https://github.com/marshmelloX/dynamic-coattention-network/blob/master/selector.py
 def encoder(questions,contexts,embedding,embedding_size=300):
     '''
         Build the model for the document encoder
