@@ -37,7 +37,7 @@ def main(args):
         assert data["version"] == "1.1"
         categories = data["data"]
 
-    data = [];
+    data = []
 
     # load GLoVE vectors
     if (not os.path.isfile(PRESAVED_EMBEDDING_FILE)) or REGENERATE_CACHE:

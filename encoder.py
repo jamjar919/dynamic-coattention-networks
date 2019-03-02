@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.python.ops import math_ops
 from tensorflow.keras import layers
 import numpy as np
 
@@ -39,9 +38,9 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
         question_embedding = tf.transpose(question_vector, perm=[0, 2, 1])
         print("Context embedding shape : ",context_embedding.get_shape())
         print("Question embedding shape : ",question_embedding.get_shape())
-        lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_units_size)
 
     with tf.variable_scope('context_embedding') as scope:
+        lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_units_size)
         # https://stackoverflow.com/questions/48238113/tensorflow-dynamic-rnn-state/48239320#48239320
         context_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, transpose(context_embedding), dtype=tf.float32)
         context_encoding = transpose(context_encoding)
@@ -82,6 +81,20 @@ def encoder(questions,contexts,embedding,hidden_units_size=300):
         # C^{D} = [Q ; C^{Q}] A^{D}
         C_d = tf.matmul(tf.concat((Q,C_q), axis=1),A_d)
         print("C_d shape: ",C_d.get_shape())
-        return Q
+        # Final context. Has no name in the paper, so we call it C
+        C = tf.concat((context_encoding,C_d),axis=1)
+        print("C shape: ",C.get_shape())
+    
+    with tf.variable_scope('coattention'):
+        # Bi-LSTM
+        cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_units_size)  
+        cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_units_size)
+        u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw,dtype=tf.float32,inputs= transpose(C))
+        U = transpose(tf.concat(u_states,axis = 2))
+        # Ignore u_{m+1}
+        U = U[:,:,:-1]
+        print("U shape: ",U.get_shape())
+        return U
+
 
  
