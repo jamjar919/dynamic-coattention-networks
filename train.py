@@ -80,34 +80,32 @@ def main(args):
 
     print("Loaded test data")
 
-    batch_size = 1
+    batch_size = 10
 
     tf.reset_default_graph()
     
 
-    embedding = tf.constant(index2embedding, dtype=tf.float32)
+    embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
   
     padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
 
     question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
     context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context])
     U = encoder(question_batch_placeholder,context_batch_placeholder,embedding)
-    print("HERE MAN")
     init = tf.global_variables_initializer()
     with tf.Session() as sess:
         sess.run(init)
-        # running on an example batch to debug encoder
-        batch = padded_data[0:batch_size]
-        question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
-        context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
-        print("question_batch shape : ",question_batch.shape)
-        print(question_batch)
-        print("context_batch shape : ", context_batch.shape)
-        print(context_batch)
-        print("BEFORE ENCODER")
-        output = sess.run(U,feed_dict={question_batch_placeholder: question_batch,
-            context_batch_placeholder: context_batch})
-        print("AFTER ENCODER")
+        print("SESSION INITIALIZED")
+        for counter in range(0,101,batch_size):
+            # running on an example batch to debug encoder
+            batch = padded_data[counter:(counter+batch_size)]
+            question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
+            context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
+            print("BEFORE ENCODER RUN counter = ",counter)
+            output = sess.run(U,feed_dict={question_batch_placeholder: question_batch,
+                context_batch_placeholder: context_batch})
+            print("AFTER ENCODER RUN counter = ",counter)
+            counter += batch_size%len(padded_data)
         return output
 
 
@@ -131,5 +129,5 @@ def main(args):
     '''
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+   output = main(sys.argv[1:])
     
