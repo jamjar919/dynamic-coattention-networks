@@ -18,9 +18,9 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200):
         contexts: Tensor of contexts
         embedding: Mappings from encoded questions to GLoVE vectors
     '''
-    batch_size = questions.get_shape()[0]
-    contexts_size = contexts.get_shape()[1].value
-    questions_size = questions.get_shape()[1].value
+    batch_size = questions.shape[0]
+    contexts_size = contexts.shape[1].value
+    questions_size = questions.shape[1].value
 
     print("Batch size", batch_size)
     print("Shape of questions", questions.get_shape())
