@@ -80,10 +80,10 @@ def main(args):
 
     print("Loaded test data")
 
-    batch_size = 10
+    batch_size = 1
 
     tf.reset_default_graph()
-    i = tf.global_variables_initializer()
+    
 
     embedding = tf.constant(index2embedding, dtype=tf.float32)
   
@@ -93,7 +93,9 @@ def main(args):
     context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context])
     U = encoder(question_batch_placeholder,context_batch_placeholder,embedding)
     print("HERE MAN")
+    init = tf.global_variables_initializer()
     with tf.Session() as sess:
+        sess.run(init)
         # running on an example batch to debug encoder
         batch = padded_data[0:batch_size]
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
@@ -106,6 +108,7 @@ def main(args):
         output = sess.run(U,feed_dict={question_batch_placeholder: question_batch,
             context_batch_placeholder: context_batch})
         print("AFTER ENCODER")
+        return output
 
 
 
