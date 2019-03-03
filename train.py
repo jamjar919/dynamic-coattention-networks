@@ -86,22 +86,23 @@ def main(args):
     i = tf.global_variables_initializer()
 
     embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable=False)
-    questions = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='questions')
-    contexts = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='contexts')
+    # questions = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='questions')
+    # contexts = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='contexts')
 
     padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
 
     question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
-    context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
+    context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context])
     U = encoder(question_batch_placeholder,context_batch_placeholder,embedding)
     print("HERE MAN")
     with tf.Session() as sess:
         # running on an example batch to debug encoder
-    
+        batch = padded_data[0:batch_size]
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
-        print("question_batch shape : ",question_batch.get_shape())
-        output = sess.run(U,feed_dict={questions: question_batch,contexts: context_batch,embedding: embedding})
+        print("question_batch shape : ",question_batch.shape)
+        output = sess.run(U,feed_dict={question_batch_placeholder: question_batch,
+            context_batch_placeholder: context_batch,embedding: embedding})
         return output
 
 
@@ -125,5 +126,5 @@ def main(args):
     '''
 
 if __name__ == "__main__":
-     padded_data, max_length_question, max_length_context = main(sys.argv[1:])
+    output = main(sys.argv[1:])
     
