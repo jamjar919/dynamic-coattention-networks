@@ -75,7 +75,7 @@ def main(args):
             data = pickle.load(question_file)
 
     # Pad questions and contexts
-    pad_char = vocab_size - 1
+    pad_char = 0
     #data = pad_data(data, pad_char)
 
     print("Loaded test data")
@@ -89,15 +89,15 @@ def main(args):
     questions = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='questions')
     contexts = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='contexts')
 
+    padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
 
-
-    question_batch_placeholder = tf.placeholder(dtype=tf.int32)
-    context_batch_placeholder = tf.placeholder(dtype=tf.int32)
+    question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
+    context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
     U = encoder(question_batch_placeholder,context_batch_placeholder,embedding)
     print("HERE MAN")
     with tf.Session() as sess:
         # running on an example batch to debug encoder
-        batch, (max_length_question, max_length_context) = pad_data(data[0:batch_size], pad_char)
+    
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         print("question_batch shape : ",question_batch.get_shape())
@@ -125,5 +125,5 @@ def main(args):
     '''
 
 if __name__ == "__main__":
-    output = main(sys.argv[1:])
+     padded_data, max_length_question, max_length_context = main(sys.argv[1:])
     
