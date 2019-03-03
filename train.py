@@ -75,7 +75,7 @@ def main(args):
             data = pickle.load(question_file)
 
     # Pad questions and contexts
-    pad_char = 0
+    pad_char = vocab_size-1
     #data = pad_data(data, pad_char)
 
     print("Loaded test data")
@@ -85,10 +85,8 @@ def main(args):
     tf.reset_default_graph()
     i = tf.global_variables_initializer()
 
-    embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable=False)
-    # questions = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='questions')
-    # contexts = tf.placeholder(dtype=tf.int32,shape=[None,batch_size], name='contexts')
-
+    embedding = tf.constant(index2embedding, dtype=tf.float32)
+  
     padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
 
     question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
@@ -101,9 +99,13 @@ def main(args):
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         print("question_batch shape : ",question_batch.shape)
+        print(question_batch)
+        print("context_batch shape : ", context_batch.shape)
+        print(context_batch)
+        print("BEFORE ENCODER")
         output = sess.run(U,feed_dict={question_batch_placeholder: question_batch,
-            context_batch_placeholder: context_batch,embedding: embedding})
-        return output
+            context_batch_placeholder: context_batch})
+        print("AFTER ENCODER")
 
 
 
@@ -126,5 +128,5 @@ def main(args):
     '''
 
 if __name__ == "__main__":
-    output = main(sys.argv[1:])
+    main(sys.argv[1:])
     

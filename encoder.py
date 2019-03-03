@@ -12,6 +12,7 @@ def transpose(tensor):
     return tf.transpose(tensor,perm=[0,2,1])
 
 def encoder(questions,contexts,embedding,hidden_unit_size=200):
+    print("INSIDE ENCODER")
     '''
         Build the model for the document encoder
         questions: Tensor of questions
@@ -23,8 +24,8 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200):
     questions_size = questions.shape[1].value
 
     print("Batch size", batch_size)
-    print("Shape of questions", questions.get_shape())
-    print("Shape of contexts", contexts.get_shape())
+    print("Shape of questions", questions.shape)
+    print("Shape of contexts", contexts.shape)
 
     with tf.variable_scope('embedding') as scope:
         # Vectorise the contexts and questions
@@ -35,8 +36,8 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200):
 
         context_embedding = tf.transpose(context_vector, perm=[0, 2, 1])
         question_embedding = tf.transpose(question_vector, perm=[0, 2, 1])
-        print("Context embedding shape : ",context_embedding.get_shape())
-        print("Question embedding shape : ",question_embedding.get_shape())
+        print("Context embedding shape : ",context_embedding.shape)
+        print("Question embedding shape : ",question_embedding.shape)
         lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
 
     with tf.variable_scope('context_embedding') as scope:
@@ -47,7 +48,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200):
         # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
         sentinel_vec = tf.constant(0, shape=[batch_size,hidden_unit_size, 1], dtype = tf.float32)
         context_encoding = tf.concat((context_encoding, sentinel_vec), axis=-1)
-        print("Context encoding shape : ",context_encoding.get_shape())
+        print("Context encoding shape : ",context_encoding.shape)
 
     with tf.variable_scope('question_embedding') as scope:
         question_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, transpose(question_embedding), dtype=tf.float32)
@@ -55,7 +56,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200):
         # Append sentinel vector
         sentinel_vec = tf.constant(0, shape=[batch_size,hidden_unit_size, 1], dtype = tf.float32)
         question_encoding = tf.concat((question_encoding,sentinel_vec), axis = -1)
-        print("Question encoding shape : ", question_encoding.get_shape())
+        print("Question encoding shape : ", question_encoding.shape)
         # Append "non linear projection layer" on top of the question encoding
         # Q = tanh(W^{Q} Q' + b^{Q})
         W_q = tf.Variable(tf.random_uniform([hidden_unit_size, hidden_unit_size]), [hidden_unit_size, hidden_unit_size], dtype=tf.float32)
@@ -65,24 +66,24 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200):
             b_q
         ), question_encoding, dtype=tf.float32)
         Q = tf.tanh(question_encoding)
-        print("Q shape: ",Q.get_shape())
+        print("Q shape: ",Q.shape)
         L = tf.matmul(transpose(context_encoding),Q)
-        print("L shape: ",L.get_shape())
+        print("L shape: ",L.shape)
         # attention weights for questions A^{Q} = softmax(L)
         A_q = tf.nn.softmax(L)
-        print("A_q shape: ",A_q.get_shape())
+        print("A_q shape: ",A_q.shape)
         # attention weights for documents A^{D} = softmax(L')
         A_d = tf.nn.softmax(transpose(L))
-        print("A_d shape: ",A_d.get_shape())
+        print("A_d shape: ",A_d.shape)
         # Attention Context C^{Q}
         C_q = tf.matmul(context_encoding,A_q)
-        print("C_q shape: ",C_q.get_shape())
+        print("C_q shape: ",C_q.shape)
         # C^{D} = [Q ; C^{Q}] A^{D}
         C_d = tf.matmul(tf.concat((Q,C_q), axis=1),A_d)
-        print("C_d shape: ",C_d.get_shape())
+        print("C_d shape: ",C_d.shape)
         # Final context. Has no name in the paper, so we call it C
         C = tf.concat((context_encoding,C_d),axis=1)
-        print("C shape: ",C.get_shape())
+        print("C shape: ",C.shape)
     
     with tf.variable_scope('coattention'):
         # Bi-LSTM
@@ -92,7 +93,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200):
         U = transpose(tf.concat(u_states,axis = 2))
         # Ignore u_{m+1}
         U = U[:,:,:-1]
-        print("U shape: ",U.get_shape())
+        print("U shape: ",U.shape)
         return U
 
 
