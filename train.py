@@ -24,9 +24,9 @@ PRESAVED_EMBEDDING_FILE = 'generated/embedding.pickle'
 
 
 
-def main(args):
+def load_data(args):
     '''
-        Main function for training the network. 
+        Function for loading the data and padding as required. 
         Pass command line option --regenerateEmbeddings to force write the embeddings to file
     '''
     REGENERATE_CACHE = '--regenerateEmbeddings' in args
@@ -76,58 +76,34 @@ def main(args):
 
     # Pad questions and contexts
     pad_char = vocab_size-1
-    #data = pad_data(data, pad_char)
-
-    print("Loaded test data")
-
-    batch_size = 10
-
-    tf.reset_default_graph()
-    
-
-    embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
-  
     padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
-
-    question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
-    context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context])
-    U = encoder(question_batch_placeholder,context_batch_placeholder,embedding)
-    init = tf.global_variables_initializer()
-    with tf.Session() as sess:
-        sess.run(init)
-        print("SESSION INITIALIZED")
-        for counter in range(0,101,batch_size):
-            # running on an example batch to debug encoder
-            batch = padded_data[counter:(counter+batch_size)]
-            question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
-            context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
-            print("BEFORE ENCODER RUN counter = ",counter)
-            output = sess.run(U,feed_dict={question_batch_placeholder: question_batch,
-                context_batch_placeholder: context_batch})
-            print("AFTER ENCODER RUN counter = ",counter)
-            counter += batch_size%len(padded_data)
-        return output
+    return padded_data, index2embedding, max_length_question, max_length_context
 
 
 
+print("Loaded data")
+padded_data, index2embedding, max_length_question, max_length_context = load_data(sys.argv[1:])
 
-    '''
-    with tf.Session() as sess:
-        sess.run(i)
-        counter = 0
-        for epochs in range(len(questions) // batch_size):
-            batch = questions[counter:(counter+batch_size)]
 
-            question_batch = list(map(lambda qas: (qas["question"]), batch))
-            context_batch = list(map(lambda qas: (qas["context"]), batch))
+### Train now
+batch_size = 10
+tf.reset_default_graph()
+embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
+question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
+context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context])
+U = encoder(question_batch_placeholder,context_batch_placeholder,embedding)
+init = tf.global_variables_initializer()
+with tf.Session() as sess:
+    sess.run(init)
+    print("SESSION INITIALIZED")
+    for counter in range(0,101,batch_size):
+        # running on an example batch to debug encoder
+        batch = padded_data[counter:(counter+batch_size)]
+        question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
+        context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
+        print("BEFORE ENCODER RUN counter = ",counter)
+        output = sess.run(U,feed_dict={question_batch_placeholder: question_batch,
+            context_batch_placeholder: context_batch})
+        print("AFTER ENCODER RUN counter = ",counter)
+        counter += batch_size%len(padded_data)
 
-            counter = counter + batch_size
-            for i in range(0, batch_size):
-                question = tf.constant(question_batch[i], shape=(max_length_questions, 300))
-                context = tf.constant(context_batch[i], shape=(max_length_context, 300))
-                encoder_states = encoder(question, context, embeddings)
-    '''
-
-if __name__ == "__main__":
-   output = main(sys.argv[1:])
-    
