@@ -9,9 +9,12 @@ import pickle
 import os
 from collections import defaultdict  
 import sys
+from functools import reduce
+
 
 # custom imports
-from preprocessing import text_to_index, load_embedding
+from preprocessing import text_to_index, load_embedding, pad_data
+from encoder import encoder
 
 # open the training file 
 TRAINING_FILE_NAME = 'data/dev.json'
@@ -21,9 +24,9 @@ PRESAVED_EMBEDDING_FILE = 'generated/embedding.pickle'
 
 
 
-def main(args):
+def load_data(args):
     '''
-        Main function for training the network. 
+        Function for loading the data and padding as required. 
         Pass command line option --regenerateEmbeddings to force write the embeddings to file
     '''
     REGENERATE_CACHE = '--regenerateEmbeddings' in args
@@ -34,7 +37,7 @@ def main(args):
         assert data["version"] == "1.1"
         categories = data["data"]
 
-    questions = [];
+    data = []
 
     # load GLoVE vectors
     if (not os.path.isfile(PRESAVED_EMBEDDING_FILE)) or REGENERATE_CACHE:
@@ -50,7 +53,6 @@ def main(args):
 
     print("Loaded embeddings")
     vocab_size, embedding_dim = index2embedding.shape
-    embeddings = tf.constant(index2embedding, dtype=tf.float32)
     print("Vocab Size:"+str(vocab_size)+" Embedding Dim:"+str(embedding_dim))
 
     # Generate question encoding
@@ -60,26 +62,48 @@ def main(args):
             for paragraph in category["paragraphs"]:
                 paragraph["context"] = paragraph["context"]
                 for qas in paragraph["qas"]:
-                    questions.append({
+                    data.append({
                         "context": text_to_index(paragraph["context"], word2index),
                         "question": text_to_index(qas["question"], word2index),
                         "answer": text_to_index(random.choice(qas["answers"])["text"], word2index)
                     })
         with open(PRESAVED_QUESTIONS_FILE, "wb") as question_file:
-            pickle.dump(questions, question_file)
+            pickle.dump(data, question_file)
     else:
         print("Loading question encoding from file")
         with open(PRESAVED_QUESTIONS_FILE, "rb") as question_file:
-            questions = pickle.load(question_file)
+            data = pickle.load(question_file)
 
-    print("Loaded test data")
-    print(questions[0])
-    print(".....")
+    # Pad questions and contexts
+    pad_char = vocab_size-1
+    padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
+    return padded_data, index2embedding, max_length_question, max_length_context
 
-    i = tf.global_variables_initializer()
 
-    with tf.Session() as sess:
-        sess.run(i)
 
-if __name__ == "__main__":
-    main(sys.argv[1:])
+print("Loaded data")
+padded_data, index2embedding, max_length_question, max_length_context = load_data(sys.argv[1:])
+
+
+### Train now
+batch_size = 10
+tf.reset_default_graph()
+embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
+question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
+context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context])
+U = encoder(question_batch_placeholder,context_batch_placeholder,embedding)
+init = tf.global_variables_initializer()
+with tf.Session() as sess:
+    sess.run(init)
+    print("SESSION INITIALIZED")
+    for counter in range(0,101,batch_size):
+        # running on an example batch to debug encoder
+        batch = padded_data[counter:(counter+batch_size)]
+        question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
+        context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
+        print("BEFORE ENCODER RUN counter = ",counter)
+        output = sess.run(U,feed_dict={question_batch_placeholder: question_batch,
+            context_batch_placeholder: context_batch})
+        print("AFTER ENCODER RUN counter = ",counter)
+        counter += batch_size%len(padded_data)
+
