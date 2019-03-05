@@ -44,16 +44,16 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200):
     context_encoding = transpose(context_encoding)
     # Append sentinel vector
     # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
-    sentinel_vec = tf.constant(0, shape=[batch_size,hidden_unit_size, 1], dtype = tf.float32)
-    context_encoding = tf.concat((context_encoding, sentinel_vec), axis=-1)
+    sentinel_vec_context = tf.Variable(tf.random_uniform([hidden_unit_size,1]), dtype = tf.float32)
+    context_encoding = tf.map_fn(lambda x: tf.concat((x,sentinel_vec_context), axis = -1),context_encoding)
     print("Context encoding shape : ",context_encoding.shape)
 
     question_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, transpose(question_embedding), dtype=tf.float32)
     question_encoding = transpose(question_encoding)
     
     # Append sentinel vector
-    sentinel_vec = tf.constant(0, shape=[batch_size,hidden_unit_size, 1], dtype = tf.float32)
-    question_encoding = tf.concat((question_encoding,sentinel_vec), axis = -1)
+    sentinel_vec_question = tf.Variable(tf.random_uniform([hidden_unit_size,1]), dtype = tf.float32)
+    question_encoding = tf.map_fn(lambda x: tf.concat((x,sentinel_vec_question), axis = -1),question_encoding)
     print("Question encoding shape : ", question_encoding.shape)
     # Append "non linear projection layer" on top of the question encoding
     # Q = tanh(W^{Q} Q' + b^{Q})
