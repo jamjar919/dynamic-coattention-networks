@@ -41,6 +41,9 @@ def highway_network(coattention_encoding_of_word_in_doc,
     b3 = tf.get_variable("b3", shape=[POOL_SIZE])
     con3 = tf.concat(values=[mt1_postmax_reshaped, mt2_postmax_reshaped])
     hmn = tf.reshape(tf.matmul(w3, con3), [POOL_SIZE]) + b2
+    hmn_postmax = tf.reduce_max(hmn_premax, axis=0)
+
+    return hmn_postmax
 
 
 
