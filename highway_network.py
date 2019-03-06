@@ -59,7 +59,7 @@ def highway_network_single(coattention_encoding_of_word_in_doc,
     #w1 = tf.get_variable("w1", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 3 * HIDDEN_STATE_SIZE],
     #                     initializer=weight_initer)
     # b1 = tf.get_variable("b1", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    con2 = tf.concat(values=[coattention_encoding_of_word_in_doc, activated_value])
+    con2 = tf.concat(values=[coattention_encoding_of_word_in_doc, activated_value],axis=0)
     mt1_premax = tf.reshape(tf.matmul(w1, con2), [POOL_SIZE, HIDDEN_STATE_SIZE]) + b1
     mt1_postmax =  tf.reduce_max(mt1_premax, axis=0)
     mt1_postmax_reshaped = tf.reshape(mt1_postmax, [HIDDEN_STATE_SIZE])
@@ -76,7 +76,7 @@ def highway_network_single(coattention_encoding_of_word_in_doc,
     #w3 = tf.get_variable("w3", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 2 * HIDDEN_STATE_SIZE],
     #                     initializer=weight_initer)
     # b3 = tf.get_variable("b3", shape=[POOL_SIZE])
-    con3 = tf.concat(values=[mt1_postmax_reshaped, mt2_postmax_reshaped])
+    con3 = tf.concat(values=[mt1_postmax_reshaped, mt2_postmax_reshaped],axis = 0)
     hmn_premax = tf.reshape(tf.matmul(w3, con3), [POOL_SIZE]) + b3
     hmn_postmax = tf.reduce_max(hmn_premax, axis=0)
 
