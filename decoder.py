@@ -6,7 +6,6 @@ EMBEDDING_SIZE_OF_WORDS = 400
 DOCUMENT_SIZE = 632
 HIDDEN_STATE_SIZE = 200 # named L in the paper
 POOL_SIZE = 16
-s_init = tf.constant(tf.random_uniform([10,1]),dtype=tf.int32)
 
 def decoder(U, s, e, hidden_unit_size=200):
     """
@@ -49,12 +48,13 @@ def decoder(U, s, e, hidden_unit_size=200):
 
     u_s = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]),
                        indices=tf.stack([tf.range(batch_size, dtype=tf.int32), s], axis=1))
-    print(u_s.shape)
+    print("u_s shape: ",u_s.shape)
     # 10 * 400
     u_e = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]),
                        indices=tf.stack([tf.range(batch_size, dtype=tf.int32), e], axis=1))
-    print(u_e.shape)
+    print("u_e shape: ",u_e.shape)
 
+    print("HERE")
     for i in range(4):
         # s is start index
         s = hn.highway_network_batch(U, hi, u_s, u_e, wd_start_word, w1_start_word, w2_start_word, w3_start_word,
@@ -75,7 +75,8 @@ def decoder(U, s, e, hidden_unit_size=200):
     return s,e
 
 print()
-U = tf.constant(shape=[10, 400, 632])
-s = tf.constant(shape=[10, 1])
+U = tf.placeholder(shape=[10, 400, 632], dtype = tf.float32)
+s = tf.placeholder(shape=[10], dtype = tf.int32)
+e = tf.placeholder(shape=[10], dtype = tf.int32)
 decoder(U, s, s)
 
