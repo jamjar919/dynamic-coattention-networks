@@ -54,10 +54,11 @@ def highway_network_batch(batch_of_word_encodings,
     print("batch_size : ",batch_size)
     con = tf.concat(values=[lstm_hidden_state, coattention_encoding_of_prev_start_word,
                                coattention_encoding_of_prev_end_word], axis=1)
+    con = tf.reshape(con,[con.shape[0],con.shape[1],1])
     print("con.shape:", con.shape)
     # wd = tf.tile(wd,[batch_size])
     print("wd.shape: ",wd.shape)
-    linear_model = tf.map_fn(lambda x: tf.matmul(wd, x, transpose_a=True),con)
+    linear_model = tf.map_fn(lambda x: tf.matmul(wd,x),con)
     print("linear_model shape: ",linear_model.shape)
     activated_value = tf.nn.tanh(linear_model)
     tf.reshape(activated_value, [HIDDEN_STATE_SIZE])
