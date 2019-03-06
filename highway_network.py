@@ -83,8 +83,8 @@ def highway_network_batch(batch_of_word_encodings,
     mt1_premax = tf.map_fn(lambda x: x+b1,mt1_premax)
     print("mt1_premax.shape: ",mt1_premax.shape)
     #mt1_premax = tf.reshape(tf.matmul(w1, con2), [POOL_SIZE, HIDDEN_STATE_SIZE]) + b1
-    mt1_postmax =  tf.reduce_max(mt1_premax, axis=0)
-    mt1_postmax_reshaped = tf.reshape(mt1_postmax, [HIDDEN_STATE_SIZE])
+    mt1_postmax =  tf.reduce_max(mt1_premax, axis=1)
+    print("mt1_postmax.shape : ",mt1_postmax.shape)
 
     #calculate mt2
     #w2 = tf.get_variable("w2", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
