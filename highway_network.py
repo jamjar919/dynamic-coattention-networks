@@ -13,9 +13,8 @@ def highway_network(U, lstm_hidden_state,
                     wd, w1, w2, w3,
                     b1, b2, b3):
 
-    U_transpose = tf.transpose(U,perm=[1, 2, 0])
-    print("u_t shape:", U_transpose.shape)
-    fn = lambda batch_of_word_encodings : highway_network_batch(batch_of_word_encodings, lstm_hidden_state,
+    U_transpose = tf.transpose(U,perm=[2, 1, 0])
+    fn = lambda batch_of_word_encodings : highway_network_batch(tf.transpose(batch_of_word_encodings,perm = [1,0]), lstm_hidden_state,
                     coattention_encoding_of_prev_start_word,
                     coattention_encoding_of_prev_end_word,
                     wd, w1, w2, w3,
@@ -51,7 +50,9 @@ def highway_network_batch(batch_of_word_encodings,
 
     # calculate r. The dimension of r would be l * 1
     batch_size = batch_of_word_encodings.shape[0]
+    batch_of_word_encodings = tf.reshape(batch_of_word_encodings, [batch_of_word_encodings.shape[0],batch_of_word_encodings.shape[1],1])
     print("batch_size : ",batch_size)
+    print("batch_of_word_encodings shape: ",batch_of_word_encodings.shape)
     con = tf.concat(values=[lstm_hidden_state, coattention_encoding_of_prev_start_word,
                                coattention_encoding_of_prev_end_word], axis=1)
     con = tf.reshape(con,[con.shape[0],con.shape[1],1])
@@ -61,13 +62,19 @@ def highway_network_batch(batch_of_word_encodings,
     linear_model = tf.map_fn(lambda x: tf.matmul(wd,x),con)
     print("linear_model shape: ",linear_model.shape)
     activated_value = tf.nn.tanh(linear_model)
-    tf.reshape(activated_value, [HIDDEN_STATE_SIZE])
+    # tf.reshape(activated_value, [HIDDEN_STATE_SIZE])
+    print("activated_value shape: ",activated_value.shape)
 
     # calculate mt1
     #w1 = tf.get_variable("w1", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 3 * HIDDEN_STATE_SIZE],
     #                     initializer=weight_initer)
     # b1 = tf.get_variable("b1", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    con2 = tf.concat(values=[coattention_encoding_of_word_in_doc, activated_value])
+    con2 = tf.concat(values=[batch_of_word_encodings, activated_value],axis=1)
+    # con2 = tf.reshape(con2,[con2.shape[0],con2.shape[1],1])
+    print("con2.shape: ",con2.shape)
+    print("w1.shape: ",w1.shape)
+    mt1_premax = tf.map_fn(lambda wmat: tf.map_fn(lambda x: tf.matmul(wmat,x),con2),w1)
+    print("mt1_premax.shape: ",mt1_premax)
     mt1_premax = tf.reshape(tf.matmul(w1, con2), [POOL_SIZE, HIDDEN_STATE_SIZE]) + b1
     mt1_postmax =  tf.reduce_max(mt1_premax, axis=0)
     mt1_postmax_reshaped = tf.reshape(mt1_postmax, [HIDDEN_STATE_SIZE])
