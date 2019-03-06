@@ -14,13 +14,15 @@ def highway_network_batch(U, lstm_hidden_state,
                     b1, b2, b3):
 
     U_transpose = transpose(U)
-    fn = lambda doc_encoding : highway_network_matrix(doc_encoding, lstm_hidden_state,
-                    coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word,
+    fn = lambda x : highway_network_matrix(x[0], x[1],
+                    x[2],
+                    x[3],
                     wd, w1, w2, w3,
                     b1, b2, b3)
     # returns 10 * 1
-    return tf.map_fn(fn, U_transpose)
+    return tf.map_fn(fn, (U_transpose, lstm_hidden_state, 
+    coattention_encoding_of_prev_start_word, 
+    coattention_encoding_of_prev_end_word) )
 
 # U_transpose is of size 632 * 400
 def highway_network_matrix(U_transpose, lstm_hidden_state,
@@ -44,6 +46,11 @@ def highway_network_single(coattention_encoding_of_word_in_doc,
                     coattention_encoding_of_prev_end_word,
                     wd, w1, w2, w3,
                     b1, b2, b3):
+
+    print("coattention_encoding_of_word shape: ",coattention_encoding_of_word_in_doc.shape)
+    print("lstm_hidden_state shape: ",lstm_hidden_state.shape)
+    print("coattention_encoding_of_prev_start_word shape: ",coattention_encoding_of_prev_start_word.shape)
+    print("coattention_encoding_of_prev_end_word shape: ",coattention_encoding_of_prev_end_word.shape)
     # weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
     #wd = tf.get_variable("wd", shape=[HIDDEN_STATE_SIZE, 5 * HIDDEN_STATE_SIZE],
     #                     initializer=weight_initer)
@@ -51,9 +58,13 @@ def highway_network_single(coattention_encoding_of_word_in_doc,
     # calculate r. The dimension of r would be L * 1
     con = tf.concat(values=[lstm_hidden_state, coattention_encoding_of_prev_start_word,
                                coattention_encoding_of_prev_end_word], axis=0)
-    linear_model = tf.matmul(wd, con, transpose_a=True)
+    print("CONCATENATION SUCCESSFUL con.shape : ",con.shape)
+    con_reshaped = tf.reshape(con, [ 1, con.shape[0], -1])
+    wd_reshaped = tf.reshape(wd, [ 1, wd.shape[0], wd.shape[1]])
+    linear_model = tf.matmul(wd_reshaped, con_reshaped)
+    print("linear_model shape ",linear_model.shape)
     activated_value = tf.nn.tanh(linear_model)
-    tf.reshape(activated_value, [HIDDEN_STATE_SIZE])
+    tf.reshape(activated_value, [1, HIDDEN_STATE_SIZE])
 
     # calculate mt1
     #w1 = tf.get_variable("w1", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 3 * HIDDEN_STATE_SIZE],
