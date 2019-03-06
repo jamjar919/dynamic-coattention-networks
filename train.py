@@ -1,88 +1,16 @@
 # This file trains the neural network using the encoder and decoder.
-
+import sys
 import numpy as np
 import tensorflow as tf
-import pandas as pd
-import json
-import random
-import pickle
-import os
-from collections import defaultdict  
-import sys
 from functools import reduce
 
-
 # custom imports
-from preprocessing import text_to_index, load_embedding, pad_data
 from encoder import encoder
+from dataset import Dataset
 
-# open the training file 
-TRAINING_FILE_NAME = 'data/dev.json'
-GLOVE_DATA_FILE = 'data/glove.6B.300d.txt'
-PRESAVED_QUESTIONS_FILE = 'generated/encoded_questions.pickle'
-PRESAVED_EMBEDDING_FILE = 'generated/embedding.pickle'
-
-
-
-def load_data(args):
-    '''
-        Function for loading the data and padding as required. 
-        Pass command line option --regenerateEmbeddings to force write the embeddings to file
-    '''
-    REGENERATE_CACHE = '--regenerateEmbeddings' in args
-
-    # read SQuAD data
-    with open(TRAINING_FILE_NAME, "r") as f:
-        data = json.loads(f.read())
-        assert data["version"] == "1.1"
-        categories = data["data"]
-
-    data = []
-
-    # load GLoVE vectors
-    if (not os.path.isfile(PRESAVED_EMBEDDING_FILE)) or REGENERATE_CACHE:
-        print("Generating embedding...")
-        word2index, index2embedding = load_embedding(GLOVE_DATA_FILE)
-        with open(PRESAVED_EMBEDDING_FILE, "wb") as embedding_file:
-            pickle.dump((dict(word2index), index2embedding), embedding_file)
-    else:
-        print("Loading embedding from file")
-        with open(PRESAVED_EMBEDDING_FILE, "rb") as embedding_file:
-            word2index, index2embedding = pickle.load(embedding_file)
-        word2index = defaultdict(lambda: len(word2index), word2index)
-
-    print("Loaded embeddings")
-    vocab_size, embedding_dim = index2embedding.shape
-    print("Vocab Size:"+str(vocab_size)+" Embedding Dim:"+str(embedding_dim))
-
-    # Generate question encoding
-    if (not os.path.isfile(PRESAVED_QUESTIONS_FILE)) or REGENERATE_CACHE:
-        print("Generating question encoding...")
-        for category in categories:
-            for paragraph in category["paragraphs"]:
-                paragraph["context"] = paragraph["context"]
-                for qas in paragraph["qas"]:
-                    data.append({
-                        "context": text_to_index(paragraph["context"], word2index),
-                        "question": text_to_index(qas["question"], word2index),
-                        "answer": text_to_index(random.choice(qas["answers"])["text"], word2index)
-                    })
-        with open(PRESAVED_QUESTIONS_FILE, "wb") as question_file:
-            pickle.dump(data, question_file)
-    else:
-        print("Loading question encoding from file")
-        with open(PRESAVED_QUESTIONS_FILE, "rb") as question_file:
-            data = pickle.load(question_file)
-
-    # Pad questions and contexts
-    pad_char = vocab_size-1
-    padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
-    return padded_data, index2embedding, max_length_question, max_length_context
-
-
-
+D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
+padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
 print("Loaded data")
-padded_data, index2embedding, max_length_question, max_length_context = load_data(sys.argv[1:])
 
 
 ### Train now
