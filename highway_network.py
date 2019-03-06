@@ -90,16 +90,27 @@ def highway_network_batch(batch_of_word_encodings,
     #w2 = tf.get_variable("w2", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
     #                     initializer=weight_initer)
     # b2 = tf.get_variable("b2", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    mt2_premax = tf.reshape(tf.matmul(w2, mt1_postmax_reshaped), [POOL_SIZE, HIDDEN_STATE_SIZE]) + b2
-    mt2_postmax =  tf.reduce_max(mt2_premax, axis=0)
-    mt2_postmax_reshaped = tf.reshape(mt2_postmax, [HIDDEN_STATE_SIZE])
+    #print("asjdflskdf")
+    mt2_premax = tf.map_fn(lambda x: tf.map_fn(lambda wmat: tf.matmul(wmat, x), w2), mt1_postmax)
+    print("mt2_premax", mt2_premax.shape)
+    b2 = to3D(b2)
+    mt2_premax = tf.map_fn(lambda x: x+b2, mt2_premax)
+    mt2_postmax = tf.reduce_max(mt2_premax, axis=1)
+    print("mt2_postmax.shape : ", mt2_postmax.shape)
+
+
 
     #calculate the final HMN output
     #w3 = tf.get_variable("w3", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 2 * HIDDEN_STATE_SIZE],
     #                     initializer=weight_initer)
-    # b3 = tf.get_variable("b3", shape=[POOL_SIZE])
-    con3 = tf.concat(values=[mt1_postmax_reshaped, mt2_postmax_reshaped])
-    hmn_premax = tf.reshape(tf.matmul(w3, con3), [POOL_SIZE]) + b3
-    hmn_postmax = tf.reduce_max(hmn_premax, axis=0)
+    mt1mt2 = tf.concat(values=[mt1_postmax, mt2_postmax], axis=1)
+    print("mt1mt2.size:", mt1mt2.shape)
+    hmn_premax = tf.map_fn(lambda x: tf.map_fn(lambda wmat: tf.matmul(wmat, x), w3), mt1mt2)
+    hmn_premax = tf.reshape(hmn_premax, [hmn_premax.shape[0], hmn_premax.shape[1]])
+    print("hmn_premax",hmn_premax.shape)
+    hmn_premax = tf.map_fn(lambda x: x+b3, hmn_premax)
+    hmn_postmax = tf.reduce_max(hmn_premax, axis=1)
+    print("hmn shape: ", hmn_postmax.shape)
 
+    # the hmn_postmax shape is 10. this is for each word in the doc. Do that for 632 words and take max
     return hmn_postmax

@@ -27,7 +27,7 @@ def decoder(U, s, e, hidden_unit_size=200):
                                     initializer=weight_initer)
     w2_start_word = tf.get_variable("w2_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
                                     initializer=weight_initer)
-    w3_start_word = tf.get_variable("w3_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 2 * HIDDEN_STATE_SIZE],
+    w3_start_word = tf.get_variable("w3_s", shape=[POOL_SIZE, 1, 2 * HIDDEN_STATE_SIZE],
                                     initializer=weight_initer)
     b1_start_word = tf.get_variable("b1_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
     b2_start_word = tf.get_variable("b2_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
@@ -39,7 +39,7 @@ def decoder(U, s, e, hidden_unit_size=200):
                                   initializer=weight_initer)
     w2_end_word = tf.get_variable("w2_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
                                   initializer=weight_initer)
-    w3_end_word = tf.get_variable("w3_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 2 * HIDDEN_STATE_SIZE],
+    w3_end_word = tf.get_variable("w3_e", shape=[POOL_SIZE, 1, 2 * HIDDEN_STATE_SIZE],
                                   initializer=weight_initer)
     b1_end_word = tf.get_variable("b1_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
     b2_end_word = tf.get_variable("b2_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
