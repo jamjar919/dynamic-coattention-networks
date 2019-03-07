@@ -51,8 +51,6 @@ def decoder(U, s, e, hidden_unit_size = 200, pool_size = 16):
     u_e = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]),
                        indices=tf.stack([tf.range(batch_size, dtype=tf.int32), e], axis=1))
     print("u_e shape: ",u_e.shape)
-
-    print("HERE")
     for i in range(4):
         # s is start index
         with tf.variable_scope('start_word', reuse=True) as scope1:
@@ -61,7 +59,7 @@ def decoder(U, s, e, hidden_unit_size = 200, pool_size = 16):
             print("s.dtype = ",s.dtype)
             u_s = tf.gather_nd(params=tf.transpose(U, perm=[0 , 2, 1]),
                             indices=tf.stack([tf.range(batch_size,dtype=tf.int32),tf.reshape(s, shape=[s.shape[0]])], axis=1))
-            print("IM HERE u_s.shape: ",u_s.shape)
+            print("u_s.shape: ",u_s.shape)
             print("u_s.dtype ",u_s.dtype)
 
         # e is the end index

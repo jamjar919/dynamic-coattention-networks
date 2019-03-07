@@ -18,7 +18,6 @@ def highway_network(U, lstm_hidden_state,
     index = tf.argmax(result,axis=0,output_type=tf.int32)
     # Remove extra array wrap at the end
     result = tf.reshape(result, [result.shape[0], result.shape[1]])
-    print("result .shape = ",result.shape)
     return index, result
 
 def highway_network_batch(batch_of_word_encodings,
@@ -44,7 +43,7 @@ def highway_network_batch(batch_of_word_encodings,
     print("batch_of_word_encodings shape: ",batch_of_word_encodings.shape)
     con = tf.concat(values=[lstm_hidden_state, coattention_encoding_of_prev_start_word,
                                coattention_encoding_of_prev_end_word], axis=1)
-    con = tf.reshape(con,[con.shape[0],con.shape[1],1])
+    con = to3D(con)
     print("con.shape:", con.shape)
     print("wd.shape: ",wd.shape)
     linear_model = tf.map_fn(lambda x: tf.matmul(wd,x),con)
