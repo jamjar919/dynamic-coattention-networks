@@ -16,6 +16,8 @@ def highway_network(U, lstm_hidden_state,
     # returns 10 * 1
     result = tf.map_fn(fn, U_transpose)
     index = tf.argmax(result,axis=0,output_type=tf.int32)
+    # Remove extra array wrap at the end
+    result = tf.reshape(result, [result.shape[0], result.shape[1]])
     print("result .shape = ",result.shape)
     return index, result
 

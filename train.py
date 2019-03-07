@@ -6,6 +6,7 @@ from functools import reduce
 
 # custom imports
 from encoder import encoder
+from decoder import decoder
 from dataset import Dataset
 
 D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
@@ -19,7 +20,24 @@ tf.reset_default_graph()
 embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
 question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
 context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context])
+
+# Create encoder
 U = encoder(question_batch_placeholder,context_batch_placeholder,embedding)
+
+# Word index placeholders
+answer_start = tf.placeholder(dtype=tf.int32,shape=[None])
+answer_end = tf.placeholder(dtype=tf.int32,shape=[None])
+
+# Create decoder 
+s, e, s_logits, e_logits = decoder(U, answer_start, answer_end)
+
+# |   ||
+# ||  |_
+l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits=s_logits)
+l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits=e_logits)
+loss = l1 + l2
+train_op = tf.train.AdamOptimizer(0.0001).minimize(loss)
+
 init = tf.global_variables_initializer()
 with tf.Session() as sess:
     sess.run(init)

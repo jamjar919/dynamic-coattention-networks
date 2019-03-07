@@ -75,11 +75,12 @@ def decoder(U, s, e, hidden_unit_size = 200, pool_size = 16):
 
         hi,ch = lstm_cell(inputs=tf.concat([u_s, u_e],axis=1), state=ch)
 
-    return s,e, s_logits,e_logits
+    return s, e, s_logits, e_logits
 
-print()
-U = tf.placeholder(shape=[10, 400, 632], dtype = tf.float32)
-s = tf.placeholder(shape=[10], dtype = tf.int32)
-e = tf.placeholder(shape=[10], dtype = tf.int32)
-decoder(U, s, s)
+if __name__ == "__main__":
+    print("Running decoder by itself for debug purposes.")
+    U = tf.placeholder(shape=[10, 400, 632], dtype = tf.float32)
+    s = tf.placeholder(shape=[10], dtype = tf.int32)
+    e = tf.placeholder(shape=[10], dtype = tf.int32)
+    decoder(U, s, e)
 
