@@ -31,7 +31,7 @@ class Dataset:
                         i += len(split_context[word_index]) + 1
                         word_index += 1
                     answer_start = word_index
-                    
+
                     data.append({
                         "context": text_to_index(paragraph["context"], word2index),
                         "question": text_to_index(qas["question"], word2index),
@@ -95,18 +95,3 @@ class Dataset:
         pad_char = vocab_size-1
         padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
         return padded_data, index2embedding, max_length_question, max_length_context
-
-if __name__ == "__main__":
-    # test 
-    D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
-    # read SQuAD data
-    with open('data/dev.json', "r") as f:
-        data = json.loads(f.read())
-        assert data["version"] == "1.1"
-        categories = data["data"]
-
-    print("loading embedding")
-    with open('generated/embedding.pickle', "rb") as f:
-        word2index, index2embedding = (lambda x: (defaultdict(lambda: len(x[0]), x[0]), x[1]))(pickle.load(f))
-
-    print(D.generate_question_encoding(categories, word2index))
