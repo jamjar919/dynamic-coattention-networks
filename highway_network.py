@@ -38,57 +38,38 @@ def highway_network_batch(batch_of_word_encodings,
     b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size])
     b3 = tf.get_variable("b3", shape=[pool_size])
 
-    batch_size = batch_of_word_encodings.shape[0]
     batch_of_word_encodings = tf.reshape(batch_of_word_encodings, [batch_of_word_encodings.shape[0],batch_of_word_encodings.shape[1],1])
-    print("batch_size : ",batch_size)
     print("batch_of_word_encodings shape: ",batch_of_word_encodings.shape)
     con = tf.concat(values=[lstm_hidden_state, coattention_encoding_of_prev_start_word,
                                coattention_encoding_of_prev_end_word], axis=1)
     con = tf.reshape(con,[con.shape[0],con.shape[1],1])
     print("con.shape:", con.shape)
-    # wd = tf.tile(wd,[batch_size])
     print("wd.shape: ",wd.shape)
     linear_model = tf.map_fn(lambda x: tf.matmul(wd,x),con)
     print("linear_model shape: ",linear_model.shape)
     activated_value = tf.nn.tanh(linear_model)
-    # tf.reshape(activated_value, [HIDDEN_STATE_SIZE])
     print("activated_value shape: ",activated_value.shape)
 
-    # calculate mt1
-    #w1 = tf.get_variable("w1", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 3 * HIDDEN_STATE_SIZE],
-    #                     initializer=weight_initer)
-    # b1 = tf.get_variable("b1", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
     con2 = tf.concat(values=[batch_of_word_encodings, activated_value],axis=1)
-    # con2 = tf.reshape(con2,[con2.shape[0],con2.shape[1],1])
     print("con2.shape: ",con2.shape)
-    print("w1.shape: ",w1.shape)
+
+    # Calculate mt1
     mt1_premax = tf.map_fn(lambda x: tf.map_fn(lambda wmat: tf.matmul(wmat,x), w1 ),con2)
     print("mt1_premax.shape: ",mt1_premax.shape)
     b1 = to3D(b1)
-    print("b1.shape: ",b1.shape)
     mt1_premax = tf.map_fn(lambda x: x+b1,mt1_premax)
-    print("mt1_premax.shape: ",mt1_premax.shape)
-    #mt1_premax = tf.reshape(tf.matmul(w1, con2), [POOL_SIZE, HIDDEN_STATE_SIZE]) + b1
     mt1_postmax =  tf.reduce_max(mt1_premax, axis=1)
     print("mt1_postmax.shape : ",mt1_postmax.shape)
 
-    #calculate mt2
-    #w2 = tf.get_variable("w2", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
-    #                     initializer=weight_initer)
-    # b2 = tf.get_variable("b2", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    #print("asjdflskdf")
+    # Calculate mt2
     mt2_premax = tf.map_fn(lambda x: tf.map_fn(lambda wmat: tf.matmul(wmat, x), w2), mt1_postmax)
-    print("mt2_premax", mt2_premax.shape)
+    print("mt2_premax.shape", mt2_premax.shape)
     b2 = to3D(b2)
     mt2_premax = tf.map_fn(lambda x: x+b2, mt2_premax)
     mt2_postmax = tf.reduce_max(mt2_premax, axis=1)
     print("mt2_postmax.shape : ", mt2_postmax.shape)
 
-
-
     #calculate the final HMN output
-    #w3 = tf.get_variable("w3", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 2 * HIDDEN_STATE_SIZE],
-    #                     initializer=weight_initer)
     mt1mt2 = tf.concat(values=[mt1_postmax, mt2_postmax], axis=1)
     print("mt1mt2.size:", mt1mt2.shape)
     hmn_premax = tf.map_fn(lambda x: tf.map_fn(lambda wmat: tf.matmul(wmat, x), w3), mt1mt2)
