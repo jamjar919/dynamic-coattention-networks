@@ -14,7 +14,7 @@ padded_data, index2embedding, max_length_question, max_length_context = D.load_d
 print("Loaded data")
 
 # Train now
-batch_size = 10
+batch_size = 32
 tf.reset_default_graph()
 embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
 question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
@@ -48,12 +48,13 @@ with tf.Session() as sess:
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
         answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
-        loss = sess.run(train_op,feed_dict = {
-            question : question_batch,
-            context : context_batch,
+        print("BEFORE ENCODER RUN counter = ",counter)
+        loss_val = sess.run(train_op,feed_dict = {
+            question_batch_placeholder : question_batch,
+            context_batch_placeholder : context_batch,
             answer_start : answer_start_batch,
             answer_end : answer_end_batch
         })
-        print("loss: ",loss)
+        print("loss: ",loss_val)
         counter += batch_size%len(padded_data)
 
