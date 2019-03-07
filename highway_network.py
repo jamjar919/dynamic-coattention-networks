@@ -9,7 +9,7 @@ def to3D(matrix):
 def highway_network(U, lstm_hidden_state,
                     coattention_encoding_of_prev_start_word,
                     coattention_encoding_of_prev_end_word, hidden_unit_size = 200, pool_size = 16):
-    U_transpose = transpose(U)
+    U_transpose = tf.transpose(U,perm=[2, 1, 0])
     fn = lambda batch_of_word_encodings : highway_network_batch(tf.transpose(batch_of_word_encodings,perm = [1,0]), lstm_hidden_state,
                     coattention_encoding_of_prev_start_word,
                     coattention_encoding_of_prev_end_word)
