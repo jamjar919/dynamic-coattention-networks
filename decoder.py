@@ -2,8 +2,6 @@
 import tensorflow as tf
 import highway_network as hn
 
-EMBEDDING_SIZE_OF_WORDS = 400
-DOCUMENT_SIZE = 632
 POOL_SIZE = 16
 
 def decoder(U, s, e, hidden_unit_size=200):
