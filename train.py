@@ -13,6 +13,7 @@ D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
 padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
 print("Loaded data")
 
+print(padded_data)
 
 ### Train now
 batch_size = 10
