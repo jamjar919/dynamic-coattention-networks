@@ -61,16 +61,17 @@ def decoder(U, s, e, hidden_unit_size=200):
                     b1_start_word, b2_start_word, b3_start_word)
         print("s shape:",s.shape)
         u_s = tf.gather_nd(params=tf.transpose(U, perm=[0 , 2, 1]),
-                           indices=tf.stack([tf.reshape(tf.range(batch_size,dtype=tf.int32),[batch_size,1,1]),s], axis=1))
-
+                           indices=tf.stack([tf.range(batch_size,dtype=tf.int32),tf.reshape(s, shape=[s.shape[0]])], axis=1))
+        print("IM HERE u_s.shape: ",u_s.shape)
         # e is the end index
         e = hn.highway_network(U, hi, u_s, u_e, wd_end_word, w1_end_word, w2_end_word, w3_end_word,
                     b1_end_word, b2_end_word, b3_end_word)
+        print("e.dtype = ",e.dtype)
 
         u_e = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]),
-                         indices=tf.stack([tf.range(batch_size, dtype=tf.int32), e], axis=1))
+                         indices=tf.stack([tf.range(batch_size, dtype=tf.int32), tf.reshape(e, shape=[e.shape[0]])], axis=1))
 
-        hi, ch = lstm_cell(inputs=tf.concat(u_s, u_e), state=ch)
+        hi, ch = lstm_cell(inputs=tf.concat(u_s, u_e), state=ch, )
 
     return s,e
 
