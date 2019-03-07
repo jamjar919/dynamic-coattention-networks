@@ -17,8 +17,8 @@ def decoder(U, s, e, hidden_unit_size=200):
     """
     batch_size = U.shape[0]
     lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_unit_size, dtype = tf.float32)
-    hi, ci = lstm_cell.zero_state(batch_size, dtype=tf.float32)
-
+    ch = lstm_cell.zero_state(batch_size, dtype=tf.float32)
+    hi, _ = ch
 
     weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
     wd_start_word = tf.get_variable("wd_s", shape=[HIDDEN_STATE_SIZE, 5 * HIDDEN_STATE_SIZE],
@@ -76,7 +76,7 @@ def decoder(U, s, e, hidden_unit_size=200):
 
         print("u_e.shape ",u_e.shape)
         print("u_e.dtype :",u_e.dtype)
-        hi, ci = lstm_cell(inputs=tf.concat([u_s, u_e],axis=1), state=ci)
+        hi,ch = lstm_cell(inputs=tf.concat([u_s, u_e],axis=1), state=ch)
 
     return s,e
 
