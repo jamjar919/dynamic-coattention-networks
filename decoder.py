@@ -57,7 +57,7 @@ def decoder(U, s, e, hidden_unit_size=200):
     print("HERE")
     for i in range(4):
         # s is start index
-        s = hn.highway_network(U, hi, u_s, u_e, wd_start_word, w1_start_word, w2_start_word, w3_start_word,
+        s, s_logits = hn.highway_network(U, hi, u_s, u_e, wd_start_word, w1_start_word, w2_start_word, w3_start_word,
                     b1_start_word, b2_start_word, b3_start_word)
         print("s shape:",s.shape)
         print("s.dtype = ",s.dtype)
@@ -67,7 +67,7 @@ def decoder(U, s, e, hidden_unit_size=200):
         print("u_s.dtype ",u_s.dtype)
 
         # e is the end index
-        e = hn.highway_network(U, hi, u_s, u_e, wd_end_word, w1_end_word, w2_end_word, w3_end_word,
+        e, e_logits = hn.highway_network(U, hi, u_s, u_e, wd_end_word, w1_end_word, w2_end_word, w3_end_word,
                     b1_end_word, b2_end_word, b3_end_word)
         print("e.dtype = ",e.dtype)
 
