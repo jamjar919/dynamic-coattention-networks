@@ -78,7 +78,7 @@ def decoder(U, s, e, hidden_unit_size=200):
         print("u_e.dtype :",u_e.dtype)
         hi,ch = lstm_cell(inputs=tf.concat([u_s, u_e],axis=1), state=ch)
 
-    return s,e
+    return s,e, s_logits,e_logits
 
 print()
 U = tf.placeholder(shape=[10, 400, 632], dtype = tf.float32)
