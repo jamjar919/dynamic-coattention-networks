@@ -19,9 +19,10 @@ def highway_network(U, lstm_hidden_state,
                     wd, w1, w2, w3,
                     b1, b2, b3)
     # returns 10 * 1
-    result = tf.argmax(tf.map_fn(fn, U_transpose),axis=0,output_type=tf.int32)
+    result = tf.map_fn(fn, U_transpose)
+    index = tf.argmax(result,axis=0,output_type=tf.int32)
     print("result .shape = ",result.shape)
-    return result
+    return index, result
 
 def highway_network_batch(batch_of_word_encodings,
                     lstm_hidden_state,
