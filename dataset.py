@@ -21,10 +21,10 @@ class Dataset:
         for category in categories:
             for paragraph in category["paragraphs"]:
                 paragraph["context"] = paragraph["context"]
+                split_context = paragraph["context"].split(" ")
                 for qas in paragraph["qas"]:
                     # Translate character index to word index
                     answer = random.choice(qas["answers"])
-                    split_context = paragraph["context"].split(" ")
                     i = 0
                     word_index = 0
                     while (i < answer["answer_start"]):

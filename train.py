@@ -13,9 +13,7 @@ D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
 padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
 print("Loaded data")
 
-print(padded_data)
-
-### Train now
+# Train now
 batch_size = 10
 tf.reset_default_graph()
 embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
@@ -48,9 +46,14 @@ with tf.Session() as sess:
         batch = padded_data[counter:(counter+batch_size)]
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
-        print("BEFORE ENCODER RUN counter = ",counter)
-        output = sess.run(U,feed_dict={question_batch_placeholder: question_batch,
-            context_batch_placeholder: context_batch})
-        print("AFTER ENCODER RUN counter = ",counter)
+        answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
+        answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
+        loss = sess.run(train_op,feed_dict = {
+            question : question_batch,
+            context : context_batch,
+            answer_start : answer_start_batch,
+            answer_end : answer_end_batch
+        })
+        print("loss: ",loss)
         counter += batch_size%len(padded_data)
 

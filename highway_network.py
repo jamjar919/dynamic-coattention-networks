@@ -79,7 +79,7 @@ def highway_network_batch(batch_of_word_encodings,
     print("hmn_premax",hmn_premax.shape)
     hmn_premax = tf.map_fn(lambda x: x+b3, hmn_premax)
     hmn_premax = to3D(hmn_premax)
-    hmn_postmax = tf.argmax(hmn_premax, axis=1)
+    hmn_postmax = tf.reduce_max(hmn_premax, axis=1)
     print("hmn shape: ", hmn_postmax.shape)
 
     # the hmn_postmax shape is 10. this is for each word in the doc. Do that for 632 words and take max
