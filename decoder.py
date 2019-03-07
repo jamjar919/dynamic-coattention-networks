@@ -16,7 +16,7 @@ def decoder(U, s, e, hidden_unit_size=200):
     :return:
     """
     batch_size = U.shape[0]
-    lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_unit_size)
+    lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_unit_size, dtype = tf.float32)
     hi, ci = lstm_cell.zero_state(batch_size, dtype=tf.float32)
 
 
@@ -60,9 +60,12 @@ def decoder(U, s, e, hidden_unit_size=200):
         s = hn.highway_network(U, hi, u_s, u_e, wd_start_word, w1_start_word, w2_start_word, w3_start_word,
                     b1_start_word, b2_start_word, b3_start_word)
         print("s shape:",s.shape)
+        print("s.dtype = ",s.dtype)
         u_s = tf.gather_nd(params=tf.transpose(U, perm=[0 , 2, 1]),
                            indices=tf.stack([tf.range(batch_size,dtype=tf.int32),tf.reshape(s, shape=[s.shape[0]])], axis=1))
         print("IM HERE u_s.shape: ",u_s.shape)
+        print("u_s.dtype ",u_s.dtype)
+
         # e is the end index
         e = hn.highway_network(U, hi, u_s, u_e, wd_end_word, w1_end_word, w2_end_word, w3_end_word,
                     b1_end_word, b2_end_word, b3_end_word)
@@ -71,7 +74,9 @@ def decoder(U, s, e, hidden_unit_size=200):
         u_e = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]),
                          indices=tf.stack([tf.range(batch_size, dtype=tf.int32), tf.reshape(e, shape=[e.shape[0]])], axis=1))
 
-        hi, ch = lstm_cell(inputs=tf.concat(u_s, u_e), state=ch, )
+        print("u_e.shape ",u_e.shape)
+        print("u_e.dtype :",u_e.dtype)
+        hi, ci = lstm_cell(inputs=tf.concat([u_s, u_e],axis=1), state=ci)
 
     return s,e
 
