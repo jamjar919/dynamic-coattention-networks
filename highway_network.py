@@ -8,16 +8,11 @@ def to3D(matrix):
 
 def highway_network(U, lstm_hidden_state,
                     coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word,
-                    wd, w1, w2, w3,
-                    b1, b2, b3):
-
+                    coattention_encoding_of_prev_end_word):
     U_transpose = tf.transpose(U,perm=[2, 1, 0])
     fn = lambda batch_of_word_encodings : highway_network_batch(tf.transpose(batch_of_word_encodings,perm = [1,0]), lstm_hidden_state,
                     coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word,
-                    wd, w1, w2, w3,
-                    b1, b2, b3)
+                    coattention_encoding_of_prev_end_word)
     # returns 10 * 1
     result = tf.map_fn(fn, U_transpose)
     index = tf.argmax(result,axis=0,output_type=tf.int32)
@@ -27,14 +22,22 @@ def highway_network(U, lstm_hidden_state,
 def highway_network_batch(batch_of_word_encodings,
                     lstm_hidden_state,
                     coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word,
-                    wd, w1, w2, w3,
-                    b1, b2, b3):
-    # weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
-    #wd = tf.get_variable("wd", shape=[HIDDEN_STATE_SIZE, 5 * HIDDEN_STATE_SIZE],
-    #                     initializer=weight_initer)
+                    coattention_encoding_of_prev_end_word, hidden_unit_size = 200, pool_size = 16):
 
-    # calculate r. The dimension of r would be l * 1
+    # Get the scoped variables if they exist (they should)
+    weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
+    wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
+                                    initializer=weight_initer)
+    w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
+                                    initializer=weight_initer)
+    w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
+                                    initializer=weight_initer)
+    w3 = tf.get_variable("w3", shape=[pool_size, 1, 2 * hidden_unit_size],
+                                    initializer=weight_initer)
+    b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size])
+    b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size])
+    b3 = tf.get_variable("b3", shape=[pool_size])
+
     batch_size = batch_of_word_encodings.shape[0]
     batch_of_word_encodings = tf.reshape(batch_of_word_encodings, [batch_of_word_encodings.shape[0],batch_of_word_encodings.shape[1],1])
     print("batch_size : ",batch_size)
