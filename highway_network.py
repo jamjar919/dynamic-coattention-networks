@@ -23,7 +23,9 @@ def highway_network(U, lstm_hidden_state,
                     wd, w1, w2, w3,
                     b1, b2, b3)
     # returns 10 * 1
-    return tf.map_fn(fn, U_transpose)
+    result = tf.argmax(tf.map_fn(fn, U_transpose),axis=0,output_type=tf.int32)
+    print("result .shape = ",result.shape)
+    return result
 
 # U_transpose is of size 632 * 400
 # def highway_network_matrix(U_transpose, lstm_hidden_state,
@@ -109,6 +111,7 @@ def highway_network_batch(batch_of_word_encodings,
     hmn_premax = tf.reshape(hmn_premax, [hmn_premax.shape[0], hmn_premax.shape[1]])
     print("hmn_premax",hmn_premax.shape)
     hmn_premax = tf.map_fn(lambda x: x+b3, hmn_premax)
+    hmn_premax = to3D(hmn_premax)
     hmn_postmax = tf.reduce_max(hmn_premax, axis=1)
     print("hmn shape: ", hmn_postmax.shape)
 
