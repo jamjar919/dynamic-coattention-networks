@@ -59,9 +59,9 @@ def decoder(U, s, e, hidden_unit_size=200):
         # s is start index
         s = hn.highway_network(U, hi, u_s, u_e, wd_start_word, w1_start_word, w2_start_word, w3_start_word,
                     b1_start_word, b2_start_word, b3_start_word)
-
+        print("s shape:",s.shape)
         u_s = tf.gather_nd(params=tf.transpose(U, perm=[0 , 2, 1]),
-                           indices=tf.stack([tf.range(batch_size,dtype=tf.int32),s], axis=1))
+                           indices=tf.stack([tf.reshape(tf.range(batch_size,dtype=tf.int32),[batch_size,1,1]),s], axis=1))
 
         # e is the end index
         e = hn.highway_network(U, hi, u_s, u_e, wd_end_word, w1_end_word, w2_end_word, w3_end_word,
