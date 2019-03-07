@@ -1,9 +1,5 @@
 import tensorflow as tf
 
-
-HIDDEN_STATE_SIZE = 200 # named L in the paper
-POOL_SIZE = 16
-
 def transpose(tensor):
     return tf.transpose(tensor,perm=[0,2,1])
 
@@ -26,22 +22,6 @@ def highway_network(U, lstm_hidden_state,
     result = tf.argmax(tf.map_fn(fn, U_transpose),axis=0,output_type=tf.int32)
     print("result .shape = ",result.shape)
     return result
-
-# U_transpose is of size 632 * 400
-# def highway_network_matrix(U_transpose, lstm_hidden_state,
-#                     coattention_encoding_of_prev_start_word,
-#                     coattention_encoding_of_prev_end_word,
-#                     wd, w1, w2, w3,
-#                     b1, b2, b3):
-#
-#     #U_transpose = tf.transpose(U, perm=[1, 0])
-#     fn = lambda col : highway_network_single(col, lstm_hidden_state,
-#                     coattention_encoding_of_prev_start_word,
-#                     coattention_encoding_of_prev_end_word,
-#                     wd, w1, w2, w3,
-#                     b1, b2, b3)
-#     # returns 1 number
-#     return tf.reduce_max(tf.map_fn(fn, U_transpose))
 
 def highway_network_batch(batch_of_word_encodings,
                     lstm_hidden_state,
