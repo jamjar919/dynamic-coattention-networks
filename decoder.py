@@ -4,7 +4,6 @@ import highway_network as hn
 
 EMBEDDING_SIZE_OF_WORDS = 400
 DOCUMENT_SIZE = 632
-HIDDEN_STATE_SIZE = 200 # named L in the paper
 POOL_SIZE = 16
 
 def decoder(U, s, e, hidden_unit_size=200):
@@ -21,28 +20,28 @@ def decoder(U, s, e, hidden_unit_size=200):
     hi, _ = ch
 
     weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
-    wd_start_word = tf.get_variable("wd_s", shape=[HIDDEN_STATE_SIZE, 5 * HIDDEN_STATE_SIZE],
+    wd_start_word = tf.get_variable("wd_s", shape=[hidden_unit_size, 5 * hidden_unit_size],
                                     initializer=weight_initer)
-    w1_start_word = tf.get_variable("w1_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 3 * HIDDEN_STATE_SIZE],
+    w1_start_word = tf.get_variable("w1_s", shape=[POOL_SIZE, hidden_unit_size, 3 * hidden_unit_size],
                                     initializer=weight_initer)
-    w2_start_word = tf.get_variable("w2_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
+    w2_start_word = tf.get_variable("w2_s", shape=[POOL_SIZE, hidden_unit_size, hidden_unit_size],
                                     initializer=weight_initer)
-    w3_start_word = tf.get_variable("w3_s", shape=[POOL_SIZE, 1, 2 * HIDDEN_STATE_SIZE],
+    w3_start_word = tf.get_variable("w3_s", shape=[POOL_SIZE, 1, 2 * hidden_unit_size],
                                     initializer=weight_initer)
-    b1_start_word = tf.get_variable("b1_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    b2_start_word = tf.get_variable("b2_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
+    b1_start_word = tf.get_variable("b1_s", shape=[POOL_SIZE, hidden_unit_size])
+    b2_start_word = tf.get_variable("b2_s", shape=[POOL_SIZE, hidden_unit_size])
     b3_start_word = tf.get_variable("b3_s", shape=[POOL_SIZE])
 
-    wd_end_word = tf.get_variable("wd_e", shape=[HIDDEN_STATE_SIZE, 5 * HIDDEN_STATE_SIZE],
+    wd_end_word = tf.get_variable("wd_e", shape=[hidden_unit_size, 5 * hidden_unit_size],
                                   initializer=weight_initer)
-    w1_end_word = tf.get_variable("w1_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 3 * HIDDEN_STATE_SIZE],
+    w1_end_word = tf.get_variable("w1_e", shape=[POOL_SIZE, hidden_unit_size, 3 * hidden_unit_size],
                                   initializer=weight_initer)
-    w2_end_word = tf.get_variable("w2_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
+    w2_end_word = tf.get_variable("w2_e", shape=[POOL_SIZE, hidden_unit_size, hidden_unit_size],
                                   initializer=weight_initer)
-    w3_end_word = tf.get_variable("w3_e", shape=[POOL_SIZE, 1, 2 * HIDDEN_STATE_SIZE],
+    w3_end_word = tf.get_variable("w3_e", shape=[POOL_SIZE, 1, 2 * hidden_unit_size],
                                   initializer=weight_initer)
-    b1_end_word = tf.get_variable("b1_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    b2_end_word = tf.get_variable("b2_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
+    b1_end_word = tf.get_variable("b1_e", shape=[POOL_SIZE, hidden_unit_size])
+    b2_end_word = tf.get_variable("b2_e", shape=[POOL_SIZE, hidden_unit_size])
     b3_end_word = tf.get_variable("b3_e", shape=[POOL_SIZE])
 
 
