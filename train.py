@@ -14,7 +14,7 @@ padded_data, index2embedding, max_length_question, max_length_context = D.load_d
 print("Loaded data")
 
 # Train now
-batch_size = 32
+batch_size = 10
 tf.reset_default_graph()
 embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
 question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
@@ -30,8 +30,6 @@ answer_end = tf.placeholder(dtype=tf.int32,shape=[None])
 # Create decoder 
 s, e, s_logits, e_logits = decoder(U, answer_start, answer_end)
 
-# |   ||
-# ||  |_
 l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits=s_logits)
 l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits=e_logits)
 loss = l1 + l2

@@ -63,7 +63,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     Q = tf.map_fn(lambda x: tf.math.add(
         tf.matmul(W_q, x),
         b_q
-    ), question_encoding, dtype=tf.float32)
+    ), question_encoding, dtype=tf.float32) 
     Q = tf.tanh(question_encoding)
     assert Q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "Q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)"+ str(Q.shape)
 
@@ -98,6 +98,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     # Ignore u_{m+1}
     U = U[:,:,:-1]
     assert U.shape == (batch_size, 2 * hidden_unit_size, contexts.shape[1]), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
+    
     return U
 
 
