@@ -10,7 +10,7 @@ def decoder(U, s, e, hidden_unit_size = 200, pool_size = 16):
     :param e_init:
     :return:
     """
-    batch_size = U.shape[0]
+    batch_size = U.shape[0] # git test
     lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = hidden_unit_size, dtype = tf.float32)
     ch = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
     hi, _ = ch
