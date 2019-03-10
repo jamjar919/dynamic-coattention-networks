@@ -30,6 +30,8 @@ def highway_network_batch(batch_of_word_encodings,
                     coattention_encoding_of_prev_start_word,
                     coattention_encoding_of_prev_end_word, hidden_unit_size = 200, pool_size = 16):
 
+    message = "Entered highway network"
+    message = tf.print(message, [message], "Try print during session run.")
     # Get the scoped variables if they exist (they should)
     weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
     wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
