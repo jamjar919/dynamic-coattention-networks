@@ -141,12 +141,13 @@ def decoder(U):
     lstm_output = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
     h_i, _ = lstm_output
     ''' Initialise initial start, end predictions'''
-    e = np.random.randint(631)
-    s = np.random.randint(e)
-    print("s: ", s)
-    s_batch = tf.tile([s],[batch_size])
-    e_batch = tf.tile([e],[batch_size])
-    
+    s = np.random.randint(0,631, batch_size)
+    e = np.random.randint(np.amax(s), 631, batch_size)
+    s_batch = tf.convert_to_tensor(s, dtype = tf.int32)
+    e_batch = tf.convert_to_tensor(e, dtype = tf.int32)
+    print(s_batch)
+    print(e_batch)
+    ''' Feed to HMN '''
     for i in range (iterations): 
         u_s = tf.gather_nd(params=tf.transpose(U, perm = [0, 2, 1]),
                            indices=tf.stack([tf.range(batch_size, dtype=tf.int32), s_batch], axis=1))
@@ -160,7 +161,7 @@ def decoder(U):
         with tf.variable_scope('end_word', reuse=True) as scope2:
             e, e_logits = highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
     
-        h_i, lstm_output = lstm_cell(inputs= tf.concat([u_s, u_e], axis = 1) , state = lstm_output) 
+        h_i, lstm_output = lstm_cell(inputs = tf.concat([u_s, u_e], axis = 1) , state = lstm_output) 
     
     return s, e, s_logits, e_logits
 
