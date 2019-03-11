@@ -32,7 +32,7 @@ def highway_network_batch(batch_of_word_encodings,
 
     # Get the scoped variables if they exist (they should)
     weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
-    weight_initer = tf.print(weight_initer, [weight_initer], "In highway network")
+   
     
     wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
                                     initializer=weight_initer)
@@ -48,6 +48,7 @@ def highway_network_batch(batch_of_word_encodings,
 
     batch_of_word_encodings = to3D(batch_of_word_encodings)
     print("batch_of_word_encodings shape: ",batch_of_word_encodings.shape)
+    # TODO: I THINK THIS SHAPE MUST BE THE ENTIRE "U" MATRIX NOT JUST 10 WORDS. 
     
     #From equation 10, concatenate h_i with u_{s_i - 1} with u_{e_i - 1}
     con = tf.concat(values=[lstm_hidden_state, coattention_encoding_of_prev_start_word,
