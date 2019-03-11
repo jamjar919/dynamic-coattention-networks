@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 def transpose(tensor):
     return tf.transpose(tensor,perm=[0,2,1])
@@ -48,7 +49,7 @@ def highway_network_batch(batch_of_word_encodings,
 
     batch_of_word_encodings = to3D(batch_of_word_encodings)
     print("batch_of_word_encodings shape: ",batch_of_word_encodings.shape)
-    # TODO: I THINK THIS SHAPE MUST BE THE ENTIRE "U" MATRIX NOT JUST 10 WORDS. 
+    # TODO:MAYBE THIS SHAPE MUST BE THE ENTIRE "U" MATRIX NOT JUST 10 WORDS. 
     
     #From equation 10, concatenate h_i with u_{s_i - 1} with u_{e_i - 1}
     con = tf.concat(values=[lstm_hidden_state, coattention_encoding_of_prev_start_word,
@@ -93,3 +94,93 @@ def highway_network_batch(batch_of_word_encodings,
 
     # the hmn_postmax shape is 10. this is for each word in the doc. Do that for 632 words and take max
     return hmn_postmax
+
+
+''' Added basic decoder just to test HMN functionality '''
+def decoder(U):
+    batch_size = U.shape[0]
+    pool_size = 16
+    hidden_unit_size = 200
+    iterations = 4
+    
+    weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
+    
+    ''' Declare weights for HMN '''
+    with tf.variable_scope('start_word') as scope1:
+        # wd dim: lx5l
+        wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
+                                        initializer=weight_initer)
+        # w1 dim: pxlx3l
+        w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
+                                        initializer=weight_initer)
+        # w2 dim: pxlxl
+        w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
+                                        initializer=weight_initer)
+        #w3 dim: px1x2l
+        w3 = tf.get_variable("w3", shape=[pool_size, 1, 2 * hidden_unit_size],
+                                        initializer=weight_initer)
+        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size]) # b1 dim: pxl
+        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size]) # b2 dim: pxl
+        b3 = tf.get_variable("b3", shape=[pool_size]) #b3 dim: px1
+
+    with tf.variable_scope('end_word') as scope2:
+        wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
+                                        initializer=weight_initer)
+        w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
+                                        initializer=weight_initer)
+        w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
+                                        initializer=weight_initer)
+        w3 = tf.get_variable("w3", shape=[pool_size, 1, 2 * hidden_unit_size],
+                                        initializer=weight_initer)
+        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size])
+        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size])
+        b3 = tf.get_variable("b3", shape=[pool_size])
+        
+    ''' Setup LSTM '''
+    lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = hidden_unit_size, dtype = tf.float32)
+    lstm_output = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
+    h_i, _ = lstm_output
+    ''' Initialise initial start, end predictions'''
+    e = np.random.randint(631)
+    s = np.random.randint(e)
+    print("s: ", s)
+    s_batch = tf.tile([s],[batch_size])
+    e_batch = tf.tile([e],[batch_size])
+    
+    for i in range (iterations): 
+        u_s = tf.gather_nd(params=tf.transpose(U, perm = [0, 2, 1]),
+                           indices=tf.stack([tf.range(batch_size, dtype=tf.int32), s_batch], axis=1))
+        print("u_s shape: ", u_s.shape) # Single U representation per batch element, corresponding to the word addressed by s (Bx400).
+        u_e = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]), # Convert U to Bx400x632
+                           indices=tf.stack([tf.range(batch_size, dtype=tf.int32), e_batch], axis=1)) # 
+        
+        with tf.variable_scope('start_word', reuse=True) as scope1:
+            # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
+            s, s_logits = highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+        with tf.variable_scope('end_word', reuse=True) as scope2:
+            e, e_logits = highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+    
+        h_i, lstm_output = lstm_cell(inputs= tf.concat([u_s, u_e], axis = 1) , state = lstm_output) 
+    
+    return s, e, s_logits, e_logits
+
+if __name__ == "__main__":
+    print("Running HMN by itself for debug purposes.")
+    
+    U = tf.placeholder(shape=[10, 400, 632], dtype = tf.float32)
+    batch_size = U.shape[0] 
+
+    train_op = decoder(U)
+        
+    init = tf.global_variables_initializer()
+        
+    with tf.Session() as sess:
+        sess.run(init)
+        print("SESSION INITIALIZED")
+        
+        print("\n Running test session. ")
+        for i in range(5):
+            print("Batch #", i)
+            U_rand = np.random.rand(10, 400 , 632)    
+            s, e, s_logits, e_logits = sess.run(train_op,feed_dict = {U : U_rand})
+        
