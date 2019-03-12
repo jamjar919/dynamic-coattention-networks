@@ -154,11 +154,12 @@ def decoder(knowledge_reps,hidden_units = 200):
     batch_size = 10#tf.shape(knowledge_reps)[0]
     #print batch_size
     pool = 16
-    e = np.random.randint(max_l_context) + 1
-    s = np.random.randint(e)
-    print("s: ", s)
-    sv = tf.tile([s],[batch_size])
-    ev = tf.tile([e],[batch_size])
+    
+    sv = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=knowledge_reps.shape[2], dtype=tf.int32)
+    ev = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=knowledge_reps.shape[2] + 1, dtype=tf.int32)
+    #sv = tf.expand_dims(sv, axis = 1)
+    #ev = tf.expand_dims(ev, axis = 1) # Make shape [batch_size, 1]
+
     print("ev.shape ", ev.shape)
     print("ev: ",ev)
 
@@ -200,11 +201,11 @@ def decoder(knowledge_reps,hidden_units = 200):
             print("sv.shape and hmns_output.shape: ", sv.shape, hmns_output.shape)
         with tf.variable_scope("hmn2",reuse=True) as scope2:
             ev,hmne_output = hmn(knowledge_reps,hi,u_s,u_e,hidden_units,pool)#loop over the document length times to obtain beta t using HNM function
-        hmne_output = tf.Print(hmne_output, [hmne_output], "Inside loop")
+        #hmne_output = tf.Print(hmne_output, [hmne_output], "Inside loop")
     
         hi,ch = lstm_dec(inputs=usue,state=ch) 
         
-    hmne_output = tf.Print(hmne_output, [hmne_output], "Outside loop")
+    #hmne_output = tf.Print(hmne_output, [hmne_output], "Outside loop")
     
     return sv,ev,hmns_output,hmne_output
 
@@ -212,56 +213,46 @@ def decoder(knowledge_reps,hidden_units = 200):
 # In[62]:
 
 
-def hmn(kr,hs,us,ue,hidden_units,pool=16):
+def hmn(U,hs,u_s,u_e,hidden_units,pool=16):
     
     #print "kr",kr.shape
     #calculate r
     wd = tf.get_variable(name="wd",shape=[hidden_units,5*hidden_units],initializer=tf.contrib.layers.xavier_initializer(),dtype=tf.float32)
-    x = tf.concat([hs,us,ue],axis=1)
+    x = tf.concat([hs,u_s,u_e],axis=1)
     x = tf.Print(x,[x], "X IS BLA BLA BLA")
     print("hs.shape :", hs.shape)
-    print("us.shape: ", us.shape)
-    print("ue.shape: ",ue.shape)
-    r = tf.nn.tanh(tf.matmul(x,tf.transpose(wd)))
+    print("us.shape: ", u_s.shape)
+    print("ue.shape: ",u_e.shape)
+    r = tf.nn.tanh(tf.matmul(x,tf.transpose(wd))) # This is 10x200
     print("r.shape: ", r.shape)
-    #print r.shape 
 
     #calculate mt1    # TENSORDOT (A,B, axes = [])
     ''' to be tested'''
-    r1 = tf.stack([r]*kr.shape[1])   # 632x10x200
+    r1 = tf.stack([r] * U.shape[1])   # 632x10x200, to accommodate max context length. 
     r1 = tf.transpose(r1, perm = [1,0,2]) #  Transpose to 10x632x200
-    print("r1.shape at line 214 ", r1.shape)
-    #r1 = tf.reshape(r1,[-1,hidden_units])
     print("r1.shape at line 216 ", r1.shape)
-    print("kr.shape: ", kr.shape)
-    krr1 = tf.concat([kr,r1],axis=2) # Concat 10x632x200 and 10x632x400 to get 10x632x600
-    print("krr1.shape at line 220 ", krr1.shape)
+    print("U.shape: ", U.shape)
+    U_r1_concat = tf.concat([U,r1],axis=2) # Concat 10x632x200 and 10x632x400 to get 10x632x600
+    print("U_r1_concat.shape at line 220 ", U_r1_concat.shape)
     w1 = tf.get_variable(name="w1",shape=[pool,hidden_units,3*hidden_units],initializer=tf.contrib.layers.xavier_initializer(),dtype=tf.float32)
     print("w1.shape: ", w1.shape)
     b1 = tf.Variable(tf.constant(0.0,shape=[pool, hidden_units,]),dtype=tf.float32)
     w1_T = tf.transpose(w1, perm = [2,0,1]) # Conver to 600x16x200
     print("w1_T.shape: ", w1_T.shape)
-    x1 = tf.tensordot(krr1, w1_T, axes = [[2], [0]])  + b1
+    x1 = tf.tensordot(U_r1_concat, w1_T, axes = [[2], [0]])  + b1
     print("x1.shape at line 242: ", x1.shape)
-    #x1 = tf.reshape(x1,[-1,pool])
-    #print("x1.shape at line 244: ", x1.shape)
     m1 = tf.reduce_max(x1,axis=2)
-    #print("x1.shape at line 246: ", x1.shape)
-    #m1 = tf.reshape(x1,[-1,hidden_units])
     print("m1.shape: ", m1.shape)
-    #print m1.shape
     
     #calculate mt2
     w2 = tf.get_variable(name="w2",shape=[pool,hidden_units,hidden_units],initializer=tf.contrib.layers.xavier_initializer(),dtype=tf.float32)
     b2 = tf.Variable(tf.constant(0.0,shape=[pool,hidden_units,]),dtype=tf.float32)
-    #x2 = tf.matmul(m1,tf.transpose(w2))+b2
     w2_T = tf.transpose(w2, perm = [2,0,1])
     print ("w2_t.shape: ", w2_T.shape)
-    m2_premax = tf.tensordot(m1, w2_T, axes = [[2], [0]])
+    m2_premax = tf.tensordot(m1, w2_T, axes = [[2], [0]]) + b2
     print("m2_premax.shape: ", m2_premax.shape)
     m2 = tf.reduce_max(m2_premax, axis = 2)
     print("m2.shape: ", m2.shape)
-    #print m2.shape
     
     #max
     m1m2 = tf.concat([m1,m2],axis=2)
@@ -272,22 +263,16 @@ def hmn(kr,hs,us,ue,hidden_units,pool=16):
     print("w3_T.shape: ", w3_T.shape)
     x3 = tf.tensordot(m1m2,w3_T, axes = [[2], [0]]) + b3
     print("x3.shape: ", x3.shape)
-    #print x3.shape
-    x3 = tf.reduce_max(x3,axis=2)
+    x3 = tf.squeeze(tf.reduce_max(x3,axis=2)) # Remove dimension of size 1
     print ("x3.shape: ", x3.shape)
     
     output = tf.argmax(x3,axis=1)
     print("1st output shape: ", output.shape)
-    output = tf.cast(output,dtype=tf.int32)
+    output = tf.squeeze(tf.cast(output,dtype=tf.int32)) # Remove dimensions of size 1
     print("2nd output shape: ", output.shape)
 
-    
     return output,x3
-
-
 # In[63]:
-
-
 #read embedding file
 embedding_array = np.load('data/glove.trimmed.100.npz')
 
