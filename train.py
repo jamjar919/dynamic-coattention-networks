@@ -28,7 +28,7 @@ answer_start = tf.placeholder(dtype=tf.int32,shape=[None])
 answer_end = tf.placeholder(dtype=tf.int32,shape=[None])
 
 # Create decoder 
-s, e, s_logits, e_logits = decoder(U, answer_start, answer_end)
+s, e, s_logits, e_logits = decoder(U)
 
 l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits=s_logits)
 l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits=e_logits)
@@ -42,6 +42,8 @@ with tf.Session() as sess:
     for counter in range(0,101,batch_size):
         # running on an example batch to debug encoder
         batch = padded_data[counter:(counter+batch_size)]
+        print(batch)
+        print(batch.shape)
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
@@ -55,4 +57,5 @@ with tf.Session() as sess:
         })
         print("loss: ",loss_val)
         counter += batch_size%len(padded_data)
+        
 
