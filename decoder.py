@@ -74,6 +74,8 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
 
         hi,ch = lstm_cell(inputs=usue, state=ch) # 
 
+        hi = tf.Print(hi,[hi],"ITERATION")
+
     return sv, ev, s_logits, e_logits
 
 if __name__ == "__main__":
