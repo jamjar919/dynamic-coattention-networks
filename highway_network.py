@@ -141,8 +141,8 @@ def decoder(U):
     lstm_output = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
     h_i, _ = lstm_output
     ''' Initialise initial start, end predictions'''
-    s = np.random.randint(0,631, batch_size)
-    e = np.random.randint(np.amax(s), 631, batch_size)
+    s = np.random.randint(0,300, batch_size)
+    e = np.random.randint(300, 631, batch_size)
     s_batch = tf.convert_to_tensor(s, dtype = tf.int32)
     e_batch = tf.convert_to_tensor(e, dtype = tf.int32)
     print(s_batch)
@@ -162,6 +162,7 @@ def decoder(U):
             e, e_logits = highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
     
         h_i, lstm_output = lstm_cell(inputs = tf.concat([u_s, u_e], axis = 1) , state = lstm_output) 
+        e = tf.print(e,[e], "TF PRINT E")
     
     return s, e, s_logits, e_logits
 
@@ -182,6 +183,6 @@ if __name__ == "__main__":
         print("\n Running test session. ")
         for i in range(5):
             print("Batch #", i)
-            U_rand = np.random.rand(10, 400 , 632)    
+            U_rand = np.random.rand(batch_size, 400 , 632)    
             s, e, s_logits, e_logits = sess.run(train_op,feed_dict = {U : U_rand})
-        
+# Try adding in labels and proper training. 

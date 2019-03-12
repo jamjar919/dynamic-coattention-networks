@@ -25,7 +25,9 @@ print("Loaded data")
 # Train now
 batch_size = 5
 tf.reset_default_graph()
-embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
+#embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
+embedding = tf.placeholder(dtype = tf.float32, shape = [400001, 300])
+#embedding = tf.placeholer()
 question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
 context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context])
 
@@ -73,7 +75,8 @@ with tf.Session() as sess:
         question_batch_placeholder : question_batch,
         context_batch_placeholder : context_batch,
         answer_start : answer_start_batch,
-        answer_end : answer_end_batch
+        answer_end : answer_end_batch,
+        embedding : index2embedding
     })
     s = tf.print(s, [s], "Value of s: ")
     print ("Loss: ", loss)
