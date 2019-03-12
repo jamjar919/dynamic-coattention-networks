@@ -1,188 +1,60 @@
 import tensorflow as tf
-import numpy as np
 
-def transpose(tensor):
-    return tf.transpose(tensor,perm=[0,2,1])
-
-def to3D(matrix):
-    return tf.reshape(matrix,[matrix.shape[0],matrix.shape[1],1])
-
-def highway_network(U, lstm_hidden_state,
-                    coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word, hidden_unit_size = 200, pool_size = 16):
-    U_transpose = tf.transpose(U,perm=[2, 1, 0]) 
-    print("U_transpose.shape: ", U_transpose.shape)
+def highway_network(U, hs, u_s, u_e, hidden_unit_size , pool_size):
     
-    fn = lambda batch_of_word_encodings : highway_network_batch(tf.transpose(batch_of_word_encodings,perm = [1,0]), lstm_hidden_state,
-                    coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word) # Pass 1 batch consisting of 1 of the 632 words to the HMN. 
+    ''' Get the weights and biases for the network '''
+    wd = tf.get_variable(name="wd",shape=[hidden_unit_size, 5*hidden_unit_size], dtype=tf.float32)
+    w1 = tf.get_variable(name="w1",shape=[pool_size, hidden_unit_size, 3*hidden_unit_size], dtype=tf.float32)
+    b1 = tf.Variable(tf.constant(0.0,shape=[pool_size, hidden_unit_size,]),dtype=tf.float32)
+    w1_T = tf.transpose(w1, perm = [2,0,1]) # Conver to 600x16x200
+    w2 = tf.get_variable(name="w2",shape=[pool_size, hidden_unit_size, hidden_unit_size], dtype=tf.float32)
+    b2 = tf.Variable(tf.constant(0.0,shape=[pool_size, hidden_unit_size, ]),dtype=tf.float32)
+    w2_T = tf.transpose(w2, perm = [2,0,1])
+    w3 = tf.get_variable(name="w3",shape=[pool_size, 1, 2*hidden_unit_size], dtype=tf.float32)
+    w3_T = tf.transpose(w3, perm = [2,0,1])
+    b3 = tf.Variable(tf.constant(0.0,shape=[pool_size, 1]), dtype=tf.float32)
     
-    result = tf.map_fn(fn, U_transpose) 
-    print ("result.shape: ", result.shape) # result is now shape 632 * B * 1  where B is batch size. We have α_1 to α_632
-    index = tf.argmax(result, axis=0, output_type=tf.int32) # Get argmax of α_1 to α_632 for each batch element. 
-    print ("index.shape: ", index.shape)
-    # Remove extra array wrap at the end
-    result = tf.reshape(result, [result.shape[0], result.shape[1]]) # This is α_1,...α_m in equation 6 (or beta in equation 7)
-    print("result after reshaping.shape ", result.shape)  # Make it 632xB instaed of 632xBx1
-    return index, result
+    # Calculate r 
+    x = tf.concat([hs,u_s,u_e],axis=1)
+    print("hs.shape :", hs.shape)
+    print("us.shape: ", u_s.shape)
+    print("ue.shape: ",u_e.shape)
+    r = tf.nn.tanh(tf.matmul(x,tf.transpose(wd))) # This is 10x200
+    print("r.shape: ", r.shape)
 
-def highway_network_batch(batch_of_word_encodings,
-                    lstm_hidden_state,
-                    coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word, hidden_unit_size = 200, pool_size = 16):
-
-    # Get the scoped variables if they exist (they should)
-    weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
-   
+    #calculate mt1    # TENSORDOT (A,B, axes = [])
+    r1 = tf.stack([r] * U.shape[1])   # 632x10x200, to accommodate max context length. 
+    r1 = tf.transpose(r1, perm = [1,0,2]) #  Transpose to 10x632x200
+    print("r1.shape at line 216 ", r1.shape)
+    print("U.shape: ", U.shape)
+    U_r1_concat = tf.concat([U,r1],axis=2) # Concat 10x632x200 and 10x632x400 to get 10x632x600
+    print("U_r1_concat.shape at line 220 ", U_r1_concat.shape)
     
-    wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
-                                    initializer=weight_initer)
-    w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
-                                    initializer=weight_initer)
-    w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
-                                    initializer=weight_initer)
-    w3 = tf.get_variable("w3", shape=[pool_size, 1, 2 * hidden_unit_size],
-                                    initializer=weight_initer)
-    b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size])
-    b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size])
-    b3 = tf.get_variable("b3", shape=[pool_size])
-
-    batch_of_word_encodings = to3D(batch_of_word_encodings)
-    print("batch_of_word_encodings shape: ",batch_of_word_encodings.shape)
-    # TODO:MAYBE THIS SHAPE MUST BE THE ENTIRE "U" MATRIX NOT JUST 10 WORDS. 
+    print("w1_T.shape: ", w1_T.shape)
+    x1 = tf.tensordot(U_r1_concat, w1_T, axes = [[2], [0]])  + b1
+    print("x1.shape at line 242: ", x1.shape)
+    m1 = tf.reduce_max(x1,axis=2)
+    print("m1.shape: ", m1.shape)
     
-    #From equation 10, concatenate h_i with u_{s_i - 1} with u_{e_i - 1}
-    con = tf.concat(values=[lstm_hidden_state, coattention_encoding_of_prev_start_word,
-                               coattention_encoding_of_prev_end_word], axis=1)
-    con = to3D(con)
-    print("con.shape:", con.shape)
-    print("wd.shape: ", wd.shape)
-    linear_model = tf.map_fn(lambda x: tf.matmul(wd,x),con) 
-    print("linear_model shape: ",linear_model.shape)
-    activated_value = tf.nn.tanh(linear_model) # This is "r" from eq.10
-    print("activated_value shape: ",activated_value.shape)
-    # For eq.11 concatenate u_t with r.
-    con2 = tf.concat(values=[batch_of_word_encodings, activated_value],axis = 1) 
-    print("con2.shape: ", con2.shape)
-
-    # Calculate mt1. Multiplying W1 of shape p*l*3l with con2 of shape B*3l*1
-    mt1_premax = tf.map_fn(lambda x: tf.map_fn(lambda wmat: tf.matmul(wmat,x), w1 ), con2)
-    print("mt1_premax.shape: ",mt1_premax.shape)
-    b1 = to3D(b1)
-    mt1_premax = tf.map_fn(lambda x: x+b1, mt1_premax) # Add on the biases. 
-    mt1_postmax =  tf.reduce_max(mt1_premax, axis=1) 
-    print("mt1_postmax.shape : ",mt1_postmax.shape) # Of shape B*200*1
-
-    # Calculate mt2.    W2 of dim p*l*l and mt1 of dim B*l*1
-    mt2_premax = tf.map_fn(lambda x: tf.map_fn(lambda wmat: tf.matmul(wmat, x), w2), mt1_postmax)
-    print("mt2_premax.shape", mt2_premax.shape)
-    b2 = to3D(b2)
-    mt2_premax = tf.map_fn(lambda x: x+b2, mt2_premax)
-    mt2_postmax = tf.reduce_max(mt2_premax, axis=1)
-    print("mt2_postmax.shape : ", mt2_postmax.shape) # This is 10*200*1
-
-    #calculate the final HMN output. Equation 9
-    mt1mt2 = tf.concat(values=[mt1_postmax, mt2_postmax], axis=1) 
-    print("mt1mt2.size:", mt1mt2.shape)
-    hmn_premax = tf.map_fn(lambda x: tf.map_fn(lambda wmat: tf.matmul(wmat, x), w3), mt1mt2) #
-    hmn_premax = tf.reshape(hmn_premax, [hmn_premax.shape[0], hmn_premax.shape[1]])
-    print("hmn_premax",hmn_premax.shape) #  Shape Bx16
-    hmn_premax = tf.map_fn(lambda x: x+b3, hmn_premax)
-    hmn_premax = to3D(hmn_premax) 
-    hmn_postmax = tf.reduce_max(hmn_premax, axis=1)
-    print("hmn shape: ", hmn_postmax.shape) # Shape Bx1. One argmax for each batch element. 
-
-    # the hmn_postmax shape is 10. this is for each word in the doc. Do that for 632 words and take max
-    return hmn_postmax
-
-
-''' Added basic decoder just to test HMN functionality '''
-def decoder(U):
-    batch_size = U.shape[0]
-    pool_size = 16
-    hidden_unit_size = 200
-    iterations = 4
+    #calculate mt2
     
-    weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
+    print ("w2_t.shape: ", w2_T.shape)
+    m2_premax = tf.tensordot(m1, w2_T, axes = [[2], [0]]) + b2
+    print("m2_premax.shape: ", m2_premax.shape)
+    m2 = tf.reduce_max(m2_premax, axis = 2)
+    print("m2.shape: ", m2.shape)
     
-    ''' Declare weights for HMN '''
-    with tf.variable_scope('start_word') as scope1:
-        # wd dim: lx5l
-        wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
-                                        initializer=weight_initer)
-        # w1 dim: pxlx3l
-        w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
-                                        initializer=weight_initer)
-        # w2 dim: pxlxl
-        w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
-                                        initializer=weight_initer)
-        #w3 dim: px1x2l
-        w3 = tf.get_variable("w3", shape=[pool_size, 1, 2 * hidden_unit_size],
-                                        initializer=weight_initer)
-        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size]) # b1 dim: pxl
-        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size]) # b2 dim: pxl
-        b3 = tf.get_variable("b3", shape=[pool_size]) #b3 dim: px1
+    # Calculate HMN max.
+    m1m2 = tf.concat([m1,m2],axis=2)
+    print ("m1m2.shape: ",m1m2.shape)
+    print("w3_T.shape: ", w3_T.shape)
+    x3 = tf.tensordot(m1m2,w3_T, axes = [[2], [0]]) + b3
+    print("x3.shape: ", x3.shape)
+    x3 = tf.squeeze(tf.reduce_max(x3,axis=2)) # Remove dimension of size 1
+    print ("x3.shape: ", x3.shape)
+    output = tf.argmax(x3,axis=1)
+    print("1st output shape: ", output.shape)
+    output = tf.squeeze(tf.cast(output,dtype=tf.int32)) # Remove dimensions of size 1
+    print("2nd output shape: ", output.shape)
 
-    with tf.variable_scope('end_word') as scope2:
-        wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
-                                        initializer=weight_initer)
-        w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
-                                        initializer=weight_initer)
-        w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
-                                        initializer=weight_initer)
-        w3 = tf.get_variable("w3", shape=[pool_size, 1, 2 * hidden_unit_size],
-                                        initializer=weight_initer)
-        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size])
-        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size])
-        b3 = tf.get_variable("b3", shape=[pool_size])
-        
-    ''' Setup LSTM '''
-    lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = hidden_unit_size, dtype = tf.float32)
-    lstm_output = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
-    h_i, _ = lstm_output
-    ''' Initialise initial start, end predictions'''
-    s = np.random.randint(0,300, batch_size)
-    e = np.random.randint(300, 631, batch_size)
-    s_batch = tf.convert_to_tensor(s, dtype = tf.int32)
-    e_batch = tf.convert_to_tensor(e, dtype = tf.int32)
-    print(s_batch)
-    print(e_batch)
-    ''' Feed to HMN '''
-    for i in range (iterations): 
-        u_s = tf.gather_nd(params=tf.transpose(U, perm = [0, 2, 1]),
-                           indices=tf.stack([tf.range(batch_size, dtype=tf.int32), s_batch], axis=1))
-        print("u_s shape: ", u_s.shape) # Single U representation per batch element, corresponding to the word addressed by s (Bx400).
-        u_e = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]), # Convert U to Bx400x632
-                           indices=tf.stack([tf.range(batch_size, dtype=tf.int32), e_batch], axis=1)) # 
-        
-        with tf.variable_scope('start_word', reuse=True) as scope1:
-            # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
-            s, s_logits = highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
-        with tf.variable_scope('end_word', reuse=True) as scope2:
-            e, e_logits = highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
-    
-        h_i, lstm_output = lstm_cell(inputs = tf.concat([u_s, u_e], axis = 1) , state = lstm_output) 
-        e = tf.print(e,[e], "TF PRINT E")
-    
-    return s, e, s_logits, e_logits
-
-if __name__ == "__main__":
-    print("Running HMN by itself for debug purposes.")
-    
-    U = tf.placeholder(shape=[10, 400, 632], dtype = tf.float32)
-    batch_size = U.shape[0] 
-
-    train_op = decoder(U)
-        
-    init = tf.global_variables_initializer()
-        
-    with tf.Session() as sess:
-        sess.run(init)
-        print("SESSION INITIALIZED")
-        
-        print("\n Running test session. ")
-        for i in range(5):
-            print("Batch #", i)
-            U_rand = np.random.rand(batch_size, 400 , 632)    
-            s, e, s_logits, e_logits = sess.run(train_op,feed_dict = {U : U_rand})
-# Try adding in labels and proper training. 
+    return output,x3

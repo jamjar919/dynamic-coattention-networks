@@ -99,7 +99,4 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     U = U[:,:,:-1]
     assert U.shape == (batch_size, 2 * hidden_unit_size, contexts.shape[1]), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
     
-    return U
-
-
- 
+    return tf.transpose(U, perm=[0,2,1]) # To make life easier later on, make it 10x632x400
