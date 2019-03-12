@@ -16,8 +16,8 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
     sv = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2], dtype=tf.int32)
     ev = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2] + 1, dtype=tf.int32)
 
-    tf.print(sv)
-    tf.print(ev)
+    print(sv)
+    print(ev)
 
     lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = hidden_unit_size, dtype = tf.float32)
     ch = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
@@ -33,13 +33,13 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
         wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
                                         initializer=weight_initer)
         # w1 dim: pxlx3l
-        w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
+        w1 = tf.get_variable("w1", shape=[pool_size*hidden_unit_size, 3 * hidden_unit_size],
                                         initializer=weight_initer)
         # w2 dim: pxlxl
-        w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
+        w2 = tf.get_variable("w2", shape=[pool_size*hidden_unit_size, hidden_unit_size],
                                         initializer=weight_initer)
         #w3 dim: px1x2l
-        w3 = tf.get_variable("w3", shape=[pool_size, 1, 2 * hidden_unit_size],
+        w3 = tf.get_variable("w3", shape=[pool_size, 2 * hidden_unit_size],
                                         initializer=weight_initer)
         b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size]) # b1 dim: pxl
         b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size]) # b2 dim: pxl
@@ -48,11 +48,11 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
     with tf.variable_scope('end_word') as scope2:
         wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
                                         initializer=weight_initer)
-        w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
+        w1 = tf.get_variable("w1", shape=[pool_size*hidden_unit_size, 3 * hidden_unit_size],
                                         initializer=weight_initer)
-        w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
+        w2 = tf.get_variable("w2", shape=[pool_size*hidden_unit_size, hidden_unit_size],
                                         initializer=weight_initer)
-        w3 = tf.get_variable("w3", shape=[pool_size, 1, 2 * hidden_unit_size],
+        w3 = tf.get_variable("w3", shape=[pool_size, 2 * hidden_unit_size],
                                         initializer=weight_initer)
         b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size])
         b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size])
@@ -72,7 +72,7 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
         with tf.variable_scope('end_word', reuse=True) as scope2:
             ev, e_logits = hn.highway_network(U, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
 
-        hi,ch = lstm_cell(inputs=tf.concat([u_s, u_e],axis=1), state=ch) # 
+        hi,ch = lstm_cell(inputs=usue, state=ch) # 
 
     return sv, ev, s_logits, e_logits
 

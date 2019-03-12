@@ -6,7 +6,14 @@ def highway_network(kr,hs,us,ue,hidden_unit_size = 200, pool_size = 16):
     #calculate r
     wd = tf.get_variable(name="wd",shape=[hidden_unit_size,5*hidden_unit_size],initializer=tf.contrib.layers.xavier_initializer(),dtype=tf.float32)
     x = tf.concat([hs,us,ue],axis=1)
-    r = tf.nn.tanh(tf.matmul(x,tf.transpose(wd)))
+    print(hs)
+    print(us)
+    print(ue)
+    print(x)
+    print(wd)
+    r = tf.nn.tanh(
+        tf.matmul(x,tf.transpose(wd))
+    )
     #print r.shape
 
     #calculate mt1

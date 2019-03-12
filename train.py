@@ -15,8 +15,9 @@ print("Loaded data")
 
 # Train now
 batch_size = 10
+embedding_dimension = 300
 tf.reset_default_graph()
-embedding = tf.Variable(index2embedding, dtype=tf.float32, trainable = False)
+embedding = tf.placeholder(shape = [len(index2embedding), embedding_dimension], dtype=tf.float32, name='embedding')
 question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question])
 context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context])
 
@@ -42,20 +43,24 @@ with tf.Session() as sess:
     for counter in range(0,101,batch_size):
         # running on an example batch to debug encoder
         batch = padded_data[counter:(counter+batch_size)]
-        print(batch)
-        print(batch.shape)
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
         answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
         print("BEFORE ENCODER RUN counter = ",counter)
-        loss_val = sess.run(train_op,feed_dict = {
+        sess.run(train_op,feed_dict = {
             question_batch_placeholder : question_batch,
             context_batch_placeholder : context_batch,
             answer_start : answer_start_batch,
-            answer_end : answer_end_batch
+            answer_end : answer_end_batch,
+            embedding: index2embedding
         })
-        print("loss: ",loss_val)
+        loss_val = sess.run(loss,feed_dict = {
+            question_batch_placeholder : question_batch,
+            context_batch_placeholder : context_batch,
+            answer_start : answer_start_batch,
+            answer_end : answer_end_batch,
+            embedding: index2embedding
+        })
+        print("loss: ",np.mean(loss_val))
         counter += batch_size%len(padded_data)
-        
-
