@@ -56,7 +56,7 @@ with tf.Session() as sess:
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
         answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
         print("BEFORE ENCODER RUN counter = ",counter)
-        _, loss_val = sess.run([train_op, loss_val],feed_dict = {
+        _, loss_val = sess.run([train_op, loss],feed_dict = {
             question_batch_placeholder : question_batch,
             context_batch_placeholder : context_batch,
             answer_start : answer_start_batch,
