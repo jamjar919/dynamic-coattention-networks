@@ -15,7 +15,7 @@ padded_data, index2embedding, max_length_question, max_length_context = D.load_d
 print("Loaded data")
 
 # Train now
-batch_size = 64
+batch_size = 16
 embedding_dimension = 300
 tf.reset_default_graph()
 
@@ -47,7 +47,7 @@ init = tf.global_variables_initializer()
 with tf.Session() as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
-    for counter in range(0,10570,batch_size):
+    for counter in range(0,20,batch_size):
         # running on an example batch to debug encoder
         batch = padded_data[counter:(counter+batch_size)]
         print("padded_data shape: ", len(padded_data))
@@ -72,17 +72,6 @@ with tf.Session() as sess:
         })
         print("loss: ",np.mean(loss_val))
         counter += batch_size%len(padded_data)
-    '''
-    tf.saved_model.simple_save(
-        sess,
-        '/model',
-        inputs = {
-            question_batch: question_batch_placeholder,
-            context_batch: context_batch_placeholder
-        },
-        outputs = {
-            answer_start: s,
-            answer_end: e
-        }
-    )
-    '''
+
+    saver.save(sess, './model/saved') 
+    
