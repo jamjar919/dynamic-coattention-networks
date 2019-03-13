@@ -47,7 +47,7 @@ init = tf.global_variables_initializer()
 with tf.Session() as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
-    for counter in range(0,20,batch_size):
+    for counter in range(0,len(padded_data),batch_size):
         # running on an example batch to debug encoder
         batch = padded_data[counter:(counter+batch_size)]
         print("padded_data shape: ", len(padded_data))
@@ -56,14 +56,7 @@ with tf.Session() as sess:
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
         answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
         print("BEFORE ENCODER RUN counter = ",counter)
-        sess.run(train_op,feed_dict = {
-            question_batch_placeholder : question_batch,
-            context_batch_placeholder : context_batch,
-            answer_start : answer_start_batch,
-            answer_end : answer_end_batch,
-            embedding: index2embedding
-        })
-        loss_val = sess.run(loss,feed_dict = {
+        _, loss_val = sess.run([train_op, loss_val],feed_dict = {
             question_batch_placeholder : question_batch,
             context_batch_placeholder : context_batch,
             answer_start : answer_start_batch,
