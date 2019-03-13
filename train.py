@@ -15,7 +15,7 @@ padded_data, index2embedding, max_length_question, max_length_context = D.load_d
 print("Loaded data")
 
 # Train now
-batch_size = 64
+batch_size = 16
 embedding_dimension = 300
 tf.reset_default_graph()
 
@@ -56,15 +56,8 @@ with tf.Session() as sess:
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
         answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
-        print("Question number:  ",counter)
-        sess.run(train_op,feed_dict = {
-            question_batch_placeholder : question_batch,
-            context_batch_placeholder : context_batch,
-            answer_start : answer_start_batch,
-            answer_end : answer_end_batch,
-            embedding: index2embedding
-        })
-        loss_val = sess.run(loss,feed_dict = {
+        print("BEFORE ENCODER RUN counter = ",counter)
+        _, loss_val = sess.run([train_op, loss],feed_dict = {
             question_batch_placeholder : question_batch,
             context_batch_placeholder : context_batch,
             answer_start : answer_start_batch,
@@ -73,17 +66,6 @@ with tf.Session() as sess:
         })
         print("loss: ",np.mean(loss_val))
         counter += batch_size%len(padded_data)
-    '''
-    tf.saved_model.simple_save(
-        sess,
-        '/model',
-        inputs = {
-            question_batch: question_batch_placeholder,
-            context_batch: context_batch_placeholder
-        },
-        outputs = {
-            answer_start: s,
-            answer_end: e
-        }
-    )
-    '''
+
+    saver.save(sess, './model/saved') 
+    
