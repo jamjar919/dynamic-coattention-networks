@@ -12,6 +12,7 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
     :return:
     """
     batch_size = U.shape[0]
+    iterations = 4
 
     sv = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2], dtype=tf.int32)
     ev = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2] + 1, dtype=tf.int32)
@@ -41,8 +42,8 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
         #w3 dim: px1x2l
         w3 = tf.get_variable("w3", shape=[pool_size, 2 * hidden_unit_size],
                                         initializer=weight_initer)
-        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size]) # b1 dim: pxl
-        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size]) # b2 dim: pxl
+        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size, ]) # b1 dim: pxl
+        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size, ]) # b2 dim: pxl
         b3 = tf.get_variable("b3", shape=[pool_size]) #b3 dim: px1
 
     with tf.variable_scope('end_word') as scope2:
@@ -52,24 +53,25 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
                                         initializer=weight_initer)
         w2 = tf.get_variable("w2", shape=[pool_size*hidden_unit_size, hidden_unit_size],
                                         initializer=weight_initer)
-        w3 = tf.get_variable("w3", shape=[pool_size, 2 * hidden_unit_size],
+
+        w3 = tf.get_variable("w3", shape=[pool_size, 1,  2 * hidden_unit_size],
                                         initializer=weight_initer)
-        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size])
-        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size])
-        b3 = tf.get_variable("b3", shape=[pool_size])
+        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size, ])
+        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size, ])
+        b3 = tf.get_variable("b3", shape=[pool_size, 1])
     
-    for i in range(4):
+    for i in range(iterations):
         # s is start index
         u_s = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),sv],axis=1))
         u_e = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),ev],axis=1))
         usue = tf.concat([u_s,u_e],axis=1)
 
-        with tf.variable_scope('start_word', reuse=True) as scope1:
+        with tf.variable_scope('start_word', reuse = True) as scope1:
             # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
             sv, s_logits = hn.highway_network(U, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
 
         # e is the end index
-        with tf.variable_scope('end_word', reuse=True) as scope2:
+        with tf.variable_scope('end_word', reuse = True) as scope2:
             ev, e_logits = hn.highway_network(U, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
 
         hi,ch = lstm_cell(inputs=usue, state=ch) # 
@@ -84,4 +86,3 @@ if __name__ == "__main__":
     s = tf.placeholder(shape=[10], dtype = tf.int32)
     e = tf.placeholder(shape=[10], dtype = tf.int32)
     decoder(U, s, e)
-

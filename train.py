@@ -15,7 +15,7 @@ padded_data, index2embedding, max_length_question, max_length_context = D.load_d
 print("Loaded data")
 
 # Train now
-batch_size = 10
+batch_size = 64
 embedding_dimension = 300
 tf.reset_default_graph()
 
@@ -36,8 +36,8 @@ s, e, s_logits, e_logits = decoder(U)
 s = tf.identity(s, name='answer_start')
 e = tf.identity(e, name='answer_end')
 
-l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits=s_logits)
-l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits=e_logits)
+l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits = s_logits)
+l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits = e_logits)
 loss = l1 + l2
 train_op = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
@@ -47,9 +47,10 @@ init = tf.global_variables_initializer()
 with tf.Session() as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
-    for counter in range(0,101,batch_size):
+    for counter in range(0,10570,batch_size):
         # running on an example batch to debug encoder
         batch = padded_data[counter:(counter+batch_size)]
+        print("padded_data shape: ", len(padded_data))
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
@@ -84,3 +85,4 @@ with tf.Session() as sess:
             answer_end: e
         }
     )
+
