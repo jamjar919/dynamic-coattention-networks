@@ -44,14 +44,16 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     # Append sentinel vector
     # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
     sentinel_vec_context = tf.Variable(tf.random_uniform([hidden_unit_size,1]), dtype = tf.float32)
-    context_encoding = tf.map_fn(lambda x: tf.concat((x,sentinel_vec_context), axis = -1),context_encoding)
+    sentinel_vec_context_batch = tf.stack([sentinel_vec_context] * batch_size)
+    context_encoding = tf.concat([context_encoding,sentinel_vec_context_batch], axis  =-1)
 
     question_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, transpose(question_embedding), dtype=tf.float32)
     question_encoding = transpose(question_encoding)
     
     # Append sentinel vector
     sentinel_vec_question = tf.Variable(tf.random_uniform([hidden_unit_size,1]), dtype = tf.float32)
-    question_encoding = tf.map_fn(lambda x: tf.concat((x,sentinel_vec_question), axis = -1),question_encoding)
+    sentinel_vec_q_batch = tf.stack([sentinel_vec_question] * batch_size)
+    question_encoding = tf.concat([question_encoding, sentinel_vec_q_batch], axis = -1)
 
     assert question_encoding.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "question encoding shape doesn't match (batch size, hidden unit size, max question length + 1) " + str(question_encoding.shape)
     assert context_encoding.shape == (batch_size, hidden_unit_size, contexts.shape[1] + 1), "context encoding shape doesn't match (batch size, hidden unit size, max context length + 1) " + str(context_encoding.shape)
@@ -60,10 +62,9 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     # Q = tanh(W^{Q} Q' + b^{Q})
     W_q = tf.Variable(tf.random_uniform([hidden_unit_size, hidden_unit_size]), [hidden_unit_size, hidden_unit_size], dtype=tf.float32)
     b_q = tf.Variable(tf.random_uniform([hidden_unit_size, questions_size+1]),  [hidden_unit_size, questions_size+1], dtype=tf.float32)
-    Q = tf.map_fn(lambda x: tf.math.add(
-        tf.matmul(W_q, x),
-        b_q
-    ), question_encoding, dtype=tf.float32) 
+    W_q_batch = tf.stack([W_q] * batch_size)
+    b_q_batch = tf.stack([b_q] * batch_size)
+    Q = tf.matmul(W_q_batch, question_encoding) + b_q_batch
     Q = tf.tanh(question_encoding)
     assert Q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "Q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)"+ str(Q.shape)
 
@@ -94,9 +95,10 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)  
     cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
     u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw,dtype=tf.float32,inputs= transpose(C))
-    U = transpose(tf.concat(u_states,axis = 2))
-    # Ignore u_{m+1}
-    U = U[:,:,:-1]
-    assert U.shape == (batch_size, 2 * hidden_unit_size, contexts.shape[1]), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
     
-    return tf.transpose(U, perm=[0,2,1]) # To make life easier later on, make it 10x632x400
+    U = tf.concat(u_states, axis = 2) # 10x633x400
+    U = U[:,:-1,:] # Make U to 10x632x400
+    assert U.shape == (batch_size, contexts.shape[1], 2 * hidden_unit_size), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
+    
+    return U 
+    

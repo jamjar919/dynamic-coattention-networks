@@ -14,30 +14,28 @@ def highway_network(U, hs, u_s, u_e, hidden_unit_size , pool_size):
     w3_T = tf.transpose(w3, perm = [2,0,1])
     b3 = tf.Variable(tf.constant(0.0,shape=[pool_size, 1]), dtype=tf.float32)
     
-    # Calculate r 
+    ''' Calculate r from equation 10 ''' 
     x = tf.concat([hs,u_s,u_e],axis=1)
     print("hs.shape :", hs.shape)
     print("us.shape: ", u_s.shape)
     print("ue.shape: ",u_e.shape)
-    r = tf.nn.tanh(tf.matmul(x,tf.transpose(wd))) # This is 10x200
+    r = tf.nn.tanh(tf.matmul(x,tf.transpose(wd))) # Product of this is 10x200 (10x1000 * 1000x200)
     print("r.shape: ", r.shape)
 
-    #calculate mt1    # TENSORDOT (A,B, axes = [])
-    r1 = tf.stack([r] * U.shape[1])   # 632x10x200, to accommodate max context length. 
+    ''' Calculate mt1 (equation 11)   '''     
+    r1 = tf.stack([r] * U.shape[1])   # Make 632 copies of r to get 632x10x200. 
     r1 = tf.transpose(r1, perm = [1,0,2]) #  Transpose to 10x632x200
     print("r1.shape at line 216 ", r1.shape)
     print("U.shape: ", U.shape)
     U_r1_concat = tf.concat([U,r1],axis=2) # Concat 10x632x200 and 10x632x400 to get 10x632x600
     print("U_r1_concat.shape at line 220 ", U_r1_concat.shape)
-    
     print("w1_T.shape: ", w1_T.shape)
     x1 = tf.tensordot(U_r1_concat, w1_T, axes = [[2], [0]])  + b1
     print("x1.shape at line 242: ", x1.shape)
     m1 = tf.reduce_max(x1,axis=2)
     print("m1.shape: ", m1.shape)
     
-    #calculate mt2
-    
+    ''' Calculate mt2 (equation 12) '''
     print ("w2_t.shape: ", w2_T.shape)
     m2_premax = tf.tensordot(m1, w2_T, axes = [[2], [0]]) + b2
     print("m2_premax.shape: ", m2_premax.shape)

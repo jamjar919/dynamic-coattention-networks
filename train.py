@@ -15,7 +15,7 @@ padded_data, index2embedding, max_length_question, max_length_context = D.load_d
 print("Loaded data")
 
 # Train now
-batch_size = 10
+batch_size = 64
 embedding_dimension = 300
 tf.reset_default_graph()
 
