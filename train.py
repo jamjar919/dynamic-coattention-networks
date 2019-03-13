@@ -72,7 +72,11 @@ with tf.Session() as sess:
         loss_val = sess.run(loss,feed_dict = {
 =======
         print("BEFORE ENCODER RUN counter = ",counter)
+<<<<<<< HEAD
         _, loss_val = sess.run([train_op, loss_val],feed_dict = {
+>>>>>>> fix train.py
+=======
+        _, loss_val = sess.run([train_op, loss],feed_dict = {
 >>>>>>> fix train.py
             question_batch_placeholder : question_batch,
             context_batch_placeholder : context_batch,
