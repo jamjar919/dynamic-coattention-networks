@@ -26,24 +26,23 @@ def highway_network(U, hs, u_s, u_e, hidden_unit_size , pool_size):
     print("r1.shape at line 216 ", r1.shape)
     print("U.shape: ", U.shape)
     U_r1_concat = tf.concat([U,r1],axis=2) # Concat 10x632x200 and 10x632x400 to get 10x632x600
-    # U_r1_concat = tf.nn.dropout(U_r1_concat, keep_prob = dropout_rate)
+    U_r1_concat_dropout = tf.nn.dropout(U_r1_concat, keep_prob = dropout_rate)
     print("U_r1_concat.shape at line 220 ", U_r1_concat.shape)
-    x1 = tf.tensordot(U_r1_concat, w1, axes = [[2], [2]])  + b1
+    x1 = tf.tensordot(U_r1_concat_dropout, w1, axes = [[2], [2]])  + b1
     print("x1.shape at line 242: ", x1.shape)
-    #x1 = tf.nn.dropout(x, keep_prob = dropout_rate) # Add dropout
     m1 = tf.reduce_max(x1,axis=2)
     print("m1.shape: ", m1.shape)
     
     ''' Calculate mt2 (equation 12) '''
-    m2_premax = tf.tensordot(m1, w2, axes = [[2], [2]]) + b2
-    #m2_premax = tf.nn.dropout(m2_premax, keep_prob = dropout_rate)
+    m1_dropout = tf.nn.dropout(m1, keep_prob = dropout_rate)
+    m2_premax = tf.tensordot(m1_dropout, w2, axes = [[2], [2]]) + b2
     print("m2_premax.shape: ", m2_premax.shape)
     m2 = tf.reduce_max(m2_premax, axis = 2)
     print("m2.shape: ", m2.shape)
     
     # Calculate HMN max.
     m1m2 = tf.concat([m1,m2],axis=2)
-    #m1m2 = tf.nn.dropout(m1m2, keep_prob = dropout_rate)
+    m1m2 = tf.nn.dropout(m1m2, keep_prob = dropout_rate)
     print ("m1m2.shape: ",m1m2.shape)
     x3 = tf.tensordot(m1m2, w3, axes = [[2], [2]]) + b3
     print("x3.shape: ", x3.shape)
