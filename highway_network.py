@@ -1,87 +1,58 @@
 import tensorflow as tf
 
+def highway_network(U, hs, u_s, u_e, hidden_unit_size , pool_size):
+    
+    ''' Get the weights and biases for the network '''
+    wd = tf.get_variable(name="wd",shape=[hidden_unit_size, 5*hidden_unit_size], dtype=tf.float32)
+    w1 = tf.get_variable(name="w1",shape=[pool_size, hidden_unit_size, 3*hidden_unit_size], dtype=tf.float32)
+    b1 = tf.Variable(tf.constant(0.0,shape=[pool_size, hidden_unit_size,]),dtype=tf.float32)
+    w1_T = tf.transpose(w1, perm = [2,0,1]) # Conver to 600x16x200
+    w2 = tf.get_variable(name="w2",shape=[pool_size, hidden_unit_size, hidden_unit_size], dtype=tf.float32)
+    b2 = tf.Variable(tf.constant(0.0,shape=[pool_size, hidden_unit_size, ]),dtype=tf.float32)
+    w2_T = tf.transpose(w2, perm = [2,0,1])
+    w3 = tf.get_variable(name="w3",shape=[pool_size, 1, 2*hidden_unit_size], dtype=tf.float32)
+    w3_T = tf.transpose(w3, perm = [2,0,1])
+    b3 = tf.Variable(tf.constant(0.0,shape=[pool_size, 1]), dtype=tf.float32)
+    
+    ''' Calculate r from equation 10 ''' 
+    x = tf.concat([hs,u_s,u_e],axis=1)
+    print("hs.shape :", hs.shape)
+    print("us.shape: ", u_s.shape)
+    print("ue.shape: ",u_e.shape)
+    r = tf.nn.tanh(tf.matmul(x,tf.transpose(wd))) # Product of this is 10x200 (10x1000 * 1000x200)
+    print("r.shape: ", r.shape)
 
-HIDDEN_STATE_SIZE = 200 # named L in the paper
-POOL_SIZE = 16
+    ''' Calculate mt1 (equation 11)   '''     
+    r1 = tf.stack([r] * U.shape[1])   # Make 632 copies of r to get 632x10x200. 
+    r1 = tf.transpose(r1, perm = [1,0,2]) #  Transpose to 10x632x200
+    print("r1.shape at line 216 ", r1.shape)
+    print("U.shape: ", U.shape)
+    U_r1_concat = tf.concat([U,r1],axis=2) # Concat 10x632x200 and 10x632x400 to get 10x632x600
+    print("U_r1_concat.shape at line 220 ", U_r1_concat.shape)
+    print("w1_T.shape: ", w1_T.shape)
+    x1 = tf.tensordot(U_r1_concat, w1_T, axes = [[2], [0]])  + b1
+    print("x1.shape at line 242: ", x1.shape)
+    m1 = tf.reduce_max(x1,axis=2)
+    print("m1.shape: ", m1.shape)
+    
+    ''' Calculate mt2 (equation 12) '''
+    print ("w2_t.shape: ", w2_T.shape)
+    m2_premax = tf.tensordot(m1, w2_T, axes = [[2], [0]]) + b2
+    print("m2_premax.shape: ", m2_premax.shape)
+    m2 = tf.reduce_max(m2_premax, axis = 2)
+    print("m2.shape: ", m2.shape)
+    
+    # Calculate HMN max.
+    m1m2 = tf.concat([m1,m2],axis=2)
+    print ("m1m2.shape: ",m1m2.shape)
+    print("w3_T.shape: ", w3_T.shape)
+    x3 = tf.tensordot(m1m2,w3_T, axes = [[2], [0]]) + b3
+    print("x3.shape: ", x3.shape)
+    x3 = tf.squeeze(tf.reduce_max(x3,axis=2)) # Remove dimension of size 1
+    print ("x3.shape: ", x3.shape)
+    output = tf.argmax(x3,axis=1)
+    print("1st output shape: ", output.shape)
+    output = tf.squeeze(tf.cast(output,dtype=tf.int32)) # Remove dimensions of size 1
+    print("2nd output shape: ", output.shape)
 
-def transpose(tensor):
-    return tf.transpose(tensor,perm=[0,2,1])
-
-def highway_network_batch(U, lstm_hidden_state,
-                    coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word,
-                    wd, w1, w2, w3,
-                    b1, b2, b3):
-
-    U_transpose = transpose(U)
-    fn = lambda doc_encoding : highway_network_matrix(doc_encoding, lstm_hidden_state,
-                    coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word,
-                    wd, w1, w2, w3,
-                    b1, b2, b3)
-    # returns 10 * 1
-    return tf.map_fn(fn, U_transpose)
-
-# U_transpose is of size 632 * 400
-def highway_network_matrix(U_transpose, lstm_hidden_state,
-                    coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word,
-                    wd, w1, w2, w3,
-                    b1, b2, b3):
-
-    #U_transpose = tf.transpose(U, perm=[1, 0])
-    fn = lambda col : highway_network_single(col, lstm_hidden_state,
-                    coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word,
-                    wd, w1, w2, w3,
-                    b1, b2, b3)
-    # returns 1 number
-    return tf.reduce_max(tf.map_fn(fn, U_transpose))
-
-def highway_network_single(coattention_encoding_of_word_in_doc,
-                    lstm_hidden_state,
-                    coattention_encoding_of_prev_start_word,
-                    coattention_encoding_of_prev_end_word,
-                    wd, w1, w2, w3,
-                    b1, b2, b3):
-    # weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
-    #wd = tf.get_variable("wd", shape=[HIDDEN_STATE_SIZE, 5 * HIDDEN_STATE_SIZE],
-    #                     initializer=weight_initer)
-
-    # calculate r. The dimension of r would be L * 1
-    con = tf.concat(values=[lstm_hidden_state, coattention_encoding_of_prev_start_word,
-                               coattention_encoding_of_prev_end_word], axis=0)
-    linear_model = tf.matmul(wd, con, transpose_a=True)
-    activated_value = tf.nn.tanh(linear_model)
-    tf.reshape(activated_value, [HIDDEN_STATE_SIZE])
-
-    # calculate mt1
-    #w1 = tf.get_variable("w1", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 3 * HIDDEN_STATE_SIZE],
-    #                     initializer=weight_initer)
-    # b1 = tf.get_variable("b1", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    con2 = tf.concat(values=[coattention_encoding_of_word_in_doc, activated_value])
-    mt1_premax = tf.reshape(tf.matmul(w1, con2), [POOL_SIZE, HIDDEN_STATE_SIZE]) + b1
-    mt1_postmax =  tf.reduce_max(mt1_premax, axis=0)
-    mt1_postmax_reshaped = tf.reshape(mt1_postmax, [HIDDEN_STATE_SIZE])
-
-    #calculate mt2
-    #w2 = tf.get_variable("w2", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
-    #                     initializer=weight_initer)
-    # b2 = tf.get_variable("b2", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    mt2_premax = tf.reshape(tf.matmul(w2, mt1_postmax_reshaped), [POOL_SIZE, HIDDEN_STATE_SIZE]) + b2
-    mt2_postmax =  tf.reduce_max(mt2_premax, axis=0)
-    mt2_postmax_reshaped = tf.reshape(mt2_postmax, [HIDDEN_STATE_SIZE])
-
-    #calculate the final HMN output
-    #w3 = tf.get_variable("w3", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 2 * HIDDEN_STATE_SIZE],
-    #                     initializer=weight_initer)
-    # b3 = tf.get_variable("b3", shape=[POOL_SIZE])
-    con3 = tf.concat(values=[mt1_postmax_reshaped, mt2_postmax_reshaped])
-    hmn_premax = tf.reshape(tf.matmul(w3, con3), [POOL_SIZE]) + b3
-    hmn_postmax = tf.reduce_max(hmn_premax, axis=0)
-
-    return hmn_postmax
-
-
-
-
+    return output,x3

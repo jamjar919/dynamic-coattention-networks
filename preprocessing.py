@@ -15,7 +15,8 @@ def pad_data(data, pad_char):
     return (list(map(lambda q: {
         "question": pad_to(q["question"], max_length_question, pad_char),
         "context": pad_to(q["context"], max_length_context, pad_char),
-        "answer": q["answer"]
+        "answer_start": q["answer_start"],
+        "answer_end": q["answer_end"]
     }, data)), (max_length_question, max_length_context))
 
 def pad_to(sequence, length, char):
@@ -24,7 +25,6 @@ def pad_to(sequence, length, char):
     else:
         sequence.append(char)
         return pad_to(sequence, length, char)
-
 
 def word_to_index(w, word2index):
     try:

@@ -21,11 +21,22 @@ class Dataset:
         for category in categories:
             for paragraph in category["paragraphs"]:
                 paragraph["context"] = paragraph["context"]
+                split_context = paragraph["context"].split(" ")
                 for qas in paragraph["qas"]:
+                    # Translate character index to word index
+                    answer = random.choice(qas["answers"])
+                    i = 0
+                    word_index = 0
+                    while (i < answer["answer_start"]):
+                        i += len(split_context[word_index]) + 1
+                        word_index += 1
+                    answer_start = word_index
+
                     data.append({
                         "context": text_to_index(paragraph["context"], word2index),
                         "question": text_to_index(qas["question"], word2index),
-                        "answer": text_to_index(random.choice(qas["answers"])["text"], word2index)
+                        "answer_start": answer_start,
+                        "answer_end": int(answer_start) + len(text_to_index(answer["text"], word2index)) - 1
                     })
         return data
 

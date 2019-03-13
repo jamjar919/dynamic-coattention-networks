@@ -1,14 +1,9 @@
 # decode the question using the dynamic decoder
 import tensorflow as tf
 import highway_network as hn
+import numpy as np
 
-EMBEDDING_SIZE_OF_WORDS = 400
-DOCUMENT_SIZE = 632
-HIDDEN_STATE_SIZE = 200 # named L in the paper
-POOL_SIZE = 16
-s_init = tf.constant(tf.random_uniform([10,1]),dtype=tf.int32)
-
-def decoder(U, s, e, hidden_unit_size=200):
+def decoder(U, hidden_unit_size = 200, pool_size = 16):
     """
     :param U: This is output of the encoder
     :param batch_size:
@@ -17,65 +12,76 @@ def decoder(U, s, e, hidden_unit_size=200):
     :return:
     """
     batch_size = U.shape[0]
-    lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_unit_size)
-    hi, ci = lstm_cell.zero_state(batch_size, dtype=tf.float32)
+    iterations = 4
 
+    sv = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2], dtype=tf.int32)
+    ev = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2] + 1, dtype=tf.int32)
 
+    print(sv)
+    print(ev)
+
+    lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = hidden_unit_size, dtype = tf.float32)
+    ch = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
+    hi, _ = ch
+    print("hi.shape", hi.shape) # 10x200
+
+    # Initialise variables to load them into the default 
     weight_initer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
-    wd_start_word = tf.get_variable("wd_s", shape=[HIDDEN_STATE_SIZE, 5 * HIDDEN_STATE_SIZE],
-                                    initializer=weight_initer)
-    w1_start_word = tf.get_variable("w1_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 3 * HIDDEN_STATE_SIZE],
-                                    initializer=weight_initer)
-    w2_start_word = tf.get_variable("w2_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
-                                    initializer=weight_initer)
-    w3_start_word = tf.get_variable("w3_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 2 * HIDDEN_STATE_SIZE],
-                                    initializer=weight_initer)
-    b1_start_word = tf.get_variable("b1_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    b2_start_word = tf.get_variable("b2_s", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    b3_start_word = tf.get_variable("b3_s", shape=[POOL_SIZE])
+    # Weights and biases for the HMN that will calculate a start index. 
+    
+    with tf.variable_scope('start_word') as scope1:
+        # wd dim: lx5l
+        wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
+                                        initializer=weight_initer)
+        # w1 dim: pxlx3l
+        w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
+                                        initializer=weight_initer)
+        # w2 dim: pxlxl
+        w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
+                                        initializer=weight_initer)
+        #w3 dim: px1x2l
+        w3 = tf.get_variable("w3", shape=[pool_size, 1, 2 * hidden_unit_size],
+                                        initializer=weight_initer)
+        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size, ]) # b1 dim: pxl
+        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size, ]) # b2 dim: pxl
+        b3 = tf.get_variable("b3", shape=[pool_size]) #b3 dim: px1
 
-    wd_end_word = tf.get_variable("wd_e", shape=[HIDDEN_STATE_SIZE, 5 * HIDDEN_STATE_SIZE],
-                                  initializer=weight_initer)
-    w1_end_word = tf.get_variable("w1_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 3 * HIDDEN_STATE_SIZE],
-                                  initializer=weight_initer)
-    w2_end_word = tf.get_variable("w2_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, HIDDEN_STATE_SIZE],
-                                  initializer=weight_initer)
-    w3_end_word = tf.get_variable("w3_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE, 2 * HIDDEN_STATE_SIZE],
-                                  initializer=weight_initer)
-    b1_end_word = tf.get_variable("b1_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    b2_end_word = tf.get_variable("b2_e", shape=[POOL_SIZE, HIDDEN_STATE_SIZE])
-    b3_end_word = tf.get_variable("b3_e", shape=[POOL_SIZE])
-
-
-    u_s = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]),
-                       indices=tf.stack([tf.range(batch_size, dtype=tf.int32), s], axis=1))
-    print(u_s.shape)
-    # 10 * 400
-    u_e = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]),
-                       indices=tf.stack([tf.range(batch_size, dtype=tf.int32), e], axis=1))
-    print(u_e.shape)
-
-    for i in range(4):
+    with tf.variable_scope('end_word') as scope2:
+        wd = tf.get_variable("wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
+                                        initializer=weight_initer)
+        w1 = tf.get_variable("w1", shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size],
+                                        initializer=weight_initer)
+        w2 = tf.get_variable("w2", shape=[pool_size, hidden_unit_size, hidden_unit_size],
+                                        initializer=weight_initer)
+        w3 = tf.get_variable("w3", shape=[pool_size, 1,  2 * hidden_unit_size],
+                                        initializer=weight_initer)
+        b1 = tf.get_variable("b1", shape=[pool_size, hidden_unit_size, ])
+        b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size, ])
+        b3 = tf.get_variable("b3", shape=[pool_size, 1])
+    
+    for i in range(iterations):
         # s is start index
-        s = hn.highway_network_batch(U, hi, u_s, u_e, wd_start_word, w1_start_word, w2_start_word, w3_start_word,
-                    b1_start_word, b2_start_word, b3_start_word)
+        u_s = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),sv],axis=1))
+        u_e = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),ev],axis=1))
+        usue = tf.concat([u_s,u_e],axis=1)
 
-        u_s = tf.gather_nd(params=tf.transpose(U, perm=[0 , 2, 1]),
-                           indices=tf.stack([tf.range(batch_size,dtype=tf.int32),s], axis=1))
+        with tf.variable_scope('start_word', reuse = True) as scope1:
+            # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
+            sv, s_logits = hn.highway_network(U, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
 
         # e is the end index
-        e = hn.highway_network_batch(U, hi, u_s, u_e, wd_end_word, w1_end_word, w2_end_word, w3_end_word,
-                    b1_end_word, b2_end_word, b3_end_word)
+        with tf.variable_scope('end_word', reuse = True) as scope2:
+            ev, e_logits = hn.highway_network(U, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
 
-        u_e = tf.gather_nd(params=tf.transpose(U, perm=[0, 2, 1]),
-                         indices=tf.stack([tf.range(batch_size, dtype=tf.int32), e], axis=1))
+        hi,ch = lstm_cell(inputs=usue, state=ch) # 
 
-        hi, ch = lstm_cell(inputs=tf.concat(u_s, u_e), state=ch)
+        hi = tf.Print(hi,[hi],"ITERATION")
 
-    return s,e
+    return sv, ev, s_logits, e_logits
 
-print()
-U = tf.constant(shape=[10, 400, 632])
-s = tf.constant(shape=[10, 1])
-decoder(U, s, s)
-
+if __name__ == "__main__":
+    print("Running decoder by itself for debug purposes.")
+    U = tf.placeholder(shape=[10, 400, 632], dtype = tf.float32)
+    s = tf.placeholder(shape=[10], dtype = tf.int32)
+    e = tf.placeholder(shape=[10], dtype = tf.int32)
+    decoder(U, s, e)
