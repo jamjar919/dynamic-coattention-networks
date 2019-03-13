@@ -47,8 +47,12 @@ init = tf.global_variables_initializer()
 with tf.Session() as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
+<<<<<<< HEAD
     dataset_size = len(padded_data)
     for counter in range(0,dataset_size, batch_size):
+=======
+    for counter in range(0,len(padded_data),batch_size):
+>>>>>>> fix train.py
         # running on an example batch to debug encoder
         batch = padded_data[counter:(counter + batch_size)]
         #print("padded_data shape: ", len(padded_data))
@@ -56,6 +60,7 @@ with tf.Session() as sess:
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
         answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
+<<<<<<< HEAD
         print("Question number:  ",counter)
         sess.run(train_op,feed_dict = {
             question_batch_placeholder : question_batch,
@@ -65,6 +70,10 @@ with tf.Session() as sess:
             embedding: index2embedding
         })
         loss_val = sess.run(loss,feed_dict = {
+=======
+        print("BEFORE ENCODER RUN counter = ",counter)
+        _, loss_val = sess.run([train_op, loss_val],feed_dict = {
+>>>>>>> fix train.py
             question_batch_placeholder : question_batch,
             context_batch_placeholder : context_batch,
             answer_start : answer_start_batch,
