@@ -9,6 +9,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 # custom imports
 from dataset import Dataset
 
+print("Starting testing...")
 D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
 padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
 print("Loaded data")
@@ -61,16 +62,16 @@ with tf.Session() as sess:
         print(
         "Precision", sk.metrics.precision_score(
                 predictions,
-                actual)
+                actual, average='micro')
         )
         print(
         "Recall", sk.metrics.recall_score(
                 predictions,
-                actual)
+                actual, average='micro')
         )
         print(
         "f1_score", sk.metrics.f1_score(
                 predictions,
-                actual)
+                actual, average='micro')
         )
 
