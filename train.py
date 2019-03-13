@@ -10,6 +10,8 @@ from encoder import encoder
 from decoder import decoder
 from dataset import Dataset
 
+tensorboard_filepath = '.'
+
 D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
 padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
 print("Loaded data")
@@ -70,6 +72,9 @@ with tf.Session() as sess:
         print("loss: ",np.mean(loss_val))
         counter += batch_size%len(padded_data)
 
+    merged = tf.summary.merge_all()
+    train_writer = tf.summary.FileWriter('./tensorboard',
+                                      sess.graph)
     '''
     tf.saved_model.simple_save(
         sess,
