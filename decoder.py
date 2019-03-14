@@ -82,6 +82,4 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
 if __name__ == "__main__":
     print("Running decoder by itself for debug purposes.")
     U = tf.placeholder(shape=[10, 632, 400], dtype = tf.float32)
-    s = tf.placeholder(shape=[10], dtype = tf.int32)
-    e = tf.placeholder(shape=[10], dtype = tf.int32)
     decoder(U)
