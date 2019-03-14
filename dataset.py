@@ -49,7 +49,7 @@ class Dataset:
             # generate
             result = generator()
             with open(filename, "wb") as f:
-                pickle.dump(beforesave(result), f)
+                pickle.dump(beforesave(result), f, protocol=4)
                 print("Saved "+filename+" to disk.")
 
             return result
@@ -59,6 +59,11 @@ class Dataset:
                 result = pickle.load(f)
             return then(result)
 
+    def index_to_text(self, indexes):
+        words = list(map(lambda index: self.index2word[index], indexes))
+        while ((words[-1] == '?') and (len(words) > 1)):
+            words = words[:-1]
+        return ' '.join(words)
 
     def load_data(self, args):
         '''
@@ -80,6 +85,9 @@ class Dataset:
             beforesave = lambda x: (dict(x[0]), x[1]),
             then = lambda x: (defaultdict(lambda: len(x[0]), x[0]), x[1])
         )
+        self.word2index = word2index
+        self.index2word = defaultdict(lambda: '?', dict(zip(word2index.values(), word2index.keys())))
+
         print("Loaded embeddings")
         vocab_size, embedding_dim = index2embedding.shape
         print("Vocab Size:"+str(vocab_size)+" Embedding Dim:"+str(embedding_dim))
