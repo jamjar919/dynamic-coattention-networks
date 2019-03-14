@@ -10,6 +10,7 @@ from encoder import encoder
 from decoder import decoder
 from dataset import Dataset
 
+ITERATIONS = 40
 tensorboard_filepath = '.'
 
 D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
@@ -52,15 +53,17 @@ with tf.Session() as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
     dataset_size = len(padded_data)
-    for counter in range(0,64, batch_size):
+    for epochs in range(ITERATIONS):
         # running on an example batch to debug encoder
-        batch = padded_data[counter:(counter + batch_size)]
+        batch_rand_indices = np.random.choice(len(padded_data), batch_size)
+        print("random batch indices :", batch_rand_indices)
+        batch = np.array(padded_data)[batch_rand_indices]
         #print("padded_data shape: ", len(padded_data))
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
         answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
-        print("Question number:  ",counter)
+        print("Epoch # : ", epochs)
         _ , loss_val = sess.run([train_op,loss],feed_dict = {
             question_batch_placeholder : question_batch,
             context_batch_placeholder : context_batch,
@@ -68,7 +71,7 @@ with tf.Session() as sess:
             answer_end : answer_end_batch,
             embedding: index2embedding
         })
-        tf.summary.scalar('loss', loss_val)
+        tf.summary.histogram('loss', loss_val)
         print("loss: ",np.mean(loss_val))
         counter += batch_size%len(padded_data)
 
