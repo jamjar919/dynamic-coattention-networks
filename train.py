@@ -72,7 +72,6 @@ with tf.Session() as sess:
         })
         tf.summary.histogram('loss', loss_val)
         print("loss: ",np.mean(loss_val))
-        counter += batch_size%len(padded_data)
 
     saver.save(sess, './model/saved') 
 
