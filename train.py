@@ -18,7 +18,7 @@ padded_data, index2embedding, max_length_question, max_length_context = D.load_d
 print("Loaded data")
 
 # Train now
-batch_size = 64
+batch_size = 16
 embedding_dimension = 300
 tf.reset_default_graph()
 
@@ -72,22 +72,7 @@ with tf.Session() as sess:
         })
         tf.summary.histogram('loss', loss_val)
         print("loss: ",np.mean(loss_val))
-        #
+        counter += batch_size%len(padded_data)
 
-    merged = tf.summary.merge_all()
-    train_writer = tf.summary.FileWriter('./tensorboard',
-                                      sess.graph)
-    '''
-    tf.saved_model.simple_save(
-        sess,
-        '/model',
-        inputs = {
-            question_batch: question_batch_placeholder,
-            context_batch: context_batch_placeholder
-        },
-        outputs = {
-            answer_start: s,
-            answer_end: e
-        }
-    )
-    '''
+    saver.save(sess, './model/saved') 
+
