@@ -58,7 +58,6 @@ with tf.Session() as sess:
         batch_rand_indices = np.random.choice(len(padded_data), batch_size)
         print("random batch indices :", batch_rand_indices)
         batch = np.array(padded_data)[batch_rand_indices]
-        #print("padded_data shape: ", len(padded_data))
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
