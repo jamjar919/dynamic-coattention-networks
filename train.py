@@ -73,7 +73,7 @@ with tf.Session() as sess:
         })
         tf.summary.histogram('loss', loss_val)
         print("loss: ",np.mean(loss_val))
-        counter += batch_size%len(padded_data)
+        #
 
     merged = tf.summary.merge_all()
     train_writer = tf.summary.FileWriter('./tensorboard',
