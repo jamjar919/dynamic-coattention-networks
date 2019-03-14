@@ -37,6 +37,10 @@ def text_to_index(text, word2index):
     tokens = tf.keras.preprocessing.text.text_to_word_sequence(text, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True, split=' ')
     return list(map(lambda tok: word_to_index(tok, word2index), tokens));
 
+def answer_span_to_indices(start, end, context_indexes):
+    r = np.arange(int(start), int(end) + 1)
+    return list(map(lambda index: context_indexes[index], r))
+
 #https://github.com/guillaume-chevalier/GloVe-as-a-TensorFlow-Embedding-Layer/blob/master/GloVe-as-TensorFlow-Embedding-Tutorial.ipynb
 def load_embedding(glove):
     word_to_index_dict = dict()
