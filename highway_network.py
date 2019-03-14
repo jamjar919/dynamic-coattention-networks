@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 def highway_network(U, hs, u_s, u_e, hidden_unit_size , pool_size):
-    dropout_rate = 0.5
+    #dropout_rate = 0.5
 
     ''' Get the weights and biases for the network '''
     wd = tf.get_variable(name="wd",shape=[hidden_unit_size, 5*hidden_unit_size], dtype=tf.float32)

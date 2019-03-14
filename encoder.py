@@ -19,7 +19,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     '''
     dropout_rate = 0.3 # https://openreview.net/forum?id=rJeKjwvclx Authors claim to use 0.3 rate. 
     batch_size = questions.shape[0]
-    contexts_size = contexts.shape[1].value
+    #contexts_size = contexts.shape[1].value
     questions_size = questions.shape[1].value
 
     print("Batch size", batch_size)
@@ -30,7 +30,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     # Format [batch, length, depth]
     context_vector = tf.map_fn(lambda x:  tf.nn.embedding_lookup(embedding, x), contexts, dtype=tf.float32)
     question_vector = tf.map_fn(lambda x:  tf.nn.embedding_lookup(embedding, x), questions, dtype=tf.float32)
-    context_vector = tf.nn.dropout(context_vector, keep_prob = dropout_rate)
+    context_vector = tf.nn.dropout(context_vector, keep_prob = dropout_rate) # Add dropout
     question_vector = tf.nn.dropout(question_vector, keep_prob = dropout_rate)
 
     context_embedding = tf.transpose(context_vector, perm=[0, 2, 1])

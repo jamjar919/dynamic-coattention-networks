@@ -10,7 +10,6 @@ from encoder import encoder
 from decoder import decoder
 from dataset import Dataset
 
-ITERATIONS = 40
 tensorboard_filepath = '.'
 
 D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
@@ -18,8 +17,9 @@ padded_data, index2embedding, max_length_question, max_length_context = D.load_d
 print("Loaded data")
 
 # Train now
-batch_size = 16
+batch_size = 128
 embedding_dimension = 300
+ITERATIONS = 5
 tf.reset_default_graph()
 
 embedding = tf.placeholder(shape = [len(index2embedding), embedding_dimension], dtype=tf.float32, name='embedding')
@@ -45,6 +45,7 @@ l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits = e
 loss = l1 + l2
 train_op = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
+hist_losses = []
 
 saver = tf.train.Saver() 
 
@@ -56,7 +57,6 @@ with tf.Session() as sess:
     for epochs in range(ITERATIONS):
         # running on an example batch to debug encoder
         batch_rand_indices = np.random.choice(len(padded_data), batch_size)
-        print("random batch indices :", batch_rand_indices)
         batch = np.array(padded_data)[batch_rand_indices]
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
@@ -70,9 +70,13 @@ with tf.Session() as sess:
             answer_end : answer_end_batch,
             embedding: index2embedding
         })
-        tf.summary.histogram('loss', loss_val)
+        
         print("loss: ",np.mean(loss_val))
-        counter += batch_size%len(padded_data)
+        hist_losses.append(loss)
 
     saver.save(sess, './model/saved') 
 
+    tf.summary.histogram('loss', tf.convert_to_tensor(np.array(hist_losses)))
+
+    merged = tf.summary.merge_all()
+    train_writer = tf.summary.FileWriter('./log_tensorboard', sess.graph)
