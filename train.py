@@ -10,6 +10,9 @@ from encoder import encoder
 from decoder import decoder
 from dataset import Dataset
 
+ITERATIONS = 40
+tensorboard_filepath = '.'
+
 D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
 padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
 print("Loaded data")
@@ -38,8 +41,10 @@ e = tf.identity(e, name='answer_end')
 
 l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits = s_logits)
 l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits = e_logits)
+
 loss = l1 + l2
 train_op = tf.train.AdamOptimizer(0.0001).minimize(loss)
+
 
 saver = tf.train.Saver() 
 
@@ -48,24 +53,26 @@ with tf.Session() as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
     dataset_size = len(padded_data)
-    for counter in range(0,dataset_size, batch_size):
+    for epochs in range(ITERATIONS):
         # running on an example batch to debug encoder
-        batch = padded_data[counter:(counter + batch_size)]
-        #print("padded_data shape: ", len(padded_data))
+        batch_rand_indices = np.random.choice(len(padded_data), batch_size)
+        print("random batch indices :", batch_rand_indices)
+        batch = np.array(padded_data)[batch_rand_indices]
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
         context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
         answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
         answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
-        print("BEFORE ENCODER RUN counter = ",counter)
-        _, loss_val = sess.run([train_op, loss],feed_dict = {
+        print("Epoch # : ", epochs)
+        _ , loss_val = sess.run([train_op,loss],feed_dict = {
             question_batch_placeholder : question_batch,
             context_batch_placeholder : context_batch,
             answer_start : answer_start_batch,
             answer_end : answer_end_batch,
             embedding: index2embedding
         })
+        tf.summary.histogram('loss', loss_val)
         print("loss: ",np.mean(loss_val))
         counter += batch_size%len(padded_data)
 
     saver.save(sess, './model/saved') 
-    
+
