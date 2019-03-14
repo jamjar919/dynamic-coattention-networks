@@ -64,7 +64,7 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
         u_s = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),sv],axis=1))
         u_e = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),ev],axis=1))
         usue = tf.concat([u_s,u_e],axis=1)
-
+        print("usue shape", usue.shape)
         with tf.variable_scope('start_word', reuse = True) as scope1:
             # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
             sv, s_logits = hn.highway_network(U, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
@@ -81,7 +81,7 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
 
 if __name__ == "__main__":
     print("Running decoder by itself for debug purposes.")
-    U = tf.placeholder(shape=[10, 400, 632], dtype = tf.float32)
+    U = tf.placeholder(shape=[10, 632, 400], dtype = tf.float32)
     s = tf.placeholder(shape=[10], dtype = tf.int32)
     e = tf.placeholder(shape=[10], dtype = tf.int32)
-    decoder(U, s, e)
+    decoder(U)
