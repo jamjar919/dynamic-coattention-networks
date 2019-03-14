@@ -17,9 +17,9 @@ padded_data, index2embedding, max_length_question, max_length_context = D.load_d
 print("Loaded data")
 
 # Train now
-batch_size = 128
+batch_size = 16
 embedding_dimension = 300
-ITERATIONS = 5
+MAX_EPOCHS = 4
 tf.reset_default_graph()
 
 embedding = tf.placeholder(shape = [len(index2embedding), embedding_dimension], dtype=tf.float32, name='embedding')
@@ -54,27 +54,28 @@ with tf.Session() as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
     dataset_size = len(padded_data)
-    for epochs in range(ITERATIONS):
-        # running on an example batch to debug encoder
-        batch_rand_indices = np.random.choice(len(padded_data), batch_size)
-        batch = np.array(padded_data)[batch_rand_indices]
-        question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
-        context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
-        answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
-        answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
-        print("Epoch # : ", epochs)
-        _ , loss_val = sess.run([train_op,loss],feed_dict = {
-            question_batch_placeholder : question_batch,
-            context_batch_placeholder : context_batch,
-            answer_start : answer_start_batch,
-            answer_end : answer_end_batch,
-            embedding: index2embedding
-        })
-        
-        print("loss: ",np.mean(loss_val))
-        hist_losses.append(loss)
+    padded_data = np.array(padded_data)[0:30]
+    for epoch in range(MAX_EPOCHS):
+        print("Epoch # : ", epoch)
+        # Shuffle the data between epochs
+        np.random.shuffle(padded_data)
+        for iteration in range(0, len(padded_data) - batch_size, batch_size):
+            batch = padded_data[iteration:iteration + batch_size]
+            question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
+            context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
+            answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
+            answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
+            _ , loss_val = sess.run([train_op,loss],feed_dict = {
+                question_batch_placeholder : question_batch,
+                context_batch_placeholder : context_batch,
+                answer_start : answer_start_batch,
+                answer_end : answer_end_batch,
+                embedding: index2embedding
+            })
+            print("loss: ",np.mean(loss_val))
+            hist_losses.append(loss)
 
-    saver.save(sess, './model/saved') 
+        saver.save(sess, './model/saved', global_step=epoch) 
 
     tf.summary.histogram('loss', tf.convert_to_tensor(np.array(hist_losses)))
 
