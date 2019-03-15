@@ -2,6 +2,7 @@
 import sys
 import numpy as np
 import tensorflow as tf
+import sklearn as sk
 from functools import reduce
 import os
 
@@ -12,9 +13,13 @@ from dataset import Dataset
 
 tensorboard_filepath = '.'
 
-D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
+D = Dataset('data/train.json', 'data/glove.840B.300d.txt')
 padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
 print("Loaded data")
+
+D = Dataset('data/dev.json', 'data/glove.840B.300d.txt')
+padded_data_validation, index2embedding_validation, max_length_question_validation, max_length_context_validation = D.load_data(sys.argv[1:])
+print("loaded validation data")
 
 # Train now
 batch_size = 128
@@ -84,7 +89,56 @@ with tf.Session() as sess:
         summary_writer.add_summary(summary_str,epoch)
         summary_writer.flush()
 
-        saver.save(sess, './model/saved', global_step=epoch) 
+        # validation starting
+        batch_size_validation = 128
+        for counter in range(0, 256, batch_size_validation):
+            # running on an example batch to debug encoder
+            batch = padded_data_validation[counter:(counter + batch_size_validation)]
+            question_batch_validation = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size_validation,
+                                                                                               max_length_question_validation)
+            context_batch_validation = np.array(list(map(lambda qas: (qas["context"]), batch))) \
+                .reshape(batch_size_validation, max_length_context_validation)
+            answer_start_batch_actual = np.array(list(map(lambda qas: (qas["answer_start"]), batch))) \
+                .reshape(batch_size_validation)
+            answer_end_batch_actual = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(
+                batch_size_validation)
+
+            print("Running validation number = ", counter)
+            s, e = sess.run([s_logits, e_logits], feed_dict={
+                question_batch_placeholder: question_batch_validation,
+                context_batch_placeholder: context_batch_validation,
+                embedding: index2embedding_validation
+            })
+
+            print("predicted and actual start and end")
+            estimated_start_index = np.argmax(s)
+            estimated_end_index =  np.argmax(e)
+            print(estimated_start_index, estimated_end_index)
+            print(answer_start_batch_actual, answer_end_batch_actual)
+
+            predictions = np.concatenate([estimated_start_index, estimated_end_index])
+            actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
+
+            print("predictions", predictions)
+            print("actual", actual)
+
+            print(
+                "Precision", sk.metrics.precision_score(
+                    predictions,
+                    actual, average='micro')
+            )
+            print(
+                "Recall", sk.metrics.recall_score(
+                    predictions,
+                    actual, average='micro')
+            )
+            print(
+                "f1_score", sk.metrics.f1_score(
+                    predictions,
+                    actual, average='micro')
+            )
+
+        saver.save(sess, './model/saved', global_step=epoch)
     summary_writer.close()
 
 
