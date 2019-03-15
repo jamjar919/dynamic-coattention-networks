@@ -42,7 +42,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
 
     # https://stackoverflow.com/questions/48238113/tensorflow-dynamic-rnn-state/48239320#48239320
     context_embedding_T = transpose(context_embedding) # c_e_T is shape 10x632x300 now.
-    context_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, context_embedding_T, sequence_length = length(context_embedding_T, axis_dim = 2), dtype=tf.float32)
+    context_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, context_embedding_T, sequence_length = length(context_embedding_T), dtype=tf.float32)
     context_encoding = transpose(context_encoding) # This is now 10x200x632
 
     # Append sentinel vector (to the beginning now)
@@ -52,7 +52,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     context_encoding = tf.concat([sentinel_vec_context_batch, context_encoding], axis  =-1)
 
     question_embedding_T = transpose(question_embedding)
-    question_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, question_embedding_T, sequence_length = length(question_embedding_T, axis_dim = 2), dtype=tf.float32)
+    question_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, question_embedding_T, sequence_length = length(question_embedding_T), dtype=tf.float32)
     question_encoding = transpose(question_encoding)
     
     # Append sentinel vector (to the beginning)
