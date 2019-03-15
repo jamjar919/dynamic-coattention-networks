@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import sklearn as sk
 from functools import reduce
+from sklearn.metrics import precision_score, recall_score, f1_score
 import os
 
 # custom imports
@@ -24,7 +25,7 @@ print("loaded validation data")
 # Train now
 batch_size = 128
 embedding_dimension = 300
-MAX_EPOCHS = 10
+MAX_EPOCHS = 8
 tf.reset_default_graph()
 
 embedding = tf.placeholder(shape = [len(index2embedding), embedding_dimension], dtype=tf.float32, name='embedding')
@@ -71,7 +72,7 @@ with tf.Session() as sess:
         print("Epoch # : ", epoch)
         # Shuffle the data between epochs
         np.random.shuffle(padded_data)
-        for iteration in range(0,len(padded_data) - batch_size, batch_size):
+        for iteration in range(0, len(padded_data) - batch_size, batch_size):
             batch = padded_data[iteration:iteration + batch_size]
             question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
             context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
@@ -110,18 +111,12 @@ with tf.Session() as sess:
                 embedding: index2embedding_validation
             })
 
-            print("predicted and actual start and end")
-            estimated_start_index = np.argmax(s)
-            estimated_end_index =  np.argmax(e)
-            print(estimated_start_index, estimated_end_index)
-            print(answer_start_batch_actual, answer_end_batch_actual)
-
+            estimated_start_index = np.argmax(s, axis = 1)
+            estimated_end_index =  np.argmax(e, axis = 1)
             predictions = np.concatenate([estimated_start_index, estimated_end_index])
             actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
-
-            print("predictions", predictions)
-            print("actual", actual)
-
+            #print("predictions", predictions)
+            #print("actual", actual)
             print(
                 "Precision", sk.metrics.precision_score(
                     predictions,
