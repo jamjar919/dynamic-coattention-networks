@@ -18,14 +18,14 @@ print(index2embedding.shape)
 
 
 tf.reset_default_graph()
-imported_graph = tf.train.import_meta_graph('./model/saved.meta')
+imported_graph = tf.train.import_meta_graph('./model/saved-6.meta')
 
 init = tf.global_variables_initializer()
-batch_size = 16
+batch_size = 64
 
 with tf.Session() as sess:
 
-    imported_graph.restore(sess, './model/saved')
+    imported_graph.restore(sess, './model/saved-6')
     graph = tf.get_default_graph()
 
     question_batch_placeholder = graph.get_tensor_by_name("question_batch:0")
@@ -36,7 +36,7 @@ with tf.Session() as sess:
 
     sess.run(init)
     print("SESSION INITIALIZED")
-    for counter in range(0, 101, batch_size):
+    for counter in range(0, batch_size * 10, batch_size):
         # running on an example batch to debug encoder
         batch = padded_data[counter:(counter + batch_size)]
         question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,

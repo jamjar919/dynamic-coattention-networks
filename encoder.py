@@ -42,7 +42,8 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
 
     # https://stackoverflow.com/questions/48238113/tensorflow-dynamic-rnn-state/48239320#48239320
     context_embedding_T = transpose(context_embedding) # c_e_T is shape 10x632x300 now.
-    context_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, context_embedding_T, sequence_length = length(context_embedding_T), dtype=tf.float32)
+    context_embedding_T_length = length(context_embedding_T)
+    context_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, context_embedding_T, sequence_length = context_embedding_T_length, dtype=tf.float32)
     context_encoding = transpose(context_encoding) # This is now 10x200x632
 
     # Append sentinel vector (to the beginning now)
@@ -100,14 +101,14 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)  
     cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
     C_transpose = transpose(C)
-    u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw,dtype=tf.float32,inputs = C_transpose, sequence_length = length(C_transpose))
+    u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw,dtype=tf.float32,inputs = C_transpose)
     
     U = tf.concat(u_states, axis = 2) # 10x633x400
-    print("U SHAPE LINE 107: ", U.shape)
+    #print("U SHAPE LINE 107: ", U.shape)
     #U = U[:,:-1,:] 
     U = tf.slice(U, begin = [0,1,0], size = [batch_size, contexts.shape[1], 2*hidden_unit_size]) # Make U to 10x632x400
-    print("U SHAPE AFTER SLICE:", U.shape)
+    #print("U SHAPE AFTER SLICE:", U.shape)
     assert U.shape == (batch_size, contexts.shape[1], 2 * hidden_unit_size), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
     
-    return U 
+    return U, context_embedding_T_length
     
