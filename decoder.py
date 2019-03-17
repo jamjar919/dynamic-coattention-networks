@@ -3,7 +3,7 @@ import tensorflow as tf
 import highway_network as hn
 import numpy as np
 
-def decoder(U, hidden_unit_size = 200, pool_size = 16):
+def decoder(U, seq_length, max_length_context, hidden_unit_size = 200, pool_size = 16):
     """
     :param U: This is output of the encoder
     :param batch_size:
@@ -67,11 +67,11 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
         print("usue shape", usue.shape)
         with tf.variable_scope('start_word', reuse = True) as scope1:
             # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
-            sv, s_logits = hn.highway_network(U, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+            sv, s_logits = hn.highway_network(U, seq_length, max_length_context, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
 
         # e is the end index
         with tf.variable_scope('end_word', reuse = True) as scope2:
-            ev, e_logits = hn.highway_network(U, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+            ev, e_logits = hn.highway_network(U, seq_length, max_length_context, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
 
         hi,ch = lstm_cell(inputs=usue, state=ch) # 
 
@@ -82,4 +82,6 @@ def decoder(U, hidden_unit_size = 200, pool_size = 16):
 if __name__ == "__main__":
     print("Running decoder by itself for debug purposes.")
     U = tf.placeholder(shape=[10, 632, 400], dtype = tf.float32)
-    decoder(U)
+    seq_length = tf.placeholder(shape =  [10,1], dtype = tf.int32)
+    max_length = 632
+    decoder(U, seq_length, max_length)
