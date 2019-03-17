@@ -68,6 +68,7 @@ with tf.Session() as sess:
     padded_data_train = padded_data[0:(int) (0.95*padded_data.shape[0])]
     padded_data_validation = padded_data[(int) (0.95*padded_data.shape[0]):]
     
+    losses = []
     for epoch in range(MAX_EPOCHS):
         print("Epoch # : ", epoch + 1)
         # Shuffle the data between epochs
@@ -85,8 +86,11 @@ with tf.Session() as sess:
                 answer_end : answer_end_batch,
                 embedding: index2embedding
             })
-        print("loss: ",np.mean(loss_val))
-        summary_str = sess.run(tf_loss_summary, feed_dict={tf_loss_ph: np.mean(loss_val)})
+            loss_val_mean = np.mean(loss_val)
+            losses.append(loss_val_mean.item())
+        mean_epoch_loss = np.mean(np.array(losses))
+        print("loss: ", mean_epoch_loss)
+        summary_str = sess.run(tf_loss_summary, feed_dict={tf_loss_ph: mean_epoch_loss})
         loss_writer.add_summary(summary_str,epoch)
         loss_writer.flush()
         
