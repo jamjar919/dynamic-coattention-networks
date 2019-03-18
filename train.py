@@ -44,7 +44,7 @@ l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits =
 l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits = e_logits)
 
 loss = l1 + l2
-train_op = tf.train.AdamOptimizer(0.0001).minimize(loss)
+train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
 
 saver = tf.train.Saver() 
 init = tf.global_variables_initializer()
