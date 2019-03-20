@@ -66,11 +66,11 @@ with tf.Session() as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
     dataset_size = len(padded_data)
-    padded_data = np.array(padded_data[0:150])
+    padded_data = np.array(padded_data)
     np.random.shuffle(padded_data)
     #print("PADDED DATA SHAPE: ", padded_data.shape)
-    padded_data_train = padded_data[0:(int) (0.90*padded_data.shape[0])]
-    padded_data_validation = padded_data[(int) (0.90*padded_data.shape[0]):]
+    padded_data_train = padded_data[0:(int) (0.95*padded_data.shape[0])]
+    padded_data_validation = padded_data[(int) (0.95*padded_data.shape[0]):]
     
     print("Validating on",padded_data_validation.shape[0],"elements")
 
