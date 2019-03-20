@@ -67,10 +67,8 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     b_q = tf.Variable(tf.random_uniform([questions_size+1, hidden_unit_size]),  [questions_size+1, hidden_unit_size], dtype=tf.float32)
     W_q_batch = tf.stack([W_q] * batch_size)
     b_q_batch = tf.stack([b_q] * batch_size)
-    Q = tf.matmul(question_encoding, W_q_batch) + b_q_batch
-    print("Q shape1 :", Q.shape)
-    Q = tf.tanh(Q)
-    print("Q shape2 :", Q.shape)
+    Q = tf.tanh(tf.matmul(question_encoding, W_q_batch) + b_q_batch)
+    print("Q shape :", Q.shape)
     # assert Q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "Q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)"+ str(Q.shape)
 
     L = tf.matmul(context_encoding, transpose(Q))
