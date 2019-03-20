@@ -14,8 +14,12 @@ def decoder(U, seq_length, max_length_context, hidden_unit_size = 200, pool_size
     batch_size = U.shape[0]
     iterations = 4
 
-    sv = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2], dtype=tf.int32)
-    ev = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2] + 1, dtype=tf.int32)
+    #sv = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2], dtype=tf.int32)
+    #ev = tf.random_uniform(tf.TensorShape([batch_size]), minval=0, maxval=U.shape[2] + 1, dtype=tf.int32)
+
+    sv = tf.zeros(tf.TensorShape([batch_size]), dtype=tf.int32)
+    ev = tf.zeros(tf.TensorShape([batch_size]), dtype=tf.int32)
+
 
     print(sv)
     print(ev)
@@ -81,7 +85,7 @@ def decoder(U, seq_length, max_length_context, hidden_unit_size = 200, pool_size
 
 if __name__ == "__main__":
     print("Running decoder by itself for debug purposes.")
-    U = tf.placeholder(shape=[10, 632, 400], dtype = tf.float32)
-    seq_length = tf.placeholder(shape =  [10,1], dtype = tf.int32)
+    U = tf.placeholder(shape=[16, 632, 400], dtype = tf.float32)
+    seq_length = tf.placeholder(shape =  [16,], dtype = tf.int32)
     max_length = 632
     decoder(U, seq_length, max_length)
