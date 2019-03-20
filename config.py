@@ -9,4 +9,6 @@ class Config:
         self.QUESTION_FILE = 'data/dev.json'
         self.EMBEDDING_FILE = 'data/glove.6B.300d.txt'
 
+        self.MAX_CONTEXT_LENGTH = 420
+        self.MAX_QUESTION_LENGTH = 40
 CONFIG = Config();
