@@ -110,3 +110,4 @@ generated/
 *.xml
 *.iml
 config.py
+log_tensorboard/

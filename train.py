@@ -66,12 +66,14 @@ with tf.Session() as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
     dataset_size = len(padded_data)
-    padded_data = np.array(padded_data)
+    padded_data = np.array(padded_data[0:150])
     np.random.shuffle(padded_data)
     #print("PADDED DATA SHAPE: ", padded_data.shape)
-    padded_data_train = padded_data[0:(int) (0.95*padded_data.shape[0])]
-    padded_data_validation = padded_data[(int) (0.95*padded_data.shape[0]):]
+    padded_data_train = padded_data[0:(int) (0.90*padded_data.shape[0])]
+    padded_data_validation = padded_data[(int) (0.90*padded_data.shape[0]):]
     
+    print("Validating on",padded_data_validation.shape[0],"elements")
+
     losses = []
     for epoch in range(CONFIG.MAX_EPOCHS):
         print("Epoch # : ", epoch + 1)
@@ -99,8 +101,8 @@ with tf.Session() as sess:
         loss_writer.flush()
         
         f1score = []
-        #precision = []
-        #recall = []
+        validation_losses = []
+
         # validation starting
         for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
@@ -113,19 +115,28 @@ with tf.Session() as sess:
             answer_end_batch_actual = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(
                 CONFIG.BATCH_SIZE)
 
-            estimated_start_index, estimated_end_index = sess.run([s,e], feed_dict={
+            estimated_start_index, estimated_end_index, loss_validation = sess.run([s, e, loss], 
+            feed_dict={               
                 question_batch_placeholder: question_batch_validation,
                 context_batch_placeholder: context_batch_validation,
+                answer_start: answer_start_batch_actual,
+                answer_end: answer_end_batch_actual,
                 embedding: index2embedding
             })
 
+            #print("pred:", loss_validation, estimated_start_index,"->" , estimated_end_index)
+            #print("real:", loss_validation, answer_start_batch_actual,"->", answer_end_batch_actual)
+            
             predictions = np.concatenate([estimated_start_index, estimated_end_index])
             actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
 
-            #precision.append(sk.metrics.precision_score(predictions, actual, average='micro'))
-            #recall.append(sk.metrics.recall_score(predictions,actual, average='micro'))
+            validation_losses.append(loss_validation)
             f1score.append(sk.metrics.f1_score(predictions, actual, average = 'micro'))
-        f1_mean = np.mean(np.array(f1score))
+        
+        #print(f1score)
+        f1_mean = np.mean(f1score)
+        validation_loss = np.mean(validation_losses)
+        print("Validation loss: ", validation_loss)
         print("Validation f1 score %: ", f1_mean * 100)
         summary_str = sess.run(tf_validation_summary, feed_dict={tf_validation_ph: f1_mean})
         val_writer.add_summary(summary_str, epoch)
