@@ -7,10 +7,14 @@ import csv
 import sys
 from collections import defaultdict  
 from functools import reduce
+from config import CONFIG
 
 def pad_data(data, pad_char):
     max_length_question = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["question"], data))))
     max_length_context = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["context"], data))))
+
+    max_length_question = min([CONFIG.MAX_QUESTION_LENGTH, max_length_question])
+    max_length_context = min([CONFIG.MAX_CONTEXT_LENGTH, max_length_context])
 
     return (list(map(lambda q: {
         "question": pad_to(q["question"], max_length_question, pad_char),
@@ -20,7 +24,9 @@ def pad_data(data, pad_char):
     }, data)), (max_length_question, max_length_context))
 
 def pad_to(sequence, length, char):
-    if len(sequence) >= length:
+    if len(sequence) > length:
+        return sequence[0:length]
+    if len(sequence) == length:
         return sequence
     else:
         sequence.append(char)
@@ -34,7 +40,7 @@ def word_to_index(w, word2index):
         return len(word2index) - 1 # defined to be all zeros
 
 def text_to_index(text, word2index):
-    tokens = tf.keras.preprocessing.text.text_to_word_sequence(text, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True, split=' ')
+    tokens = tf.keras.preprocessing.text.text_to_word_sequence(text, split=' ')
     return list(map(lambda tok: word_to_index(tok, word2index), tokens));
 
 def answer_span_to_indices(start, end, context_indexes):
