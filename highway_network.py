@@ -5,10 +5,10 @@ import numpy as np
 def getMasks(seq_length, max_seq_length):
     one_zero_mask =  tf.map_fn(lambda x: tf.pad(tf.ones([x], dtype=tf.int32), [[0, max_seq_length - x]]), seq_length)
     filled_negone = tf.fill([seq_length.shape[0], max_seq_length], value = -1) # Fill same shape tensor with -1.
-    mask = tf.math.add(one_zero_mask, filled_negone)
-    inv_mask =  tf.math.multiply(mask, filled_negone) # This is now the inverted mask.
+    mask = one_zero_mask + filled_negone
+    inv_mask =  mask * filled_negone # This is now the inverted mask.
     arr = np.full((seq_length.shape[0], max_seq_length), np.NINF)
-    ninf_mask = tf.math.multiply(inv_mask, arr)
+    ninf_mask = inv_mask * arr
     
     return tf.cast(one_zero_mask, tf.float32), tf.cast(ninf_mask, tf.float32) # cast the mask to float so that we can multiply with float logits.
 
@@ -18,11 +18,11 @@ def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit
     ''' Get the weights and biases for the network '''
     wd = tf.get_variable(name="wd",shape=[hidden_unit_size, 5*hidden_unit_size], dtype=tf.float32)
     w1 = tf.get_variable(name="w1",shape=[pool_size, hidden_unit_size, 3 * hidden_unit_size], dtype=tf.float32)
-    b1 = tf.Variable(tf.constant(0.0,shape=[pool_size, hidden_unit_size,]),dtype=tf.float32)
+    b1 = tf.get_variable(name="b1" ,shape=[pool_size, hidden_unit_size,],dtype=tf.float32)
     w2 = tf.get_variable(name="w2",shape=[pool_size, hidden_unit_size, hidden_unit_size], dtype=tf.float32)
-    b2 = tf.Variable(tf.constant(0.0,shape=[pool_size, hidden_unit_size, ]),dtype=tf.float32)
+    b2 = tf.get_variable(name="b2" ,shape=[pool_size, hidden_unit_size,],dtype=tf.float32)
     w3 = tf.get_variable(name="w3",shape=[pool_size, 1, 2*hidden_unit_size], dtype=tf.float32)
-    b3 = tf.Variable(tf.constant(0.0,shape=[pool_size, 1]), dtype=tf.float32)
+    b3 = tf.get_variable(name="b3" ,shape=[pool_size,1],dtype=tf.float32)
     
     ''' Calculate r from equation 10 ''' 
     x = tf.concat([hs,u_s,u_e],axis=1)
@@ -64,11 +64,11 @@ def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit
 
     print ("x3.shape: ", x3.shape)
     bin_mask, ninf_mask = getMasks(seq_length, max_length_context) # Get two masks from the sequence length (calculated in encoder)
-    x3_ninf_mask = tf.math.add(x3, ninf_mask) # Ignore elements which were simply padded on. (element wise multiplication)
+    x3_ninf_mask = x3 + ninf_mask # Ignore elements which were simply padded on. (element wise multiplication)
     #x3_ninf_mask = tf.Print(x3_ninf_mask, [x3_ninf_mask[0][0:2]], "x3 (0:2) after ninf mask") # Check that the start words are unaffected
     #x3_ninf_mask = tf.Print(x3_ninf_mask, [x3_ninf_mask[0][600:602]], "x3 (600:602) after ninf mask") # Check that the probably padded words are affected.
 
-    x3_bin_mask = tf.math.multiply(x3, bin_mask)
+    x3_bin_mask = x3 * bin_mask
     #x3_bin_mask = tf.Print(x3_bin_mask, [x3_bin_mask[0][0:2]], "x3 (0:2) after bin mask") # Check that the start words are unaffected
     #x3_bin_mask = tf.Print(x3_bin_mask, [x3_bin_mask[0][600:602]], "x3 (600:602) after bin mask") # Check that the probably padded words are affected.
     
