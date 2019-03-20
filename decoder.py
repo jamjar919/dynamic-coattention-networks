@@ -65,6 +65,7 @@ def decoder(U, seq_length, max_length_context, hidden_unit_size = 200, pool_size
         b2 = tf.get_variable("b2", shape=[pool_size, hidden_unit_size, ], initializer = tf.zeros_initializer()) # b2 dim: pxl
         b3 = tf.get_variable("b3", shape=[pool_size,1], initializer=tf.zeros_initializer()) #b3 dim: px1
     
+    alphas, betas = [] , []
     for i in range(iterations):
         # s is start index
         u_s = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),sv],axis=1))
@@ -74,16 +75,16 @@ def decoder(U, seq_length, max_length_context, hidden_unit_size = 200, pool_size
         with tf.variable_scope('HMN_start', reuse = True) as scope1:
             # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
             sv, s_logits = hn.highway_network(U, seq_length, max_length_context, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
-
+            alphas.append(s_logits)
         # e is the end index
         with tf.variable_scope('HMN_end', reuse = True) as scope2:
             ev, e_logits = hn.highway_network(U, seq_length, max_length_context, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
-
+            betas.append(e_logits)
         hi,ch = lstm_cell(inputs=usue, state=ch) # 
 
         #hi = tf.Print(hi,[],"ITERATION") # Print just the message. 
 
-    return sv, ev, s_logits, e_logits
+    return sv, ev, alphas , betas
 
 if __name__ == "__main__":
     print("Running decoder by itself for debug purposes.")

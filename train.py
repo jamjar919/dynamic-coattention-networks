@@ -33,16 +33,22 @@ answer_start = tf.placeholder(dtype=tf.int32,shape=[None], name='answer_start_tr
 answer_end = tf.placeholder(dtype=tf.int32,shape=[None], name='answer_end_true')
 
 # Create decoder 
-s, e, s_logits, e_logits = decoder(U, seq_length, max_length_context, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, pool_size=CONFIG.POOL_SIZE) # Pass also the seq_length from encoder and max_length.
+s, e, alphas, betas = decoder(U, seq_length, max_length_context, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, pool_size=CONFIG.POOL_SIZE) # Pass also the seq_length from encoder and max_length.
 
 s = tf.identity(s, name='answer_start')
 e = tf.identity(e, name='answer_end')
 
-l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits = s_logits)
-l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits = e_logits)
 
-loss = l1 + l2
-train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
+losses_alpha = [tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start, logits=a) for a in alphas]
+losses_alpha = [tf.reduce_mean(x) for x in losses_alpha]
+losses_beta = [tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end, logits=b) for b in betas]
+losses_beta = [tf.reduce_mean(x) for x in losses_beta]
+loss = tf.reduce_sum([losses_alpha, losses_beta])
+
+# l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits = s_logits)
+# l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits = e_logits)
+# loss = l1 + l2
+train_op = tf.train.AdamOptimizer(0.0005).minimize(loss)
 
 saver = tf.train.Saver() 
 init = tf.global_variables_initializer()
@@ -107,14 +113,12 @@ with tf.Session() as sess:
             answer_end_batch_actual = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(
                 CONFIG.BATCH_SIZE)
 
-            s, e = sess.run([s_logits, e_logits], feed_dict={
+            estimated_start_index, estimated_end_index = sess.run([s,e], feed_dict={
                 question_batch_placeholder: question_batch_validation,
                 context_batch_placeholder: context_batch_validation,
                 embedding: index2embedding
             })
 
-            estimated_start_index = np.argmax(s, axis = 1)
-            estimated_end_index =  np.argmax(e, axis = 1)
             predictions = np.concatenate([estimated_start_index, estimated_end_index])
             actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
 
