@@ -17,26 +17,28 @@ def squad_f1_score(self, prediction, ground_truth):
 
     return f1
 
- def squad_normalize_answer(self, s):
-        """ Lower text and remove punctuation, articles and extra whitespace
-        Method copied from the SQuAD Leaderboard: https://rajpurkar.github.io/SQuAD-explorer/  """
-        def remove_articles(text):
-            return re.sub(r'\b(a|an|the)\b', ' ', text)
 
-        def white_space_fix(text):
-            return ' '.join(text.split())
+""" Lower text and remove punctuation, articles and extra whitespace
+Method copied from the SQuAD Leaderboard: https://rajpurkar.github.io/SQuAD-explorer/  """
+def remove_articles(text):
+    return re.sub(r'\b(a|an|the)\b', ' ', text)
 
-        def remove_punc(text):
-            exclude = set(string.punctuation)
-            return ''.join(ch for ch in text if ch not in exclude)
+def white_space_fix(text):
+    return ' '.join(text.split())
 
-        def lower(text):
-            return text.lower()
+def remove_punc(text):
+    exclude = set(string.punctuation)
+    return ''.join(ch for ch in text if ch not in exclude)
 
-        return white_space_fix(remove_articles(remove_punc(lower(s))))
+def lower(text):
+    return text.lower()
+
+def squad_normalize_answer(self, s):
+    return white_space_fix(remove_articles(remove_punc(lower(s))))
+
+
 
 def get_f1_from_tokens(self, yS, yE, ypS, ypE, batch_Xc):
-
     """
     Pass yS, yE, ypS and ypE to be indices.
 
