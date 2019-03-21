@@ -11,6 +11,7 @@ from encoder import encoder
 from decoder import decoder
 from dataset import Dataset
 from config import CONFIG
+from evaluation_metrics import *
 
 tensorboard_filepath = '.'
 
@@ -108,43 +109,50 @@ with tf.Session() as sess:
         f1score = []
         validation_losses = []
 
-        # validation starting
-        # for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
-        #     batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
-        #     question_batch_validation = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(CONFIG.BATCH_SIZE,
-        #                                                                                        max_length_question)
-        #     context_batch_validation = np.array(list(map(lambda qas: (qas["context"]), batch))) \
-        #         .reshape(CONFIG.BATCH_SIZE, max_length_context)
-        #     answer_start_batch_actual = np.array(list(map(lambda qas: (qas["answer_start"]), batch))) \
-        #         .reshape(CONFIG.BATCH_SIZE)
-        #     answer_end_batch_actual = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(
-        #         CONFIG.BATCH_SIZE)
+        #validation starting
+        for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+            batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
+            question_batch_validation = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(CONFIG.BATCH_SIZE,
+                                                                                               max_length_question)
+            context_batch_validation = np.array(list(map(lambda qas: (qas["context"]), batch))) \
+                .reshape(CONFIG.BATCH_SIZE, max_length_context)
+            answer_start_batch_actual = np.array(list(map(lambda qas: (qas["answer_start"]), batch))) \
+                .reshape(CONFIG.BATCH_SIZE)
+            answer_end_batch_actual = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(
+                CONFIG.BATCH_SIZE)
 
-        #     estimated_start_index, estimated_end_index, loss_validation = sess.run([s, e, loss], 
-        #     feed_dict={               
-        #         question_batch_placeholder: question_batch_validation,
-        #         context_batch_placeholder: context_batch_validation,
-        #         answer_start: answer_start_batch_actual,
-        #         answer_end: answer_end_batch_actual,
-        #         embedding: index2embedding
-        #     })
+            estimated_start_index, estimated_end_index, loss_validation = sess.run([s, e, loss],
+            feed_dict={
+                question_batch_placeholder: question_batch_validation,
+                context_batch_placeholder: context_batch_validation,
+                answer_start: answer_start_batch_actual,
+                answer_end: answer_end_batch_actual,
+                embedding: index2embedding
+            })
 
-        #     #print("pred:", loss_validation, estimated_start_index,"->" , estimated_end_index)
-        #     #print("real:", loss_validation, answer_start_batch_actual,"->", answer_end_batch_actual)
+            #print("pred:", loss_validation, estimated_start_index,"->" , estimated_end_index)
+            #print("real:", loss_validation, answer_start_batch_actual,"->", answer_end_batch_actual)
             
-        #     predictions = np.concatenate([estimated_start_index, estimated_end_index])
-        #     actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
+            predictions = np.concatenate([estimated_start_index, estimated_end_index])
+            actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
 
-        #     validation_losses.append(loss_validation)
-        #     f1score.append(sk.metrics.f1_score(predictions, actual, average = 'micro'))
-        
-        # #print(f1score)
-        # f1_mean = np.mean(f1score)
-        # validation_loss = np.mean(validation_losses)
-        # print("Validation loss: ", validation_loss)
-        # print("Validation f1 score %: ", f1_mean * 100)
-        # summary_str = sess.run(tf_validation_summary, feed_dict={tf_validation_ph: f1_mean})
-        # val_writer.add_summary(summary_str, epoch)
-        # val_writer.flush()
+            validation_losses.append(loss_validation)
+            f1score.append(sk.metrics.f1_score(predictions, actual, average = 'micro'))
+
+            f1 = 0
+            for i in range(len(estimated_end_index)):
+                f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
+                                   estimated_start_index[i], estimated_end_index[i],
+                                   context_batch_validation[i])
+            print("f1 score: ", f1/len(estimated_end_index))
+
+        #print(f1score)
+        f1_mean = np.mean(f1score)
+        validation_loss = np.mean(validation_losses)
+        print("Validation loss: ", validation_loss)
+        print("Validation f1 score %: ", f1_mean * 100)
+        summary_str = sess.run(tf_validation_summary, feed_dict={tf_validation_ph: f1_mean})
+        val_writer.add_summary(summary_str, epoch)
+        val_writer.flush()
         saver.save(sess, './model/saved', global_step=epoch)
     loss_writer.close()
