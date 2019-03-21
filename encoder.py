@@ -28,8 +28,8 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
 
     # Vectorise the contexts and questions
     # Format [batch, length, depth]  
-    context_embedding = tf.map_fn(lambda x:  tf.nn.embedding_lookup(embedding, x), contexts, dtype=tf.float32)
-    question_embedding = tf.map_fn(lambda x:  tf.nn.embedding_lookup(embedding, x), questions, dtype=tf.float32) # shape 10x33x300
+    context_embedding = tf.nn.embedding_lookup(embedding, contexts)
+    question_embedding = tf.nn.embedding_lookup(embedding, questions)
     #context_vector = tf.nn.dropout(context_vector, keep_prob = dropout_rate) # Add dropout
     #question_vector = tf.nn.dropout(question_vector, keep_prob = dropout_rate)
 
@@ -67,7 +67,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_s
     b_q = tf.get_variable(name= "b_q",shape= [questions_size+1, hidden_unit_size], initializer = tf.contrib.layers.xavier_initializer(), dtype=tf.float32)
     W_q_batch = tf.stack([W_q] * batch_size)
     b_q_batch = tf.stack([b_q] * batch_size)
-    Q = tf.tanh(tf.matmul(question_encoding, W_q_batch) + b_q_batch)
+    Q = tf.tanh(tf.add(tf.matmul(question_encoding, W_q_batch), b_q_batch))
     print("Q shape :", Q.shape)
     # assert Q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "Q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)"+ str(Q.shape)
 
