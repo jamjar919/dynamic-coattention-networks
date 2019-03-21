@@ -16,21 +16,34 @@ def pad_data(data, pad_char):
     max_length_question = min([CONFIG.MAX_QUESTION_LENGTH, max_length_question])
     max_length_context = min([CONFIG.MAX_CONTEXT_LENGTH, max_length_context])
 
-    return (list(map(lambda q: {
-        "question": pad_to(q["question"], max_length_question, pad_char),
-        "context": pad_to(q["context"], max_length_context, pad_char),
-        "answer_start": q["answer_start"],
-        "answer_end": q["answer_end"]
-    }, data)), (max_length_question, max_length_context))
+    padded_data = []
+    masks = []
+
+    for q in data:
+        question, question_mask = pad_to(q["question"], max_length_question, pad_char)
+        context, context_mask = pad_to(q["context"], max_length_context, pad_char)
+        if (q["answer_end"] <= max_length_context):
+            padded_data.append({
+                "question": question,
+                "context": context,
+                "question_mask": question_mask,
+                "context_mask": context_mask,
+                "answer_start": q["answer_start"],
+                "answer_end": q["answer_end"]
+            })
+    return padded_data, (max_length_question, max_length_context)
 
 def pad_to(sequence, length, char):
     if len(sequence) > length:
-        return sequence[0:length]
+        return (sequence[0:length], [True] * length)
     if len(sequence) == length:
-        return sequence
+        return (sequence, [True] * length)
     else:
-        sequence.append(char)
-        return pad_to(sequence, length, char)
+        mask = [True] * len(sequence)
+        while len(sequence) != length:
+            mask.append(False)
+            sequence.append(char)
+        return sequence, mask
 
 def word_to_index(w, word2index):
     try:
