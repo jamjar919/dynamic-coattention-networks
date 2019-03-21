@@ -58,6 +58,16 @@ def get_f1_from_tokens( yS, yE, ypS, ypE, batch_Xc):
     return f1
 
 
+if __name__ == "__main__":
+    ty = np.array([1, 5, 4, 7, 8, 4, 3, 4, 6, 7, 7, 4])
+    print(get_f1_from_tokens(5, 8, 4, 7,ty))
+    print(get_f1_from_tokens(5, 8, 5, 8,ty))
+    print(get_f1_from_tokens(5, 8, 1, 3,ty))
+    print(get_f1_from_tokens(5, 8, 6, 8,ty))
+    print(get_f1_from_tokens(5, 8, 1, 8,ty))
+    print(get_f1_from_tokens(5, 8, 8, 9,ty))
+
+
 
 
 
