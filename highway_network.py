@@ -1,19 +1,19 @@
 import tensorflow as tf
 import numpy as np
 
-# Returns two masks. One that will help us get the argmax (ninf_mask) and other to mask logits for the loss function (one_zero_mask)
-def getMasks(seq_length, max_seq_length):
-    one_zero_mask =  tf.map_fn(lambda x: tf.pad(tf.ones([x], dtype=tf.int32), [[0, max_seq_length - x]]), seq_length)
-    filled_negone = tf.fill([seq_length.shape[0], max_seq_length], value = -1) # Fill same shape tensor with -1.
-    mask = one_zero_mask + filled_negone
-    inv_mask =  mask * filled_negone # This is now the inverted mask.
-    arr = np.full((seq_length.shape[0], max_seq_length), np.NINF)
-    ninf_mask = inv_mask * arr
+# # Returns two masks. One that will help us get the argmax (ninf_mask) and other to mask logits for the loss function (one_zero_mask)
+# def getMasks(seq_length, max_seq_length):
+#     one_zero_mask =  tf.map_fn(lambda x: tf.pad(tf.ones([x], dtype=tf.int32), [[0, max_seq_length - x]]), seq_length)
+#     filled_negone = tf.fill([seq_length.shape[0], max_seq_length], value = -1) # Fill same shape tensor with -1.
+#     mask = one_zero_mask + filled_negone
+#     inv_mask =  mask * filled_negone # This is now the inverted mask.
+#     arr = np.full((seq_length.shape[0], max_seq_length), np.NINF)
+#     ninf_mask = inv_mask * arr
     
-    return tf.cast(one_zero_mask, tf.float32), tf.cast(ninf_mask, tf.float32) # cast the mask to float so that we can multiply with float logits.
+#     return tf.cast(one_zero_mask, tf.float32), tf.cast(ninf_mask, tf.float32) # cast the mask to float so that we can multiply with float logits.
 
 def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit_size , pool_size):
-    dropout_rate = 0.3
+    keep_rate = 1
 
     ''' Get the weights and biases for the network '''
     wd = tf.get_variable(name="wd",shape=[hidden_unit_size, 5*hidden_unit_size], dtype=tf.float32)
@@ -38,7 +38,7 @@ def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit
     print("r1.shape at line 216 ", r1.shape)
     print("U.shape: ", U.shape)
     U_r1_concat = tf.concat([U,r1],axis=2) # Concat 10x632x200 and 10x632x400 to get 10x632x600
-    U_r1_concat_dropout = tf.nn.dropout(U_r1_concat, keep_prob = dropout_rate)
+    U_r1_concat_dropout = tf.nn.dropout(U_r1_concat, keep_prob = keep_rate)
     print("U_r1_concat.shape at line 220 ", U_r1_concat.shape)
     x1 = tf.tensordot(U_r1_concat_dropout, w1, axes = [[2], [2]])  + b1 # make u_r1_concat_dropout for dropout. 
     print("x1.shape at line 242: ", x1.shape)
@@ -46,7 +46,7 @@ def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit
     print("m1.shape: ", m1.shape)
     
     ''' Calculate mt2 (equation 12) '''
-    m1_dropout = tf.nn.dropout(m1, keep_prob = dropout_rate)
+    m1_dropout = tf.nn.dropout(m1, keep_prob = keep_rate)
     m2_premax = tf.tensordot(m1_dropout, w2, axes = [[2], [2]]) + b2 # make m1_dropout for dropout. 
     print("m2_premax.shape: ", m2_premax.shape)
     m2 = tf.reduce_max(m2_premax, axis = 2)
@@ -54,7 +54,7 @@ def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit
     
     # Calculate HMN max.
     m1m2 = tf.concat([m1,m2],axis=2)
-    m1m2 = tf.nn.dropout(m1m2, keep_prob = dropout_rate)
+    m1m2 = tf.nn.dropout(m1m2, keep_prob = keep_rate)
     print ("m1m2.shape: ",m1m2.shape)
     x3 = tf.tensordot(m1m2, w3, axes = [[2], [2]]) + b3
     print("x3.shape: ", x3.shape)
@@ -63,18 +63,18 @@ def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit
     #x3 = tf.Print(x3, [x3[0][600:602]], "x3 (600:602) before mask")
 
     print ("x3.shape: ", x3.shape)
-    bin_mask, ninf_mask = getMasks(seq_length, max_length_context) # Get two masks from the sequence length (calculated in encoder)
-    x3_ninf_mask = x3 + ninf_mask # Ignore elements which were simply padded on. (element wise multiplication)
+    # bin_mask, ninf_mask = getMasks(seq_length, max_length_context) # Get two masks from the sequence length (calculated in encoder)
+    # x3_ninf_mask = x3 + ninf_mask # Ignore elements which were simply padded on. (element wise multiplication)
     #x3_ninf_mask = tf.Print(x3_ninf_mask, [x3_ninf_mask[0][0:2]], "x3 (0:2) after ninf mask") # Check that the start words are unaffected
     #x3_ninf_mask = tf.Print(x3_ninf_mask, [x3_ninf_mask[0][600:602]], "x3 (600:602) after ninf mask") # Check that the probably padded words are affected.
 
-    x3_bin_mask = x3 * bin_mask
+    # x3_bin_mask = x3 * bin_mask
     #x3_bin_mask = tf.Print(x3_bin_mask, [x3_bin_mask[0][0:2]], "x3 (0:2) after bin mask") # Check that the start words are unaffected
     #x3_bin_mask = tf.Print(x3_bin_mask, [x3_bin_mask[0][600:602]], "x3 (600:602) after bin mask") # Check that the probably padded words are affected.
     
-    output = tf.argmax(x3_ninf_mask, axis=1) # Take argmax from the mask.
+    output = tf.argmax(x3, axis=1) # Take argmax from the mask.
     print("1st output shape: ", output.shape)
     output = tf.squeeze(tf.cast(output, dtype=tf.int32)) # Remove dimensions of size 1
     print("2nd output shape: ", output.shape)
 
-    return output, x3_bin_mask
+    return output, x3
