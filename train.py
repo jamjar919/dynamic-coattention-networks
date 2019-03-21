@@ -48,7 +48,7 @@ loss = tf.reduce_sum([losses_alpha, losses_beta])
 # l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits = s_logits)
 # l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits = e_logits)
 # loss = l1 + l2
-original_optimizer = tf.train.AdamOptimizer(0.01)
+original_optimizer = tf.train.AdamOptimizer(0.001)
 optimizer = tf.contrib.estimator.clip_gradients_by_norm(original_optimizer, clip_norm=3.0)
 train_op = optimizer.minimize(loss)
 
@@ -87,7 +87,7 @@ with tf.Session() as sess:
             context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(CONFIG.BATCH_SIZE,max_length_context)
             answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(CONFIG.BATCH_SIZE)
             answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(CONFIG.BATCH_SIZE)
-            _ , loss_val = sess.run([train_op,loss],feed_dict = {
+            _ , loss_val, alpha_logits, beta_logits = sess.run([train_op,loss,alphas,betas],feed_dict = {
                 question_batch_placeholder : question_batch,
                 context_batch_placeholder : context_batch,
                 answer_start : answer_start_batch,
@@ -95,6 +95,9 @@ with tf.Session() as sess:
                 embedding: index2embedding
             })
             loss_val_mean = np.mean(loss_val)
+            print("loss_val : ",loss_val_mean)
+            # for alpha_logit in alpha_logits :
+            #     print(alpha_logit)
             losses.append(loss_val_mean.item())
         mean_epoch_loss = np.mean(np.array(losses))
         print("loss: ", mean_epoch_loss)
@@ -106,42 +109,42 @@ with tf.Session() as sess:
         validation_losses = []
 
         # validation starting
-        for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
-            batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
-            question_batch_validation = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(CONFIG.BATCH_SIZE,
-                                                                                               max_length_question)
-            context_batch_validation = np.array(list(map(lambda qas: (qas["context"]), batch))) \
-                .reshape(CONFIG.BATCH_SIZE, max_length_context)
-            answer_start_batch_actual = np.array(list(map(lambda qas: (qas["answer_start"]), batch))) \
-                .reshape(CONFIG.BATCH_SIZE)
-            answer_end_batch_actual = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(
-                CONFIG.BATCH_SIZE)
+        # for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+        #     batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
+        #     question_batch_validation = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(CONFIG.BATCH_SIZE,
+        #                                                                                        max_length_question)
+        #     context_batch_validation = np.array(list(map(lambda qas: (qas["context"]), batch))) \
+        #         .reshape(CONFIG.BATCH_SIZE, max_length_context)
+        #     answer_start_batch_actual = np.array(list(map(lambda qas: (qas["answer_start"]), batch))) \
+        #         .reshape(CONFIG.BATCH_SIZE)
+        #     answer_end_batch_actual = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(
+        #         CONFIG.BATCH_SIZE)
 
-            estimated_start_index, estimated_end_index, loss_validation = sess.run([s, e, loss], 
-            feed_dict={               
-                question_batch_placeholder: question_batch_validation,
-                context_batch_placeholder: context_batch_validation,
-                answer_start: answer_start_batch_actual,
-                answer_end: answer_end_batch_actual,
-                embedding: index2embedding
-            })
+        #     estimated_start_index, estimated_end_index, loss_validation = sess.run([s, e, loss], 
+        #     feed_dict={               
+        #         question_batch_placeholder: question_batch_validation,
+        #         context_batch_placeholder: context_batch_validation,
+        #         answer_start: answer_start_batch_actual,
+        #         answer_end: answer_end_batch_actual,
+        #         embedding: index2embedding
+        #     })
 
-            #print("pred:", loss_validation, estimated_start_index,"->" , estimated_end_index)
-            #print("real:", loss_validation, answer_start_batch_actual,"->", answer_end_batch_actual)
+        #     #print("pred:", loss_validation, estimated_start_index,"->" , estimated_end_index)
+        #     #print("real:", loss_validation, answer_start_batch_actual,"->", answer_end_batch_actual)
             
-            predictions = np.concatenate([estimated_start_index, estimated_end_index])
-            actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
+        #     predictions = np.concatenate([estimated_start_index, estimated_end_index])
+        #     actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
 
-            validation_losses.append(loss_validation)
-            f1score.append(sk.metrics.f1_score(predictions, actual, average = 'micro'))
+        #     validation_losses.append(loss_validation)
+        #     f1score.append(sk.metrics.f1_score(predictions, actual, average = 'micro'))
         
-        #print(f1score)
-        f1_mean = np.mean(f1score)
-        validation_loss = np.mean(validation_losses)
-        print("Validation loss: ", validation_loss)
-        print("Validation f1 score %: ", f1_mean * 100)
-        summary_str = sess.run(tf_validation_summary, feed_dict={tf_validation_ph: f1_mean})
-        val_writer.add_summary(summary_str, epoch)
-        val_writer.flush()
+        # #print(f1score)
+        # f1_mean = np.mean(f1score)
+        # validation_loss = np.mean(validation_losses)
+        # print("Validation loss: ", validation_loss)
+        # print("Validation f1 score %: ", f1_mean * 100)
+        # summary_str = sess.run(tf_validation_summary, feed_dict={tf_validation_ph: f1_mean})
+        # val_writer.add_summary(summary_str, epoch)
+        # val_writer.flush()
         saver.save(sess, './model/saved', global_step=epoch)
     loss_writer.close()
