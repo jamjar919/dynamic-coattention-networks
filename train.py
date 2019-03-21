@@ -96,18 +96,18 @@ with tf.Session() as sess:
                 embedding: index2embedding
             })
             loss_val_mean = np.mean(loss_val)
-            print("loss_val : ",loss_val_mean)
-            # for alpha_logit in alpha_logits :
-            #     print(alpha_logit)
+            if(iteration % (CONFIG.BATCH_SIZE-1) == 0):
+                print("Loss val: ", loss_val_mean)
+
             losses.append(loss_val_mean.item())
         mean_epoch_loss = np.mean(np.array(losses))
-        print("loss: ", mean_epoch_loss)
+        print("Mean loss: ", mean_epoch_loss)
         summary_str = sess.run(tf_loss_summary, feed_dict={tf_loss_ph: mean_epoch_loss})
         loss_writer.add_summary(summary_str,epoch)
         loss_writer.flush()
         
         f1score = []
-        validation_losses = []
+        #validation_losses = []
 
         #validation starting
         for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
@@ -133,11 +133,11 @@ with tf.Session() as sess:
             #print("pred:", loss_validation, estimated_start_index,"->" , estimated_end_index)
             #print("real:", loss_validation, answer_start_batch_actual,"->", answer_end_batch_actual)
             
-            predictions = np.concatenate([estimated_start_index, estimated_end_index])
-            actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
+            #predictions = np.concatenate([estimated_start_index, estimated_end_index])
+            #actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
 
-            validation_losses.append(loss_validation)
-            f1score.append(sk.metrics.f1_score(predictions, actual, average = 'micro'))
+            #validation_losses.append(loss_validation)
+            #f1score.append(sk.metrics.f1_score(predictions, actual, average = 'micro'))
 
             f1 = 0
             
@@ -146,8 +146,10 @@ with tf.Session() as sess:
                 f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                    estimated_start_index[i], estimated_end_index[i],
                                    context_batch_validation[i])
-            print("f1 score: ", f1/len(estimated_end_index))
+            f1score.append(f1/len(estimated_end_index))
+            #print("f1 score: ", f1/len(estimated_end_index))
 
+        print("F1 mean on validation: ", np.mean(f1score))
         #print(f1score)
         #f1_mean = np.mean(f1score)
         #validation_loss = np.mean(validation_losses)
