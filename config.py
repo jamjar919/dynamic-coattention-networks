@@ -1,6 +1,6 @@
 class Config:
     def __init__(self):
-        self.BATCH_SIZE = 32
+        self.BATCH_SIZE = 64
         self.EMBEDDING_DIMENSION = 300
         self.MAX_EPOCHS = 10
         self.HIDDEN_UNIT_SIZE = 200
