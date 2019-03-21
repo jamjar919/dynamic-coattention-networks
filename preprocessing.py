@@ -40,7 +40,7 @@ def word_to_index(w, word2index):
         return len(word2index) - 1 # defined to be all zeros
 
 def text_to_index(text, word2index):
-    tokens = tf.keras.preprocessing.text.text_to_word_sequence(text, split=' ')
+    tokens = tf.keras.preprocessing.text.text_to_word_sequence(text, lower=True, split=' ')
     return list(map(lambda tok: word_to_index(tok, word2index), tokens));
 
 def answer_span_to_indices(start, end, context_indexes):
