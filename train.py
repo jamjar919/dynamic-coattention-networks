@@ -96,7 +96,7 @@ with tf.Session() as sess:
                 embedding: index2embedding
             })
             loss_val_mean = np.mean(loss_val)
-            if(iteration % (CONFIG.BATCH_SIZE-1) == 0):
+            if(iteration % ((16 * CONFIG.BATCH_SIZE)-1) == 0):
                 print("Loss val: ", loss_val_mean)
 
             losses.append(loss_val_mean.item())
