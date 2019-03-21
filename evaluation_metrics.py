@@ -1,12 +1,17 @@
 
 import numpy as np
 from collections import Counter
-import re, string
+import re, string, sys
+from dataset import Dataset
+from config import CONFIG
 
-def squad_f1_score(self, prediction, ground_truth):
+D = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
+padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
+
+def squad_f1_score( prediction, ground_truth):
     """Method copied from the SQuAD Leaderboard: https://rajpurkar.github.io/SQuAD-explorer/"""
-    prediction_tokens = self.squad_normalize_answer(prediction).split()
-    ground_truth_tokens = self.squad_normalize_answer(ground_truth).split()
+    prediction_tokens = squad_normalize_answer(prediction).split()
+    ground_truth_tokens = squad_normalize_answer(ground_truth).split()
     common = Counter(prediction_tokens) & Counter(ground_truth_tokens)
     num_same = sum(common.values())
     if num_same == 0:
@@ -33,27 +38,25 @@ def remove_punc(text):
 def lower(text):
     return text.lower()
 
-def squad_normalize_answer(self, s):
+def squad_normalize_answer(s):
     return white_space_fix(remove_articles(remove_punc(lower(s))))
 
+def indexToWord(indices):
+    return D.index_to_text(indices)
 
-
-def get_f1_from_tokens(self, yS, yE, ypS, ypE, batch_Xc):
+def get_f1_from_tokens( yS, yE, ypS, ypE, batch_Xc):
     """
-    Pass yS, yE, ypS and ypE to be indices.
+    Pass yS, yE, ypS and ypE to be indices.batch_Xc is the context indices
 
     This function doesn't compare the indices, but the tokens behind the indices. This is a bit more forgiving
     and it is the metric applied on the SQuAD leaderboard."""
-    ground_truth = self.index_list_to_string(batch_Xc[yS:yE + 1])
-    prediction = self.index_list_to_string(batch_Xc[ypS:ypE + 1])
-    f1 = self.squad_f1_score(prediction, ground_truth)
-
+    split_context = indexToWord(batch_Xc).split()
+    ground_truth = ' '.join(split_context[yS:yE+1])
+    prediction = ' '.join(split_context[ypS:ypE + 1])
+    #prediction = index_list_to_string(batch_Xc[ypS:ypE + 1])
+    f1 = squad_f1_score(prediction, ground_truth)
     return f1
 
-def index_list_to_string(self, index_list):
-    """Helper function. Converts a list of word indices to a string of words"""
-    res = [self.vocab[index] for index in index_list]
-    return ' '.join(res)
 
 
 
