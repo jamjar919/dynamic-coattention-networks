@@ -4,7 +4,7 @@ import highway_network as hn
 import numpy as np
 from config import CONFIG
 
-def decoder(U, seq_length, max_length_context, hidden_unit_size = 200, pool_size = CONFIG.POOL_SIZE):
+def decoder(U, seq_length, max_length_context, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
     """
     :param U: This is output of the encoder
     :param batch_size:

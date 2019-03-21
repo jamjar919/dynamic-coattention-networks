@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from config import CONFIG
 
 def length(sequence):
     used = tf.sign(tf.reduce_max(tf.abs(sequence), axis= 2))
@@ -10,7 +11,7 @@ def length(sequence):
 def transpose(tensor):
     return tf.transpose(tensor,perm=[0,2,1])
 
-def encoder(questions,contexts,embedding,hidden_unit_size=200,embedding_vector_size=300):
+def encoder(questions,contexts,embedding,hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE,embedding_vector_size=CONFIG.EMBEDDING_DIMENSION):
     '''
         Build the model for the document encoder
         questions: Tensor of questions

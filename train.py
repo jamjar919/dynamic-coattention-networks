@@ -140,19 +140,21 @@ with tf.Session() as sess:
             f1score.append(sk.metrics.f1_score(predictions, actual, average = 'micro'))
 
             f1 = 0
+            
             for i in range(len(estimated_end_index)):
+                #print("start actual, end actual, start pred, end pred: ", answer_start_batch_actual[i], answer_end_batch_actual[i], estimated_start_index[i], estimated_end_index[i])
                 f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                    estimated_start_index[i], estimated_end_index[i],
                                    context_batch_validation[i])
             print("f1 score: ", f1/len(estimated_end_index))
 
         #print(f1score)
-        f1_mean = np.mean(f1score)
-        validation_loss = np.mean(validation_losses)
-        print("Validation loss: ", validation_loss)
-        print("Validation f1 score %: ", f1_mean * 100)
-        summary_str = sess.run(tf_validation_summary, feed_dict={tf_validation_ph: f1_mean})
-        val_writer.add_summary(summary_str, epoch)
-        val_writer.flush()
+        #f1_mean = np.mean(f1score)
+        #validation_loss = np.mean(validation_losses)
+        #print("Validation loss: ", validation_loss)
+        #print("Validation f1 score %: ", f1_mean * 100)
+        #summary_str = sess.run(tf_validation_summary, feed_dict={tf_validation_ph: f1_mean})
+        #val_writer.add_summary(summary_str, epoch)
+        #val_writer.flush()
         saver.save(sess, './model/saved', global_step=epoch)
     loss_writer.close()
