@@ -13,7 +13,7 @@ import numpy as np
 #     return tf.cast(one_zero_mask, tf.float32), tf.cast(ninf_mask, tf.float32) # cast the mask to float so that we can multiply with float logits.
 
 def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit_size , pool_size):
-    dropout_rate = 0.3
+    keep_rate = 1
 
     ''' Get the weights and biases for the network '''
     wd = tf.get_variable(name="wd",shape=[hidden_unit_size, 5*hidden_unit_size], dtype=tf.float32)
@@ -38,7 +38,7 @@ def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit
     print("r1.shape at line 216 ", r1.shape)
     print("U.shape: ", U.shape)
     U_r1_concat = tf.concat([U,r1],axis=2) # Concat 10x632x200 and 10x632x400 to get 10x632x600
-    U_r1_concat_dropout = tf.nn.dropout(U_r1_concat, keep_prob = dropout_rate)
+    U_r1_concat_dropout = tf.nn.dropout(U_r1_concat, keep_prob = keep_rate)
     print("U_r1_concat.shape at line 220 ", U_r1_concat.shape)
     x1 = tf.tensordot(U_r1_concat_dropout, w1, axes = [[2], [2]])  + b1 # make u_r1_concat_dropout for dropout. 
     print("x1.shape at line 242: ", x1.shape)
@@ -46,7 +46,7 @@ def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit
     print("m1.shape: ", m1.shape)
     
     ''' Calculate mt2 (equation 12) '''
-    m1_dropout = tf.nn.dropout(m1, keep_prob = dropout_rate)
+    m1_dropout = tf.nn.dropout(m1, keep_prob = keep_rate)
     m2_premax = tf.tensordot(m1_dropout, w2, axes = [[2], [2]]) + b2 # make m1_dropout for dropout. 
     print("m2_premax.shape: ", m2_premax.shape)
     m2 = tf.reduce_max(m2_premax, axis = 2)
@@ -54,7 +54,7 @@ def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit
     
     # Calculate HMN max.
     m1m2 = tf.concat([m1,m2],axis=2)
-    m1m2 = tf.nn.dropout(m1m2, keep_prob = dropout_rate)
+    m1m2 = tf.nn.dropout(m1m2, keep_prob = keep_rate)
     print ("m1m2.shape: ",m1m2.shape)
     x3 = tf.tensordot(m1m2, w3, axes = [[2], [2]]) + b3
     print("x3.shape: ", x3.shape)
