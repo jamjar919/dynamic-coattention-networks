@@ -76,10 +76,11 @@ with tf.Session() as sess:
     padded_data_validation = padded_data[(int) (0.95*padded_data.shape[0]):]
     
     print("Validating on",padded_data_validation.shape[0],"elements")
-
-    losses = []
+    print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
+    
     for epoch in range(CONFIG.MAX_EPOCHS):
         print("Epoch # : ", epoch + 1)
+        losses = []
         # Shuffle the data between epochs
         np.random.shuffle(padded_data)
         for iteration in range(0, len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
