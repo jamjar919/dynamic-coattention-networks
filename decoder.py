@@ -4,7 +4,7 @@ import highway_network as hn
 import numpy as np
 from config import CONFIG
 
-def decoder(U, seq_length, max_length_context, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
+def decoder(U, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
     """
     :param U: This is output of the encoder
     :param batch_size:
@@ -27,8 +27,8 @@ def decoder(U, seq_length, max_length_context, hidden_unit_size = CONFIG.HIDDEN_
 
     lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = hidden_unit_size, dtype = tf.float32)
     ch = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
-    hi, _ = ch
-    print("hi.shape", hi.shape) # 10x200
+    h_i, _ = ch
+    print("h_i.shape", h_i.shape) # 10x200
 
     # Weights and biases for the HMN that will calculate a start index. 
     
@@ -72,20 +72,20 @@ def decoder(U, seq_length, max_length_context, hidden_unit_size = CONFIG.HIDDEN_
         u_s = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),sv],axis=1))
         u_e = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),ev],axis=1))
         usue = tf.concat([u_s,u_e],axis=1)
-        hi,ch = lstm_cell(inputs=usue, state=ch) # 
+        h_i,ch = lstm_cell(inputs=usue, state=ch) # 
         print("usue shape", usue.shape)
         with tf.variable_scope('HMN_start', reuse = True) as scope1:
             # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
-            sv, s_logits = hn.highway_network(U, seq_length, max_length_context, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+            sv, s_logits = hn.highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
             # sv = tf.Print(sv,[sv], "s_v START INDEX ESTIMATE")
             alphas.append(s_logits)
         # e is the end index
         with tf.variable_scope('HMN_end', reuse = True) as scope2:
-            ev, e_logits = hn.highway_network(U, seq_length, max_length_context, hi, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+            ev, e_logits = hn.highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
             # ev = tf.Print(ev,[ev],"e_v END INDEX ESTIMATE")
             betas.append(e_logits)
 
-        #hi = tf.Print(hi,[],"ITERATION") # Print just the message. 
+        #h_i = tf.Print(h_i,[],"ITERATION") # Print just the message. 
 
     return sv, ev, alphas , betas
 

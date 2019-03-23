@@ -11,7 +11,7 @@ def length(sequence):
 def transpose(tensor):
     return tf.transpose(tensor,perm=[0,2,1])
 
-def encoder(questions,contexts,embedding,hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE,embedding_vector_size=CONFIG.EMBEDDING_DIMENSION):
+def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE,embedding_vector_size=CONFIG.EMBEDDING_DIMENSION):
     '''
         Build the model for the document encoder
         questions: Tensor of questions
@@ -19,13 +19,11 @@ def encoder(questions,contexts,embedding,hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZ
         embedding: Mappings from encoded questions to GLoVE vectors
     '''
     #dropout_rate = 0.3 # https://openreview.net/forum?id=rJeKjwvclx Authors claim to use 0.3 rate. 
-    batch_size = questions.shape[0]
+    batch_size = questions.shape[0].value
     #contexts_size = contexts.shape[1].value
     questions_size = questions.shape[1].value
 
     print("Batch size", batch_size)
-    assert questions.shape[0] == batch_size, "question shape doesn't match batch size"
-    assert contexts.shape[0] == batch_size, "context shape doesn't match batch size"
 
     # Vectorise the contexts and questions
     # Format [batch, length, depth]  
@@ -39,9 +37,9 @@ def encoder(questions,contexts,embedding,hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZ
     question_embedding_length = length(question_embedding)
     
     lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
+    lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob=dropout_keep_rate)
 
-
-    context_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, context_embedding, sequence_length = context_embedding_length, dtype=tf.float32)
+    context_encoding, _ = tf.nn.dynamic_rnn(lstm_cell, context_embedding, sequence_length = context_embedding_length, dtype=tf.float32)
     print("context encoding shape: ",context_encoding.shape)
     # Append sentinel vector
     # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
@@ -51,7 +49,7 @@ def encoder(questions,contexts,embedding,hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZ
     print("Extended context encoding shape: ", context_encoding.shape)
 
     
-    question_encoding, _ = tf.nn.dynamic_rnn(lstm_enc, question_embedding, sequence_length = question_embedding_length, dtype=tf.float32) 
+    question_encoding, _ = tf.nn.dynamic_rnn(lstm_cell, question_embedding, sequence_length = question_embedding_length, dtype=tf.float32) 
     print("Question encoding shape: ", question_encoding.shape)   
     # Append sentinel vector 
     sentinel_vec_question = tf.Variable(tf.zeros([1,hidden_unit_size]), dtype = tf.float32)
@@ -114,9 +112,9 @@ def encoder(questions,contexts,embedding,hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZ
     # U = tf.slice(U, begin = [0,1,0], size = [batch_size, contexts.shape[1], 2*hidden_unit_size]) # Make U to 10x632x400
     print("U.shape ",U.shape)
     #print("U SHAPE AFTER SLICE:", U.shape)
-    assert U.shape == (batch_size, contexts.shape[1], 2 * hidden_unit_size), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
+    #assert U.shape == (batch_size, contexts.shape[1], 2 * hidden_unit_size), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
     
-    return U, context_embedding_length
+    return U #, context_embedding_length
 
 
 if __name__ == "__main__":
@@ -127,6 +125,7 @@ if __name__ == "__main__":
                                                name='context_batch')
     embedding = tf.placeholder(shape=[1542, 300],
                                dtype=tf.float32, name='embedding')
+    batch_size = 10
 
-    encoder(question_batch_placeholder, context_batch_placeholder, embedding)
+    encoder(question_batch_placeholder, context_batch_placeholder, 10, embedding)
     
