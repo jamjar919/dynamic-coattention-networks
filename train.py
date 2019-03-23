@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 import tensorflow as tf
-import sklearn as sk
+import pickle
 from functools import reduce
 from sklearn.metrics import precision_score, recall_score, f1_score
 import os
@@ -40,7 +40,9 @@ with tf.Session() as sess:
     padded_data_validation = padded_data[(int) (0.95*padded_data.shape[0]):]
     
     print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
-    
+    loss_means = []
+    val_loss_means = []
+    val_f1_means = []
     for epoch in range(CONFIG.MAX_EPOCHS):
         print("Epoch # : ", epoch + 1)
         losses = []
@@ -52,17 +54,16 @@ with tf.Session() as sess:
             context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(CONFIG.BATCH_SIZE,max_length_context)
             answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(CONFIG.BATCH_SIZE)
             answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(CONFIG.BATCH_SIZE)
-            
-            
+             
             _ , loss_val = sess.run([train_op, loss],feed_dict = get_feed_dict(question_batch,context_batch,answer_start_batch,answer_end_batch, CONFIG.DROPOUT_KEEP_PROB, index2embedding))
             loss_val_mean = np.mean(loss_val)
             if(iteration % ((CONFIG.BATCH_SIZE)-1) == 0):
-                print("Loss val: ", loss_val_mean)
+                print("Loss in epoch: ", loss_val_mean)
 
             losses.append(loss_val_mean.item())
         mean_epoch_loss = np.mean(np.array(losses))
-        print("Mean loss: ", mean_epoch_loss)
-
+        loss_means.append(mean_epoch_loss)
+        print("Mean epoch loss: ", mean_epoch_loss)
         f1score = []
         validation_losses = []
 
@@ -91,9 +92,18 @@ with tf.Session() as sess:
                                    context_batch_validation[i])
             f1score.append(f1/len(estimated_end_index))
             #print("f1 score: ", f1/len(estimated_end_index))
-
+  
         print("F1 mean on validation: ", np.mean(f1score))
-        print("Validation loss: ", np.mean(validation_losses))
+        print("Mean validation loss on epoch: ", np.mean(validation_losses))
+        val_loss_means.append(np.mean(validation_losses))
+        val_f1_means.append(np.mean(f1score))
+
+        with open('./results/validation_loss_means.pkl', 'wb') as f:
+            pickle.dump(val_loss_means, f)
+        with open('./results/validation_f1_means.pkl', 'wb') as f:
+            pickle.dump(val_f1_means, f)
+        with open('./results/training_loss_means.pkl', 'wb') as f:
+            pickle.dump(loss_means, f)
 
         saver.save(sess, './model/saved', global_step=epoch)
 
