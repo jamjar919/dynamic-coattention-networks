@@ -25,12 +25,11 @@ def build_model(embedding):
     losses_alpha = [tf.reduce_mean(x) for x in losses_alpha]
     losses_beta = [tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end, logits=b) for b in betas]
     losses_beta = [tf.reduce_mean(x) for x in losses_beta]
-    loss = tf.reduce_sum([losses_alpha, losses_beta])
-    loss = tf.identity(loss, name = "loss")
+    loss = tf.reduce_sum([losses_alpha, losses_beta], name = "loss_to_optimize")
 
     original_optimizer = tf.train.AdamOptimizer(CONFIG.LEARNING_RATE)
     optimizer = tf.contrib.estimator.clip_gradients_by_norm(original_optimizer, clip_norm=CONFIG.CLIP_NORM)
-    train_op = optimizer.minimize(loss)
+    train_op = optimizer.minimize(loss, name = "train_op")
 
     return train_op, loss, s , e
 
