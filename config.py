@@ -14,5 +14,5 @@ class Config:
         self.EMBEDDING_FILE = 'data/glove.840B.300d.txt'
 
         self.MAX_CONTEXT_LENGTH = 632
-        self.MAX_QUESTION_LENGTH = 33
+        self.MAX_QUESTION_LENGTH = 40
 CONFIG = Config();
