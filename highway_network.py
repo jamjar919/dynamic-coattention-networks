@@ -12,7 +12,7 @@ import numpy as np
     
 #     return tf.cast(one_zero_mask, tf.float32), tf.cast(ninf_mask, tf.float32) # cast the mask to float so that we can multiply with float logits.
 
-def highway_network(U, seq_length, max_length_context, hs, u_s, u_e, hidden_unit_size , pool_size):
+def highway_network(U, hs, u_s, u_e, hidden_unit_size , pool_size):
     keep_rate = 1
 
     ''' Get the weights and biases for the network '''
