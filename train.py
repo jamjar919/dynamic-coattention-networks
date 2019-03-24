@@ -11,7 +11,7 @@ from encoder import encoder
 from decoder import decoder
 from dataset import Dataset
 from config import CONFIG
-from evaluation_metrics import *
+from evaluation_metrics import get_f1_from_tokens
 from build_model import build_model, get_feed_dict, get_batch
 
 tensorboard_filepath = '.'
@@ -24,6 +24,9 @@ tf.reset_default_graph()
 embedding = tf.placeholder(shape = [len(index2embedding), CONFIG.EMBEDDING_DIMENSION], dtype=tf.float32, name='embedding_ph')
 train_op, loss, s, e  = build_model(embedding)
 
+# Blank csv file
+open('./results/training_loss_per_batch.csv', 'w').close()
+
 # Train now
 saver = tf.train.Saver() 
 init = tf.global_variables_initializer()
@@ -35,8 +38,8 @@ with tf.Session() as sess:
     padded_data = np.array(padded_data)
     np.random.shuffle(padded_data)
     #print("PADDED DATA SHAPE: ", padded_data.shape)
-    padded_data_train = padded_data[0:(int) (0.95*padded_data.shape[0])]
-    padded_data_validation = padded_data[(int) (0.95*padded_data.shape[0]):]
+    padded_data_train = padded_data[0:(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0])]
+    padded_data_validation = padded_data[(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0]):]
     
     print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
     loss_means = []
@@ -92,7 +95,9 @@ with tf.Session() as sess:
         with open('./results/validation_f1_means.pkl', 'wb') as f:
             pickle.dump(val_f1_means, f, protocol=3)
         with open('./results/training_loss_means.pkl', 'wb') as f:
-            pickle.dump(loss_means, f, protocol=3)
+            pickle.dump(loss_means, f, protocol = 3)
+        with open('./results/training_loss_per_batch.csv', 'a+') as f:
+            f.write(','.join(list(map(lambda x: str(x), losses))) + '\n')
 
         saver.save(sess, './model/saved', global_step=epoch)
 

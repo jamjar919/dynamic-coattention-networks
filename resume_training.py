@@ -8,7 +8,7 @@ from build_model import get_batch, get_feed_dict
 
 # custom imports
 from dataset import Dataset
-from evaluation_metrics import *
+from evaluation_metrics import get_f1_from_tokens
 
 print("Resumeing training")
 D_train = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
@@ -100,7 +100,7 @@ with tf.Session() as sess:
             for i in range(len(estimated_end_index)):
                 f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                          estimated_start_index[i], estimated_end_index[i],
-                                         context_batch_validation[i])
+                                         context_batch_validation[i], D_train)
             print("f1 score: ", f1 / len(estimated_end_index))
 
         # print(f1score)
