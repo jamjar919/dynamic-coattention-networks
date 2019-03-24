@@ -5,9 +5,6 @@ import re, string, sys
 from dataset import Dataset
 from config import CONFIG
 
-D = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
-padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
-
 def squad_f1_score( prediction, ground_truth):
     """Method copied from the SQuAD Leaderboard: https://rajpurkar.github.io/SQuAD-explorer/"""
     prediction_tokens = squad_normalize_answer(prediction).split()
@@ -41,16 +38,16 @@ def lower(text):
 def squad_normalize_answer(s):
     return white_space_fix(remove_articles(remove_punc(lower(s))))
 
-def indexToWord(indices):
+def indexToWord(indices, D):
     return D.index_to_text(indices)
 
-def get_f1_from_tokens( yS, yE, ypS, ypE, batch_Xc):
+def get_f1_from_tokens( yS, yE, ypS, ypE, batch_Xc, D):
     """
     Pass yS, yE, ypS and ypE to be indices.batch_Xc is the context indices
 
     This function doesn't compare the indices, but the tokens behind the indices. This is a bit more forgiving
     and it is the metric applied on the SQuAD leaderboard."""
-    split_context = indexToWord(batch_Xc).split()
+    split_context = indexToWord(batch_Xc, D).split()
     ground_truth = ' '.join(split_context[yS:yE+1])
     prediction = ' '.join(split_context[ypS:ypE + 1])
     #prediction = index_list_to_string(batch_Xc[ypS:ypE + 1])
@@ -59,13 +56,15 @@ def get_f1_from_tokens( yS, yE, ypS, ypE, batch_Xc):
 
 
 if __name__ == "__main__":
+    D = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
+    padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
     ty = np.array([1, 5, 4, 7, 8, 4, 3, 4, 6, 7, 7, 4])
-    print(get_f1_from_tokens(5, 8, 4, 7,ty))
-    print(get_f1_from_tokens(5, 8, 5, 8,ty))
-    print(get_f1_from_tokens(5, 8, 1, 3,ty))
-    print(get_f1_from_tokens(5, 8, 6, 8,ty))
-    print(get_f1_from_tokens(5, 8, 1, 8,ty))
-    print(get_f1_from_tokens(5, 8, 8, 9,ty))
+    print(get_f1_from_tokens(5, 8, 4, 7,ty, D))
+    print(get_f1_from_tokens(5, 8, 5, 8,ty, D))
+    print(get_f1_from_tokens(5, 8, 1, 3,ty, D))
+    print(get_f1_from_tokens(5, 8, 6, 8,ty, D))
+    print(get_f1_from_tokens(5, 8, 1, 8,ty, D))
+    print(get_f1_from_tokens(5, 8, 8, 9,ty, D))
 
 
 

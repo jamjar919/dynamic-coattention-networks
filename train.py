@@ -78,7 +78,7 @@ with tf.Session() as sess:
                 #print("start actual, end actual, start pred, end pred: ", answer_start_batch_actual[i], answer_end_batch_actual[i], estimated_start_index[i], estimated_end_index[i])
                 f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                    estimated_start_index[i], estimated_end_index[i],
-                                   context_batch_validation[i])
+                                   context_batch_validation[i], D_train)
             f1score.append(f1/len(estimated_end_index))
             #print("f1 score: ", f1/len(estimated_end_index))
   
