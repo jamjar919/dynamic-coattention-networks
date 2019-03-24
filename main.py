@@ -16,16 +16,20 @@ batch_size = 16 # needs to match
 embedding_dimension = 300
 init = tf.global_variables_initializer()
 
-saver = tf.train.import_meta_graph('./model/saved.meta')
+latest_checkpoint_path = tf.train.latest_checkpoint('./model/')
+print("restoring from "+latest_checkpoint_path)
+saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
+
 with tf.Session() as sess:
     sess.run(init)
-    saver.restore(sess, './model/saved')
+    saver.restore(sess, latest_checkpoint_path)
     graph = tf.get_default_graph()
     s = graph.get_tensor_by_name("answer_start:0")
     e = graph.get_tensor_by_name("answer_end:0")
-    question_batch_placeholder = graph.get_tensor_by_name("question_batch:0")
-    context_batch_placeholder = graph.get_tensor_by_name("context_batch:0")
-    embedding = graph.get_tensor_by_name("embedding:0")
+    question_batch_placeholder = graph.get_tensor_by_name("question_batch_ph:0")
+    context_batch_placeholder = graph.get_tensor_by_name("context_batch_ph:0")
+    embedding = graph.get_tensor_by_name("embedding_ph:0")
+    dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
 
     question = np.array([random_question["question"]] * batch_size, dtype = np.int32)
     context = np.array([random_question["context"]] * batch_size, dtype = np.int32)
@@ -33,7 +37,8 @@ with tf.Session() as sess:
     s_result, e_result = sess.run([s, e], feed_dict = {
         question_batch_placeholder : question,
         context_batch_placeholder : context,
-        embedding: index2embedding
+        embedding: index2embedding,
+        dropout_keep_rate: 1
     })
 
     s_result = int(np.median(s_result))

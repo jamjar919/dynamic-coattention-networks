@@ -12,10 +12,9 @@ from decoder import decoder
 from dataset import Dataset
 from config import CONFIG
 from evaluation_metrics import *
-from build_model import build_model, get_feed_dict
+from build_model import build_model, get_feed_dict, get_batch
 
 tensorboard_filepath = '.'
-
 
 D_train = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
 padded_data, index2embedding, max_length_question, max_length_context = D_train.load_data(sys.argv[1:])
@@ -50,15 +49,12 @@ with tf.Session() as sess:
         np.random.shuffle(padded_data)
         for iteration in range(0, len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_train[iteration:iteration + CONFIG.BATCH_SIZE]
-            question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(CONFIG.BATCH_SIZE,max_length_question)
-            context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(CONFIG.BATCH_SIZE,max_length_context)
-            answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(CONFIG.BATCH_SIZE)
-            answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(CONFIG.BATCH_SIZE)
-             
+            question_batch, context_batch, answer_start_batch, answer_end_batch = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
+
             _ , loss_val = sess.run([train_op, loss],feed_dict = get_feed_dict(question_batch,context_batch,answer_start_batch,answer_end_batch, CONFIG.DROPOUT_KEEP_PROB, index2embedding))
             loss_val_mean = np.mean(loss_val)
             if(iteration % ((CONFIG.BATCH_SIZE)-1) == 0):
-                print("Loss in epoch: ", loss_val_mean)
+                print("Loss in epoch: ", loss_val_mean, "(",iteration,"/",len(padded_data_train),")")
 
             losses.append(loss_val_mean.item())
         mean_epoch_loss = np.mean(np.array(losses))
@@ -70,14 +66,7 @@ with tf.Session() as sess:
         #validation starting
         for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
-            question_batch_validation = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(CONFIG.BATCH_SIZE,
-                                                                                               max_length_question)
-            context_batch_validation = np.array(list(map(lambda qas: (qas["context"]), batch))) \
-                .reshape(CONFIG.BATCH_SIZE, max_length_context)
-            answer_start_batch_actual = np.array(list(map(lambda qas: (qas["answer_start"]), batch))) \
-                .reshape(CONFIG.BATCH_SIZE)
-            answer_end_batch_actual = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(
-                CONFIG.BATCH_SIZE)
+            question_batch_validation, context_batch_validation, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
             estimated_start_index, estimated_end_index, loss_validation = sess.run([s, e, loss],
             get_feed_dict(question_batch_validation,context_batch_validation,answer_end_batch_actual,answer_end_batch_actual, 1.0, index2embedding)
@@ -99,11 +88,11 @@ with tf.Session() as sess:
         val_f1_means.append(np.mean(f1score))
 
         with open('./results/validation_loss_means.pkl', 'wb') as f:
-            pickle.dump(val_loss_means, f)
+            pickle.dump(val_loss_means, f, protocol=3)
         with open('./results/validation_f1_means.pkl', 'wb') as f:
-            pickle.dump(val_f1_means, f)
+            pickle.dump(val_f1_means, f, protocol=3)
         with open('./results/training_loss_means.pkl', 'wb') as f:
-            pickle.dump(loss_means, f)
+            pickle.dump(loss_means, f, protocol=3)
 
         saver.save(sess, './model/saved', global_step=epoch)
 

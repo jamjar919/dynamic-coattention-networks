@@ -4,6 +4,13 @@ from encoder import encoder
 from decoder import decoder
 from config import CONFIG
 
+def get_batch(batch, batch_size = CONFIG.BATCH_SIZE, max_length_question = CONFIG.MAX_QUESTION_LENGTH, max_length_context = CONFIG.MAX_CONTEXT_LENGTH):
+    question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size, max_length_question)
+    context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size, max_length_context)
+    answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
+    answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
+    return question_batch, context_batch, answer_start_batch, answer_end_batch
+
 def build_model(embedding):
     dropout_keep_rate = tf.placeholder(dtype = tf.float32, name = "dropout_keep_ph")
     batch_size_ph = tf.placeholder(dtype = tf.int32, name = "batch_size_ph")
