@@ -11,7 +11,7 @@ from encoder import encoder
 from decoder import decoder
 from dataset import Dataset
 from config import CONFIG
-from evaluation_metrics import get_f1_from_tokens
+from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 from build_model import build_model, get_feed_dict, get_batch
 
 tensorboard_filepath = '.'
@@ -45,6 +45,7 @@ with tf.Session() as sess:
     loss_means = []
     val_loss_means = []
     val_f1_means = []
+    val_em_means = []
     for epoch in range(CONFIG.MAX_EPOCHS):
         print("Epoch # : ", epoch + 1)
         losses = []
@@ -64,6 +65,7 @@ with tf.Session() as sess:
         loss_means.append(mean_epoch_loss)
         print("Mean epoch loss: ", mean_epoch_loss)
         f1score = []
+        emscore = []
         validation_losses = []
 
         #validation starting
@@ -76,24 +78,33 @@ with tf.Session() as sess:
             )
 
             validation_losses.append(np.mean(loss_validation))
-            f1 = 0            
+            f1 = 0
+            em = 0
             for i in range(len(estimated_end_index)):
                 #print("start actual, end actual, start pred, end pred: ", answer_start_batch_actual[i], answer_end_batch_actual[i], estimated_start_index[i], estimated_end_index[i])
                 f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                    estimated_start_index[i], estimated_end_index[i],
                                    context_batch_validation[i], D_train)
-            f1score.append(f1/len(estimated_end_index))
+                em += get_exact_match_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
+                                   estimated_start_index[i], estimated_end_index[i],
+                                   context_batch_validation[i], D_train)
+            f1score.append(f1 / len(estimated_end_index))
+            emscore.append(em / len(estimated_end_index))
             #print("f1 score: ", f1/len(estimated_end_index))
   
         print("F1 mean on validation: ", np.mean(f1score))
+        print("EM mean on validation: ", np.mean(emscore))
         print("Mean validation loss on epoch: ", np.mean(validation_losses))
         val_loss_means.append(np.mean(validation_losses))
         val_f1_means.append(np.mean(f1score))
+        val_em_means.append(np.mean(emscore))
 
         with open('./results/validation_loss_means.pkl', 'wb') as f:
             pickle.dump(val_loss_means, f, protocol=3)
         with open('./results/validation_f1_means.pkl', 'wb') as f:
             pickle.dump(val_f1_means, f, protocol=3)
+        with open('./results/validation_em_means.pkl', 'wb') as f:
+            pickle.dump(val_em_means, f, protocol=3)
         with open('./results/training_loss_means.pkl', 'wb') as f:
             pickle.dump(loss_means, f, protocol = 3)
         with open('./results/training_loss_per_batch.csv', 'a+') as f:

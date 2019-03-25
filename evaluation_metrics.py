@@ -43,7 +43,7 @@ def indexToWord(indices, D):
 
 def get_f1_from_tokens( yS, yE, ypS, ypE, batch_Xc, D):
     """
-    Pass yS, yE, ypS and ypE to be indices.batch_Xc is the context indices
+    Pass yS, yE, ypS and ypE to be indices. batch_Xc is the context indices
 
     This function doesn't compare the indices, but the tokens behind the indices. This is a bit more forgiving
     and it is the metric applied on the SQuAD leaderboard."""
@@ -53,6 +53,23 @@ def get_f1_from_tokens( yS, yE, ypS, ypE, batch_Xc, D):
     #prediction = index_list_to_string(batch_Xc[ypS:ypE + 1])
     f1 = squad_f1_score(prediction, ground_truth)
     return f1
+
+def squad_exact_match_score( prediction, ground_truth):
+    """Method copied from the SQuAD Leaderboard: https://rajpurkar.github.io/SQuAD-explorer/"""
+    return (squad_normalize_answer(prediction) == squad_normalize_answer(ground_truth))
+
+
+def get_exact_match_from_tokens(yS, yE, ypS, ypE, batch_Xc, D):
+    """This function doesn't compare the indices, but the tokens behind the indices. This is a bit more forgiving
+    and it is the metric applied on the SQuAD leaderboard"""
+
+    em = 0
+    #TODO: Pull ou the code from this and get_f1_from_tokens fn
+    split_context = indexToWord(batch_Xc, D).split()
+    ground_truth = ' '.join(split_context[yS:yE+1])
+    prediction = ' '.join(split_context[ypS:ypE + 1])
+    em += squad_exact_match_score(prediction, ground_truth)
+    return em
 
 
 if __name__ == "__main__":
@@ -64,7 +81,10 @@ if __name__ == "__main__":
     print(get_f1_from_tokens(5, 8, 1, 3,ty, D))
     print(get_f1_from_tokens(5, 8, 6, 8,ty, D))
     print(get_f1_from_tokens(5, 8, 1, 8,ty, D))
-    print(get_f1_from_tokens(5, 8, 8, 9,ty, D))
+    # print(get_f1_from_tokens(5, 8, 8, 9,ty, D))
+    print(get_exact_match_from_tokens(5, 8, 4, 7,ty, D))
+    print(get_exact_match_from_tokens(1, 4, 1, 4, ty, D))
+
 
 
 
