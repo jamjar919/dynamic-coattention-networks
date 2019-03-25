@@ -13,11 +13,13 @@ def pad_data(data, pad_char):
     max_length_question = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["question"], data))))
     max_length_context = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["context"], data))))
 
-    max_length_question = min([CONFIG.MAX_QUESTION_LENGTH, max_length_question])
-    max_length_context = min([CONFIG.MAX_CONTEXT_LENGTH, max_length_context])
+    if CONFIG.MAX_QUESTION_LENGTH != None:
+        max_length_question = CONFIG.MAX_QUESTION_LENGTH
+    
+    if CONFIG.MAX_CONTEXT_LENGTH != None:
+        max_length_context = CONFIG.MAX_CONTEXT_LENGTH
 
     padded_data = []
-    masks = []
 
     for q in data:
         question, question_mask = pad_to(q["question"], max_length_question, pad_char)

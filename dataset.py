@@ -12,8 +12,9 @@ class Dataset:
     def __init__(self, training_file, glove_file):
         self.TRAINING_FILE_NAME = training_file
         self.GLOVE_DATA_FILE = glove_file
-        self.PRESAVED_QUESTIONS_FILE = 'generated/encoded_questions.pickle'
-        self.PRESAVED_EMBEDDING_FILE = 'generated/embedding.pickle'
+        self.PRESAVED_QUESTIONS_FILE_NAME = os.path.splitext(os.path.basename(training_file))[0] + '_encoded_questions.pickle'
+        self.PRESAVED_EMBEDDING_FILE_NAME = 'embedding.pickle'
+        self.PRESAVED_DIR = 'generated/'
 
     def generate_question_encoding(self, categories, word2index):
         print("Generating question encoding...")
@@ -79,7 +80,7 @@ class Dataset:
             categories = data["data"]
 
         word2index, index2embedding = self.load_if_cached_else_generate(
-            self.PRESAVED_EMBEDDING_FILE,
+            self.PRESAVED_DIR + self.PRESAVED_EMBEDDING_FILE_NAME,
             lambda: self.generate_glove_vectors(),
             REGENERATE_CACHE,
             beforesave = lambda x: (dict(x[0]), x[1]),
@@ -93,7 +94,7 @@ class Dataset:
         print("Vocab Size:"+str(vocab_size)+" Embedding Dim:"+str(embedding_dim))
 
         data = self.load_if_cached_else_generate(
-            self.PRESAVED_QUESTIONS_FILE,
+            self.PRESAVED_DIR + self.PRESAVED_QUESTIONS_FILE_NAME,
             lambda: self.generate_question_encoding(categories, word2index),
             REGENERATE_CACHE
         )
