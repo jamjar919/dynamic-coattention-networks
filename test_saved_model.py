@@ -11,11 +11,11 @@ from build_model import get_batch
 from evaluation_metrics import get_f1_from_tokens
 
 print("Starting testing on dev file...")
-D = Dataset('data/dev.json', CONFIG.EMBEDDING_FILE)
+D = Dataset('data/train.json', CONFIG.EMBEDDING_FILE)
 padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
 print("Loaded data")
 
-tf.reset_default_graph()
+#tf.reset_default_graph()
 latest_checkpoint_path = './model/saved-23'
 print("restoring from "+latest_checkpoint_path)
 saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
@@ -32,7 +32,7 @@ with tf.Session() as sess:
     context_batch_placeholder = graph.get_tensor_by_name("context_batch_ph:0")
     embedding = graph.get_tensor_by_name("embedding_ph:0")
     dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
-    loss  = graph.get_tensor_by_name("loss_to_optimize:0")
+    #loss  = graph.get_tensor_by_name("loss_to_optimize:0")
 
     f1score = []
 
@@ -42,13 +42,13 @@ with tf.Session() as sess:
         batch = padded_data[iteration:(iteration + CONFIG.BATCH_SIZE)]
         question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
         
-        estimated_start_index, estimated_end_index, loss = sess.run([answer_start_batch_predict, answer_end_batch_predict, loss], feed_dict={
+        estimated_start_index, estimated_end_index = sess.run([answer_start_batch_predict, answer_end_batch_predict], feed_dict={
             question_batch_placeholder: question_batch,
             context_batch_placeholder: context_batch,
             embedding: index2embedding,
             dropout_keep_rate: 1
         })
-        print("Loss: ", np.mean(loss))
+        #print("Loss: ", np.mean(loss))
         print("estimated start index: ", estimated_start_index)
         print("estimated end index: ", estimated_end_index)
         print(estimated_start_index.shape)
@@ -70,5 +70,3 @@ with tf.Session() as sess:
         print("Tested (",iteration,"/",len(padded_data),")")
 
     print("F1 mean: ", np.mean(f1score))
-
-
