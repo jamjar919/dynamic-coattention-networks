@@ -7,24 +7,45 @@ import csv
 import sys
 from collections import defaultdict  
 from functools import reduce
+from config import CONFIG
 
 def pad_data(data, pad_char):
     max_length_question = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["question"], data))))
     max_length_context = len(reduce(lambda a, b: b if len(a) < len(b) else a, list(map(lambda a: a["context"], data))))
 
-    return (list(map(lambda q: {
-        "question": pad_to(q["question"], max_length_question, pad_char),
-        "context": pad_to(q["context"], max_length_context, pad_char),
-        "answer_start": q["answer_start"],
-        "answer_end": q["answer_end"]
-    }, data)), (max_length_question, max_length_context))
+    if CONFIG.MAX_QUESTION_LENGTH != None:
+        max_length_question = CONFIG.MAX_QUESTION_LENGTH
+    
+    if CONFIG.MAX_CONTEXT_LENGTH != None:
+        max_length_context = CONFIG.MAX_CONTEXT_LENGTH
+
+    padded_data = []
+
+    for q in data:
+        question, question_mask = pad_to(q["question"], max_length_question, pad_char)
+        context, context_mask = pad_to(q["context"], max_length_context, pad_char)
+        if (q["answer_end"] <= max_length_context):
+            padded_data.append({
+                "question": question,
+                "context": context,
+                "question_mask": question_mask,
+                "context_mask": context_mask,
+                "answer_start": q["answer_start"],
+                "answer_end": q["answer_end"]
+            })
+    return padded_data, (max_length_question, max_length_context)
 
 def pad_to(sequence, length, char):
-    if len(sequence) >= length:
-        return sequence
+    if len(sequence) > length:
+        return (sequence[0:length], [True] * length)
+    if len(sequence) == length:
+        return (sequence, [True] * length)
     else:
-        sequence.append(char)
-        return pad_to(sequence, length, char)
+        mask = [True] * len(sequence)
+        while len(sequence) != length:
+            mask.append(False)
+            sequence.append(char)
+        return sequence, mask
 
 def word_to_index(w, word2index):
     try:
@@ -34,7 +55,7 @@ def word_to_index(w, word2index):
         return len(word2index) - 1 # defined to be all zeros
 
 def text_to_index(text, word2index):
-    tokens = tf.keras.preprocessing.text.text_to_word_sequence(text, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True, split=' ')
+    tokens = tf.keras.preprocessing.text.text_to_word_sequence(text, lower=True, split=' ')
     return list(map(lambda tok: word_to_index(tok, word2index), tokens));
 
 def answer_span_to_indices(start, end, context_indexes):

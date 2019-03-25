@@ -109,3 +109,5 @@ generated/
 .vscode/
 *.xml
 *.iml
+config.py
+log_tensorboard/

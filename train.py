@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 import tensorflow as tf
-import sklearn as sk
+import pickle
 from functools import reduce
 from sklearn.metrics import precision_score, recall_score, f1_score
 import os
@@ -10,123 +10,94 @@ import os
 from encoder import encoder
 from decoder import decoder
 from dataset import Dataset
+from config import CONFIG
+from evaluation_metrics import get_f1_from_tokens
+from build_model import build_model, get_feed_dict, get_batch
 
 tensorboard_filepath = '.'
 
-D_train = Dataset('data/train.json', 'data/glove.840B.300d.txt')
+D_train = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
 padded_data, index2embedding, max_length_question, max_length_context = D_train.load_data(sys.argv[1:])
 print("Loaded data")
 
-# Train now
-batch_size = 64
-embedding_dimension = 300
-MAX_EPOCHS = 40
 tf.reset_default_graph()
+embedding = tf.placeholder(shape = [len(index2embedding), CONFIG.EMBEDDING_DIMENSION], dtype=tf.float32, name='embedding_ph')
+train_op, loss, s, e  = build_model(embedding)
 
-embedding = tf.placeholder(shape = [len(index2embedding), embedding_dimension], dtype=tf.float32, name='embedding')
-question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_question], name='question_batch')
-context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [batch_size, max_length_context], name='context_batch')
+# Blank csv file
+open('./results/training_loss_per_batch.csv', 'w').close()
 
-# Create encoder. (Encoder will also return the sequence length of the context (i.e. how much of each batch element is unpadded))
-U, seq_length = encoder(question_batch_placeholder,context_batch_placeholder,embedding)
-#context_ph_length = tf.Print(context_ph_length, [context_ph_length.shape], "Context lengths: ")
-# Word index placeholders
-answer_start = tf.placeholder(dtype=tf.int32,shape=[None], name='answer_start_true')
-answer_end = tf.placeholder(dtype=tf.int32,shape=[None], name='answer_end_true')
-
-# Create decoder 
-s, e, s_logits, e_logits = decoder(U, seq_length, max_length_context) # Pass also the seq_length from encoder and max_length.
-
-s = tf.identity(s, name='answer_start')
-e = tf.identity(e, name='answer_end')
-
-l1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start,logits = s_logits)
-l2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end,logits = e_logits)
-
-loss = l1 + l2
-train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
-
+# Train now
 saver = tf.train.Saver() 
 init = tf.global_variables_initializer()
 
 with tf.Session() as sess:
-    loss_writer = tf.summary.FileWriter('./log_tensorboard/plot_loss', sess.graph)
-    val_writer = tf.summary.FileWriter('./log_tensorboard/plot_val', sess.graph)
-    # Summaries need to be displayed
-    # Whenever you need to record the loss, feed the mean loss to this placeholder
-    tf_loss_ph = tf.placeholder(tf.float32, shape=None,name='Loss_summary')
-    tf_validation_ph = tf.placeholder(tf.float32, shape = None, name = 'f1_score')
-    # Create a scalar summary object for the loss so it can be displayed on tensorboard
-    tf_loss_summary = tf.summary.scalar('Loss_summary', tf_loss_ph)
-    tf_validation_summary = tf.summary.scalar('f1_score', tf_validation_ph)
     sess.run(init)
     print("SESSION INITIALIZED")
     dataset_size = len(padded_data)
     padded_data = np.array(padded_data)
     np.random.shuffle(padded_data)
     #print("PADDED DATA SHAPE: ", padded_data.shape)
-    padded_data_train = padded_data[0:(int) (0.95*padded_data.shape[0])]
-    padded_data_validation = padded_data[(int) (0.95*padded_data.shape[0]):]
+    padded_data_train = padded_data[0:(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0])]
+    padded_data_validation = padded_data[(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0]):]
     
-    losses = []
-    for epoch in range(MAX_EPOCHS):
+    print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
+    loss_means = []
+    val_loss_means = []
+    val_f1_means = []
+    for epoch in range(CONFIG.MAX_EPOCHS):
         print("Epoch # : ", epoch + 1)
+        losses = []
         # Shuffle the data between epochs
-        np.random.shuffle(padded_data)
-        for iteration in range(0, len(padded_data_train) - batch_size, batch_size):
-            batch = padded_data_train[iteration:iteration + batch_size]
-            question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,max_length_question)
-            context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size,max_length_context)
-            answer_start_batch = np.array(list(map(lambda qas: (qas["answer_start"]), batch))).reshape(batch_size)
-            answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
-            _ , loss_val = sess.run([train_op,loss],feed_dict = {
-                question_batch_placeholder : question_batch,
-                context_batch_placeholder : context_batch,
-                answer_start : answer_start_batch,
-                answer_end : answer_end_batch,
-                embedding: index2embedding
-            })
+        np.random.shuffle(padded_data_train)
+        for iteration in range(0, len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+            batch = padded_data_train[iteration:iteration + CONFIG.BATCH_SIZE]
+            question_batch, context_batch, answer_start_batch, answer_end_batch = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
+
+            _ , loss_val = sess.run([train_op, loss],feed_dict = get_feed_dict(question_batch,context_batch,answer_start_batch,answer_end_batch, CONFIG.DROPOUT_KEEP_PROB, index2embedding))
             loss_val_mean = np.mean(loss_val)
+            if(iteration % ((CONFIG.BATCH_SIZE)-1) == 0):
+                print("Loss in epoch: ", loss_val_mean, "(",iteration,"/",len(padded_data_train),")")
+
             losses.append(loss_val_mean.item())
         mean_epoch_loss = np.mean(np.array(losses))
-        print("loss: ", mean_epoch_loss)
-        summary_str = sess.run(tf_loss_summary, feed_dict={tf_loss_ph: mean_epoch_loss})
-        loss_writer.add_summary(summary_str,epoch)
-        loss_writer.flush()
-        
+        loss_means.append(mean_epoch_loss)
+        print("Mean epoch loss: ", mean_epoch_loss)
         f1score = []
-        #precision = []
-        #recall = []
-        # validation starting
-        for counter in range(0, len(padded_data_validation) - batch_size, batch_size):
-            batch = padded_data_validation[counter:(counter + batch_size)]
-            question_batch_validation = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size,
-                                                                                               max_length_question)
-            context_batch_validation = np.array(list(map(lambda qas: (qas["context"]), batch))) \
-                .reshape(batch_size, max_length_context)
-            answer_start_batch_actual = np.array(list(map(lambda qas: (qas["answer_start"]), batch))) \
-                .reshape(batch_size)
-            answer_end_batch_actual = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(
-                batch_size)
+        validation_losses = []
 
-            s, e = sess.run([s_logits, e_logits], feed_dict={
-                question_batch_placeholder: question_batch_validation,
-                context_batch_placeholder: context_batch_validation,
-                embedding: index2embedding
-            })
+        #validation starting
+        for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+            batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
+            question_batch_validation, context_batch_validation, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
-            estimated_start_index = np.argmax(s, axis = 1)
-            estimated_end_index =  np.argmax(e, axis = 1)
-            predictions = np.concatenate([estimated_start_index, estimated_end_index])
-            actual = np.concatenate([answer_start_batch_actual, answer_end_batch_actual])
+            estimated_start_index, estimated_end_index, loss_validation = sess.run([s, e, loss],
+            get_feed_dict(question_batch_validation,context_batch_validation,answer_end_batch_actual,answer_end_batch_actual, 1.0, index2embedding)
+            )
 
-            #precision.append(sk.metrics.precision_score(predictions, actual, average='micro'))
-            #recall.append(sk.metrics.recall_score(predictions,actual, average='micro'))
-            f1score.append(sk.metrics.f1_score(predictions, actual, average = 'micro'))
-        f1_mean = np.mean(np.array(f1score))
-        print("Validation f1 score %: ", f1_mean * 100)
-        summary_str = sess.run(tf_validation_summary, feed_dict={tf_validation_ph: f1_mean})
-        val_writer.add_summary(summary_str, epoch)
-        val_writer.flush()
+            validation_losses.append(np.mean(loss_validation))
+            f1 = 0            
+            for i in range(len(estimated_end_index)):
+                #print("start actual, end actual, start pred, end pred: ", answer_start_batch_actual[i], answer_end_batch_actual[i], estimated_start_index[i], estimated_end_index[i])
+                f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
+                                   estimated_start_index[i], estimated_end_index[i],
+                                   context_batch_validation[i], D_train)
+            f1score.append(f1/len(estimated_end_index))
+            #print("f1 score: ", f1/len(estimated_end_index))
+  
+        print("F1 mean on validation: ", np.mean(f1score))
+        print("Mean validation loss on epoch: ", np.mean(validation_losses))
+        val_loss_means.append(np.mean(validation_losses))
+        val_f1_means.append(np.mean(f1score))
+
+        with open('./results/validation_loss_means.pkl', 'wb') as f:
+            pickle.dump(val_loss_means, f, protocol=3)
+        with open('./results/validation_f1_means.pkl', 'wb') as f:
+            pickle.dump(val_f1_means, f, protocol=3)
+        with open('./results/training_loss_means.pkl', 'wb') as f:
+            pickle.dump(loss_means, f, protocol = 3)
+        with open('./results/training_loss_per_batch.csv', 'a+') as f:
+            f.write(','.join(list(map(lambda x: str(x), losses))) + '\n')
+
         saver.save(sess, './model/saved', global_step=epoch)
-    loss_writer.close()
+
