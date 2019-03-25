@@ -8,7 +8,7 @@ from build_model import get_batch, get_feed_dict
 
 # custom imports
 from dataset import Dataset
-from evaluation_metrics import get_f1_from_tokens
+from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 
 print("Resumeing training")
 D_train = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
@@ -77,6 +77,7 @@ with tf.Session() as sess:
         loss_writer.flush()
 
         f1score = []
+        emscore = []
         validation_losses = []
 
         # validation starting
@@ -97,17 +98,27 @@ with tf.Session() as sess:
             validation_losses.append(loss_validation)
 
             f1 = 0
+            em = 0
             for i in range(len(estimated_end_index)):
                 f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                          estimated_start_index[i], estimated_end_index[i],
                                          context_batch_validation[i], D_train)
+                em += get_exact_match_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
+                                                    estimated_start_index[i], estimated_end_index[i],
+                                                    context_batch_validation[i], D_train)
+
             print("f1 score: ", f1 / len(estimated_end_index))
+            print("EM score: ", em / len(estimated_end_index))
+            f1score.append(f1)
+            emscore.append(em)
 
         # print(f1score)
         f1_mean = np.mean(f1score)
+        em_mean = np.mean(emscore)
         validation_loss = np.mean(validation_losses)
         print("Validation loss: ", validation_loss)
         print("Validation f1 score %: ", f1_mean * 100)
+        print("Validation em score %: ", em_mean * 100)
         summary_str = sess.run(tf_validation_summary, feed_dict={tf_validation_ph: f1_mean})
         val_writer.add_summary(summary_str, epoch)
         val_writer.flush()

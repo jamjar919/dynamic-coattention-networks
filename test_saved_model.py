@@ -8,7 +8,7 @@ from functools import reduce
 from dataset import Dataset
 from config import CONFIG
 from build_model import get_batch
-from evaluation_metrics import get_f1_from_tokens
+from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 
 print("Starting testing on dev file...")
 D = Dataset('data/train.json', CONFIG.EMBEDDING_FILE)
@@ -35,6 +35,7 @@ with tf.Session() as sess:
     #loss  = graph.get_tensor_by_name("loss_to_optimize:0")
 
     f1score = []
+    emscore = []
 
     print("SESSION INITIALIZED")
     for iteration in range(0, len(padded_data) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
@@ -53,20 +54,30 @@ with tf.Session() as sess:
         print("estimated end index: ", estimated_end_index)
         print(estimated_start_index.shape)
 
-        f1 = 0            
+        f1 = 0
+        em = 0
         for i in range(len(estimated_end_index)):
             f1 += get_f1_from_tokens(
                 answer_start_batch_actual[i], 
                 answer_end_batch_actual[i],
                 estimated_start_index[i], estimated_end_index[i],
                 context_batch[i],
-                D
-            )
+                D)
+
+            em += get_exact_match_from_tokens(answer_start_batch_actual[i],
+                answer_end_batch_actual[i],
+                estimated_start_index[i], estimated_end_index[i],
+                context_batch[i],
+                D)
         f1score_curr = f1/len(estimated_end_index)
+        emscore_curr = em/len(estimated_end_index)
         print("Current f1 score: ", f1score_curr)
+        print("Current em score: ", emscore_curr)
         f1score.append(f1score_curr)
+        emscore.append(emscore_curr)
 
         #if(iteration % ((CONFIG.BATCH_SIZE)-1) == 0):
         print("Tested (",iteration,"/",len(padded_data),")")
 
     print("F1 mean: ", np.mean(f1score))
+    print("EM mean: ", np.mean(emscore))
