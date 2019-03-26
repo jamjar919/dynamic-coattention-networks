@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 from functools import reduce
-
+from preprocessing import answer_span_to_indices
 # custom imports
 from dataset import Dataset
 from config import CONFIG
@@ -11,12 +11,12 @@ from build_model import get_batch
 from evaluation_metrics import get_f1_from_tokens
 
 print("Starting testing on dev file...")
-D = Dataset('data/train.json', CONFIG.EMBEDDING_FILE)
+D = Dataset('data/dev.json', CONFIG.EMBEDDING_FILE)
 padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
 print("Loaded data")
 
 #tf.reset_default_graph()
-latest_checkpoint_path = './model/saved-23'
+latest_checkpoint_path = './model/saved-33' #tf.train.latest_checkpoint('./model/')'./model/saved-23'
 print("restoring from "+latest_checkpoint_path)
 saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
 
@@ -41,17 +41,24 @@ with tf.Session() as sess:
         # running on an example batch to debug encoder
         batch = padded_data[iteration:(iteration + CONFIG.BATCH_SIZE)]
         question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-        
+        #print("First context: ", D.index_to_text(context_batch[0]))
+        #print("First question: ", D.index_to_text(question_batch[0]))
+        #answer = answer_span_to_indices(answer_start_batch_actual[0], answer_end_batch_actual[0], context_batch[0])
+        #print("First answer label: ", D.index_to_text(answer))
+
         estimated_start_index, estimated_end_index = sess.run([answer_start_batch_predict, answer_end_batch_predict], feed_dict={
             question_batch_placeholder: question_batch,
             context_batch_placeholder: context_batch,
             embedding: index2embedding,
             dropout_keep_rate: 1
         })
+        #est_answer = answer_span_to_indices(estimated_start_index[0], estimated_end_index[0], context_batch[0])
+        #print("Predicted answer: ", D.index_to_text(est_answer))
         #print("Loss: ", np.mean(loss))
-        print("estimated start index: ", estimated_start_index)
-        print("estimated end index: ", estimated_end_index)
-        print(estimated_start_index.shape)
+        #print("estimated start index: ", estimated_start_index)
+        #print("Start batch actual: ", answer_start_batch_actual)
+        #print("estimated end index: ", estimated_end_index)
+        #print("End batch actual: ", answer_end_batch_actual)
 
         f1 = 0            
         for i in range(len(estimated_end_index)):
