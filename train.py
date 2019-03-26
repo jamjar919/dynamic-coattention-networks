@@ -41,11 +41,13 @@ with tf.Session(config=config) as sess:
     print("SESSION INITIALIZED")
     dataset_size = len(padded_data)
     padded_data = np.array(padded_data)
-    np.random.shuffle(padded_data)
+    
     #print("PADDED DATA SHAPE: ", padded_data.shape)
     padded_data_train = padded_data[0:(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0])]
     padded_data_validation = padded_data[(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0]):]
-    
+    np.random.shuffle(padded_data_train)
+    np.random.shuffle(padded_data_validation)
+
     print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
     loss_means = []
     val_loss_means = []
