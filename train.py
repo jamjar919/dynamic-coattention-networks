@@ -4,7 +4,6 @@ import numpy as np
 import tensorflow as tf
 import pickle
 from functools import reduce
-from sklearn.metrics import precision_score, recall_score, f1_score
 import os
 # custom imports
 from encoder import encoder
@@ -29,7 +28,7 @@ train_op, loss, s, e  = build_model(embedding)
 open('./results/training_loss_per_batch.csv', 'w').close()
 
 # Train now
-saver = tf.train.Saver() 
+saver = tf.train.Saver(max_to_keep = CONFIG.MAX_EPOCHS) 
 init = tf.global_variables_initializer()
 
 config = tf.ConfigProto()
@@ -42,11 +41,13 @@ with tf.Session(config=config) as sess:
     print("SESSION INITIALIZED")
     dataset_size = len(padded_data)
     padded_data = np.array(padded_data)
-    np.random.shuffle(padded_data)
+    
     #print("PADDED DATA SHAPE: ", padded_data.shape)
     padded_data_train = padded_data[0:(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0])]
     padded_data_validation = padded_data[(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0]):]
-    
+    np.random.shuffle(padded_data_train)
+    np.random.shuffle(padded_data_validation)
+
     print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
     loss_means = []
     val_loss_means = []
