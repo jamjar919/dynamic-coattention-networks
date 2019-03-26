@@ -32,23 +32,18 @@ def build_model(embedding):
     print("alphas.shape = ",alphas.shape)
     losses_alpha = tf.map_fn(lambda a : tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start, logits=a), alphas) 
     print("losses_alpha.shape = ",losses_alpha.shape)
-    losses_alpha = tf.reshape(tf.reduce_mean(losses_alpha,axis = 1), shape = [-1,1])
-    print("losses_alpha.shape = ",losses_alpha.shape)
-
     losses_beta = tf.map_fn(lambda b : tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end, logits=b), betas )
     print("losses_beta.shape = ",losses_beta.shape)
-    losses_beta = tf.reshape(tf.reduce_mean(losses_beta,axis = 1), shape = [-1,1])
-    print("losses_beta.shape = ", losses_beta.shape)
+    
+    losses  = losses_alpha + losses_beta
+    print("losses.shape = ",losses.shape)    # should be (4,batch_size)
+    loss = tf.reduce_sum(losses,axis = 0) # get rid of the 4
+    print("loss.shape = ", loss.shape) # should be (batch_size,)
 
     # losses_alpha = [tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start, logits=a) for a in alphas]
     # losses_alpha = [tf.reduce_mean(x) for x in losses_alpha]
     # losses_beta = [tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end, logits=b) for b in betas]
     # losses_beta = [tf.reduce_mean(x) for x in losses_beta]
-    
-    losses = tf.concat([losses_alpha,losses_beta],axis=0)
-    print("losses.shape = ",losses.shape) # should be 8 losses: 4 from alphas and 4 from betas
-    loss = tf.reduce_sum(losses, axis = 0,  name = "loss_to_optimize")  # calculate the mean of 8 values
-    print("loss.shape = ", loss.shape)
 
     original_optimizer = tf.train.AdamOptimizer(CONFIG.LEARNING_RATE)
     optimizer = tf.contrib.estimator.clip_gradients_by_norm(original_optimizer, clip_norm=CONFIG.CLIP_NORM)
