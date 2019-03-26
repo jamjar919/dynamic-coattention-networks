@@ -4,7 +4,6 @@ import numpy as np
 import tensorflow as tf
 import pickle
 from functools import reduce
-from sklearn.metrics import precision_score, recall_score, f1_score
 import os
 # custom imports
 from encoder import encoder
@@ -29,7 +28,7 @@ train_op, loss, s, e  = build_model(embedding)
 open('./results/training_loss_per_batch.csv', 'w').close()
 
 # Train now
-saver = tf.train.Saver() 
+saver = tf.train.Saver(max_to_keep = CONFIG.MAX_EPOCHS) 
 init = tf.global_variables_initializer()
 
 config = tf.ConfigProto()
