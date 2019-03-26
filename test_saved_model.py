@@ -16,8 +16,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 print("Starting testing on dev file...")
-D = Dataset('data/dev.json', CONFIG.EMBEDDING_FILE)
-padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
+D = Dataset(CONFIG.EMBEDDING_FILE)
+index2embedding = D.index2embedding
+padded_data, (max_length_question, max_length_context) = D.load_questions('data/dev.json')
 print("Loaded data")
 
 latest_checkpoint_path = './model/saved-22' 

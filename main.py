@@ -3,11 +3,13 @@ import tensorflow as tf
 import sys
 import numpy as np
 
+from config import CONFIG
 from dataset import Dataset
 from preprocessing import answer_span_to_indices
 
-D = Dataset('data/dev.json', 'data/glove.6B.300d.txt')
-padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
+D = Dataset(CONFIG.EMBEDDING_FILE)
+index2embedding = D.index2embedding
+padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
 
 random_question = np.random.choice(padded_data)
 

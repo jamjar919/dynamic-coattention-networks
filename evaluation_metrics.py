@@ -73,8 +73,10 @@ def get_exact_match_from_tokens(yS, yE, ypS, ypE, batch_Xc, D):
 
 
 if __name__ == "__main__":
-    D = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
-    padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
+    D = Dataset(CONFIG.EMBEDDING_FILE)
+    index2embedding = D.index2embedding
+    padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
+
     ty = np.array([1, 5, 4, 7, 8, 4, 3, 4, 6, 7, 7, 4])
     print(get_f1_from_tokens(5, 8, 4, 7,ty, D))
     print(get_f1_from_tokens(5, 8, 5, 8,ty, D))

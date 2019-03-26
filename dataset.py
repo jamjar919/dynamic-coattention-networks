@@ -20,7 +20,7 @@ class Dataset:
         self.vocab_size = 0
         self.embedding_dim = 0
 
-        self.load_embeddings(sys.argv[1:])
+        self.index2embedding = self.load_embeddings(sys.argv[1:])
 
     def generate_question_encoding(self, categories, word2index):
         print("Generating question encoding...")
@@ -123,44 +123,4 @@ class Dataset:
         padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
 
         print("Loaded questions")
-        return padded_data, max_length_question, max_length_context
-
-if __name__ == '__main__':
-    D = Dataset('data/dev.json', 'data/glove.840B.300d.txt')
-    padded_data, index2embedding, max_length_question, max_length_context = D.load_data(sys.argv[1:])
-    paragraph = {
-        "context": "With 4:51 left in regulation, Carolina got the ball on their own 24-yard line with a chance to mount a game-winning drive, and soon faced 3rd-and-9. On the next play, Miller stripped the ball away from Newton, and after several players dove for it, it took a long bounce backwards and was recovered by Ward, who returned it five yards to the Panthers 4-yard line. Although several players dove into the pile to attempt to recover it, Newton did not and his lack of aggression later earned him heavy criticism. Meanwhile, Denver's offense was kept out of the end zone for three plays, but a holding penalty on cornerback Josh Norman gave the Broncos a new set of downs. Then Anderson scored on a 2-yard touchdown run and Manning completed a pass to Bennie Fowler for a 2-point conversion, giving Denver a 24\u201310 lead with 3:08 left and essentially putting the game away. Carolina had two more drives, but failed to get a first down on each one.", 
-        "qas": [
-            {
-                "answers": [{"answer_start": 65, "text": "24"}, {"answer_start": 55, "text": "their own 24"}, {"answer_start": 65, "text": "24"}], 
-                "question": "On what yard line did Carolina begin with 4:51 left in the game?", "id": "56beca913aeaaa14008c946d"
-            }, 
-            {
-                "answers": [{"answer_start": 202, "text": "Newton"}, {"answer_start": 202, "text": "Newton"}, {"answer_start": 434, "text": "Newton"}],
-                "question": "Who fumbled the ball on 3rd-and-9?", "id": "56beca913aeaaa14008c946e"
-            },
-            {
-                "answers": [{"answer_start": 620, "text": "Josh Norman"}, {"answer_start": 620, "text": "Josh Norman"}, {"answer_start": 625, "text": "Norman"}],
-                "question": "What Panther defender was called for holding on third down?", "id": "56beca913aeaaa14008c946f"
-            },
-        ]
-    }
-    split_context = paragraph["context"].split(" ")
-    for qas in paragraph["qas"]:
-        # Translate character index to word index
-        answer = random.choice(qas["answers"])
-        i = 0
-        word_index = 0
-        while (i < answer["answer_start"]):
-            i += len(split_context[word_index]) + 1
-            word_index += 1
-        answer_start = word_index
-
-        print({
-            "context": paragraph["context"],
-            "question": qas["question"],
-            "answer_start": answer_start,
-            "answer_end": int(answer_start) + len(text_to_index(answer["text"], D.word2index)) - 1,
-            "answer": paragraph["context"].split()[answer_start:int(answer_start) + len(text_to_index(answer["text"], D.word2index))],
-            "answer_text":answer["text"]
-        })
+        return (padded_data, (max_length_question, max_length_context))
