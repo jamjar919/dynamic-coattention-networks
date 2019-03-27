@@ -95,6 +95,7 @@ with tf.Session(config=config) as sess:
                 em += get_exact_match_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                    estimated_start_index[i], estimated_end_index[i],
                                    context_batch_validation[i], D )
+
             f1score.append(f1 / len(estimated_end_index))
             emscore.append(em / len(estimated_end_index))
             #print("f1 score: ", f1/len(estimated_end_index))
