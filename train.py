@@ -4,7 +4,6 @@ import numpy as np
 import tensorflow as tf
 import pickle
 from functools import reduce
-from sklearn.metrics import precision_score, recall_score, f1_score
 import os
 # custom imports
 from encoder import encoder
@@ -16,8 +15,9 @@ from build_model import build_model, get_feed_dict, get_batch
 
 tensorboard_filepath = '.'
 
-D_train = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
-padded_data, index2embedding, max_length_question, max_length_context = D_train.load_data(sys.argv[1:])
+D = Dataset(CONFIG.EMBEDDING_FILE)
+index2embedding = D.index2embedding
+padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
 print("Loaded data")
 
 tf.reset_default_graph()
@@ -28,19 +28,26 @@ train_op, loss, s, e  = build_model(embedding)
 open('./results/training_loss_per_batch.csv', 'w').close()
 
 # Train now
-saver = tf.train.Saver() 
+saver = tf.train.Saver(max_to_keep = CONFIG.MAX_EPOCHS) 
 init = tf.global_variables_initializer()
 
-with tf.Session() as sess:
+config = tf.ConfigProto()
+if '--noGPU' in sys.argv[1:]:
+    print("Not using the GPU...")
+    config = tf.ConfigProto(device_count = {'GPU': 0})
+
+with tf.Session(config=config) as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
     dataset_size = len(padded_data)
     padded_data = np.array(padded_data)
-    np.random.shuffle(padded_data)
+    
     #print("PADDED DATA SHAPE: ", padded_data.shape)
     padded_data_train = padded_data[0:(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0])]
     padded_data_validation = padded_data[(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0]):]
-    
+    np.random.shuffle(padded_data_train)
+    np.random.shuffle(padded_data_validation)
+
     print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
     loss_means = []
     val_loss_means = []
@@ -84,10 +91,11 @@ with tf.Session() as sess:
                 #print("start actual, end actual, start pred, end pred: ", answer_start_batch_actual[i], answer_end_batch_actual[i], estimated_start_index[i], estimated_end_index[i])
                 f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                    estimated_start_index[i], estimated_end_index[i],
-                                   context_batch_validation[i], D_train)
+                                   context_batch_validation[i], D )
                 em += get_exact_match_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                    estimated_start_index[i], estimated_end_index[i],
-                                   context_batch_validation[i], D_train)
+                                   context_batch_validation[i], D )
+
             f1score.append(f1 / len(estimated_end_index))
             emscore.append(em / len(estimated_end_index))
             #print("f1 score: ", f1/len(estimated_end_index))

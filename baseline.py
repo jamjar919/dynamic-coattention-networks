@@ -4,8 +4,10 @@ import tensorflow as tf
 from dataset import Dataset
 import sys
 
-D_train = Dataset(CONFIG.QUESTION_FILE, CONFIG.EMBEDDING_FILE)
-padded_data, index2embedding, max_length_question, max_length_context = D_train.load_data(sys.argv[1:])
+D = Dataset(CONFIG.EMBEDDING_FILE)
+index2embedding = D.index2embedding
+padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
+
 print("Loaded data")
 
 # Train now

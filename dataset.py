@@ -5,40 +5,62 @@ import json
 import os
 from collections import defaultdict  
 import sys
-from preprocessing import text_to_index, load_embedding, pad_data
+import tensorflow as tf
+
+from preprocessing import text_to_index, load_embedding, pad_data, KnuthMorrisPratt, tokenise
 
 class Dataset:
 
-    def __init__(self, training_file, glove_file):
-        self.TRAINING_FILE_NAME = training_file
+    def __init__(self, glove_file):
         self.GLOVE_DATA_FILE = glove_file
-        self.PRESAVED_QUESTIONS_FILE_NAME = os.path.splitext(os.path.basename(training_file))[0] + '_encoded_questions.pickle'
         self.PRESAVED_EMBEDDING_FILE_NAME = 'embedding.pickle'
         self.PRESAVED_DIR = 'generated/'
 
-    def generate_question_encoding(self, categories, word2index):
+        self.word2index = None
+        self.vocab_size = 0
+        self.embedding_dim = 0
+
+        self.index2embedding = self.load_embeddings(sys.argv[1:])
+
+    def generate_question_encoding(self, categories, word2index, version="1.1"):
         print("Generating question encoding...")
         data = []
+        skipped_count = 0
         for category in categories:
             for paragraph in category["paragraphs"]:
-                paragraph["context"] = paragraph["context"]
-                split_context = paragraph["context"].split(" ")
+                split_context = tokenise(paragraph["context"])
                 for qas in paragraph["qas"]:
                     # Translate character index to word index
-                    answer = random.choice(qas["answers"])
-                    i = 0
-                    word_index = 0
-                    while (i < answer["answer_start"]):
-                        i += len(split_context[word_index]) + 1
-                        word_index += 1
-                    answer_start = word_index
+                    answers = qas["answers"]
+                    
+                    found = False
+                    answer_index = 0
 
-                    data.append({
-                        "context": text_to_index(paragraph["context"], word2index),
-                        "question": text_to_index(qas["question"], word2index),
-                        "answer_start": answer_start,
-                        "answer_end": int(answer_start) + len(text_to_index(answer["text"], word2index)) - 1
-                    })
+                    try: 
+                        if (len(answers) > 0):
+                            while not found:
+                                split_answer = tokenise(answers[answer_index]["text"])
+
+                                answer_start = next(KnuthMorrisPratt(split_context, split_answer))
+                                if answer_start != None:
+                                    found = True
+                                else:
+                                    answer_index += 1
+                                
+                            answer_end = answer_start + len(split_answer) - 1
+                        elif (version == "v2.0") and (qas["is_impossible"]):
+                            answer_start = -1
+                            answer_end = -1
+
+                        data.append({
+                            "context": text_to_index(paragraph["context"], word2index),
+                            "question": text_to_index(qas["question"], word2index),
+                            "answer_start": answer_start,
+                            "answer_end": answer_end
+                        })
+                    except IndexError:
+                        skipped_count += 1
+        print("Skipped encoding",skipped_count,"/",len(data) + skipped_count,"questions because couldn't find the answer in the text")
         return data
 
     def generate_glove_vectors(self):
@@ -66,18 +88,12 @@ class Dataset:
             words = words[:-1]
         return ' '.join(words)
 
-    def load_data(self, args):
+    def load_embeddings(self, args):
         '''
             Function for loading the data and padding as required. 
             Pass command line option --regenerateEmbeddings to force write the embeddings to file
         '''
         REGENERATE_CACHE = '--regenerateEmbeddings' in args
-
-        # read SQuAD data
-        with open(self.TRAINING_FILE_NAME, "r") as f:
-            data = json.loads(f.read())
-            assert data["version"] == "1.1"
-            categories = data["data"]
 
         word2index, index2embedding = self.load_if_cached_else_generate(
             self.PRESAVED_DIR + self.PRESAVED_EMBEDDING_FILE_NAME,
@@ -90,17 +106,34 @@ class Dataset:
         self.index2word = defaultdict(lambda: '?', dict(zip(word2index.values(), word2index.keys())))
 
         print("Loaded embeddings")
-        vocab_size, embedding_dim = index2embedding.shape
-        print("Vocab Size:"+str(vocab_size)+" Embedding Dim:"+str(embedding_dim))
+        self.vocab_size, self.embedding_dim = index2embedding.shape
+        print("Vocab Size:"+str(self.vocab_size)+" Embedding Dim:"+str(self.embedding_dim))
 
-        data = self.load_if_cached_else_generate(
-            self.PRESAVED_DIR + self.PRESAVED_QUESTIONS_FILE_NAME,
-            lambda: self.generate_question_encoding(categories, word2index),
-            REGENERATE_CACHE
-        )
-        print("Loaded questions")
+        return index2embedding
+
+    def load_questions(self, question_file):
+        if (self.word2index == None):
+            raise RuntimeError("Load the embedding file first")
+
+        # read SQuAD data
+        with open(question_file, "r") as f:
+            data = json.loads(f.read())
+            version = data["version"]
+            categories = data["data"]
+
+        print("Question version is",version)
+
+        data = self.generate_question_encoding(categories, self.word2index, version) 
 
         # Pad questions and contexts
-        pad_char = vocab_size-1
+        pad_char = self.vocab_size-1
         padded_data, (max_length_question, max_length_context) = pad_data(data, pad_char)
-        return padded_data, index2embedding, max_length_question, max_length_context
+
+        print("Loaded questions")
+        return (padded_data, (max_length_question, max_length_context))
+
+if __name__ == '__main__':
+    from config import CONFIG
+    D = Dataset(CONFIG.EMBEDDING_FILE)
+    index2embedding = D.index2embedding
+    padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
