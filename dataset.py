@@ -19,6 +19,7 @@ class Dataset:
         self.word2index = None
         self.vocab_size = 0
         self.embedding_dim = 0
+        self.unknown_word = "<UNKNOWN>"
 
         self.index2embedding = self.load_embeddings(sys.argv[1:])
 
@@ -84,7 +85,7 @@ class Dataset:
 
     def index_to_text(self, indexes):
         words = list(map(lambda index: self.index2word[index], indexes))
-        while ((words[-1] == '?') and (len(words) > 1)):
+        while ((words[-1] == self.unknown_word) and (len(words) > 1)):
             words = words[:-1]
         return ' '.join(words)
 
@@ -103,7 +104,7 @@ class Dataset:
             then = lambda x: (defaultdict(lambda: len(x[0]), x[0]), x[1])
         )
         self.word2index = word2index
-        self.index2word = defaultdict(lambda: '?', dict(zip(word2index.values(), word2index.keys())))
+        self.index2word = defaultdict(lambda: self.unknown_word, dict(zip(word2index.values(), word2index.keys())))
 
         print("Loaded embeddings")
         self.vocab_size, self.embedding_dim = index2embedding.shape
@@ -134,6 +135,8 @@ class Dataset:
 
 if __name__ == '__main__':
     from config import CONFIG
-    D = Dataset(CONFIG.EMBEDDING_FILE)
+    D = Dataset('data/glove.840B.300d.txt')
     index2embedding = D.index2embedding
     padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
+
+    print(D.index_to_text(padded_data[0]["context"]))
