@@ -19,10 +19,11 @@ class Dataset:
         self.word2index = None
         self.vocab_size = 0
         self.embedding_dim = 0
+        self.unknown_word = "<UNKNOWN>"
 
         self.index2embedding = self.load_embeddings(sys.argv[1:])
 
-    def generate_question_encoding(self, categories, word2index):
+    def generate_question_encoding(self, categories, word2index, version="1.1"):
         print("Generating question encoding...")
         data = []
         skipped_count = 0
@@ -31,21 +32,26 @@ class Dataset:
                 split_context = tokenise(paragraph["context"])
                 for qas in paragraph["qas"]:
                     # Translate character index to word index
-                    answer = qas["answers"]
+                    answers = qas["answers"]
+                    
                     found = False
                     answer_index = 0
 
                     try: 
-                        while not found:
-                            split_answer = tokenise(answer[answer_index]["text"])
+                        if (len(answers) > 0):
+                            while not found:
+                                split_answer = tokenise(answers[answer_index]["text"])
 
-                            answer_start = next(KnuthMorrisPratt(split_context, split_answer))
-                            if answer_start != None:
-                                found = True
-                            else:
-                                answer_index += 1
-                            
-                        answer_end = answer_start + len(split_answer) - 1
+                                answer_start = next(KnuthMorrisPratt(split_context, split_answer))
+                                if answer_start != None:
+                                    found = True
+                                else:
+                                    answer_index += 1
+                                
+                            answer_end = answer_start + len(split_answer) - 1
+                        elif (version == "v2.0") and (qas["is_impossible"]):
+                            answer_start = -1
+                            answer_end = -1
 
                         data.append({
                             "context": text_to_index(paragraph["context"], word2index),
@@ -79,7 +85,7 @@ class Dataset:
 
     def index_to_text(self, indexes):
         words = list(map(lambda index: self.index2word[index], indexes))
-        while ((words[-1] == '?') and (len(words) > 1)):
+        while ((words[-1] == self.unknown_word) and (len(words) > 1)):
             words = words[:-1]
         return ' '.join(words)
 
@@ -98,7 +104,7 @@ class Dataset:
             then = lambda x: (defaultdict(lambda: len(x[0]), x[0]), x[1])
         )
         self.word2index = word2index
-        self.index2word = defaultdict(lambda: '?', dict(zip(word2index.values(), word2index.keys())))
+        self.index2word = defaultdict(lambda: self.unknown_word, dict(zip(word2index.values(), word2index.keys())))
 
         print("Loaded embeddings")
         self.vocab_size, self.embedding_dim = index2embedding.shape
@@ -113,10 +119,12 @@ class Dataset:
         # read SQuAD data
         with open(question_file, "r") as f:
             data = json.loads(f.read())
-            assert data["version"] == "1.1"
+            version = data["version"]
             categories = data["data"]
 
-        data = self.generate_question_encoding(categories, self.word2index) 
+        print("Question version is",version)
+
+        data = self.generate_question_encoding(categories, self.word2index, version) 
 
         # Pad questions and contexts
         pad_char = self.vocab_size-1
@@ -124,3 +132,11 @@ class Dataset:
 
         print("Loaded questions")
         return (padded_data, (max_length_question, max_length_context))
+
+if __name__ == '__main__':
+    from config import CONFIG
+    D = Dataset('data/glove.840B.300d.txt')
+    index2embedding = D.index2embedding
+    padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
+
+    print(D.index_to_text(padded_data[0]["context"]))

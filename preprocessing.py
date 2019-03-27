@@ -8,6 +8,7 @@ import sys
 from collections import defaultdict  
 from functools import reduce
 import re
+import string
 from config import CONFIG
 
 # https://code.activestate.com/recipes/117214/
@@ -93,7 +94,19 @@ def word_to_index(w, word2index):
 def tokenise(text):
     # Replace annoying unicode with a space
     text = re.sub(r'[^\x00-\x7F]+',' ', text)
-    return tf.keras.preprocessing.text.text_to_word_sequence(text, lower=True, split=' ', filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n\'')
+    # The following replacements are suggested in the paper
+    # BidAF (Seo et al., 2016)
+    text = text.replace("''", '" ')
+    text = text.replace("``", '" ')
+
+    # Space out punctuation
+    space_list = "!\"#$%&()*+,-./:;<=>?@[\\]^_`{|}~"
+    text = text.translate(str.maketrans({key: " {0} ".format(key) for key in space_list}))
+
+    # space out singlequotes a bit better (and like stanford)
+    text = text.replace("'", " '")
+
+    return tf.keras.preprocessing.text.text_to_word_sequence(text, lower=True, split=' ', filters='\t\n')
 
 def text_to_index(text, word2index):
     tokens = tokenise(text)

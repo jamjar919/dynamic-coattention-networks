@@ -5,12 +5,12 @@ import tensorflow as tf
 from functools import reduce
 import os
 from preprocessing import answer_span_to_indices
+
 # custom imports
 from dataset import Dataset
 from config import CONFIG
 from build_model import get_batch
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
-
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
@@ -39,6 +39,7 @@ with tf.Session(config=config) as sess:
     context_batch_placeholder = graph.get_tensor_by_name("context_batch_ph:0")
     embedding = graph.get_tensor_by_name("embedding_ph:0")
     dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
+    # loss  = graph.get_tensor_by_name("loss_to_optimize:0")
 
     f1score = []
     emscore = []
@@ -66,12 +67,11 @@ with tf.Session(config=config) as sess:
         #print("Start batch actual: ", answer_start_batch_actual)
         #print("estimated end index: ", estimated_end_index)
         #print("End batch actual: ", answer_end_batch_actual)
-
         f1 = 0
         em = 0
         for i in range(len(estimated_end_index)):
             f1 += get_f1_from_tokens(
-                answer_start_batch_actual[i], 
+                answer_start_batch_actual[i],
                 answer_end_batch_actual[i],
                 estimated_start_index[i], estimated_end_index[i],
                 context_batch[i],
