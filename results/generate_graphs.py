@@ -1,6 +1,9 @@
 import pickle
 import os
+
 import csv
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -12,8 +15,8 @@ path = os.path.dirname(os.path.abspath(__file__))
 # Load saved data from the files
 loss_averages_file = path+"/training_loss_means.pkl"
 loss_full_csv = path+'/training_loss_per_batch.csv'
-validation_f1_file = path+"./validation_f1_means.pkl"
-validation_loss_file = path+"./validation_loss_means.pkl"
+validation_f1_file = path+"/validation_f1_means.pkl"
+validation_loss_file = path+"/validation_loss_means.pkl"
 
 with open(loss_averages_file, "rb") as f:
     loss_averages = pickle.load(f)
