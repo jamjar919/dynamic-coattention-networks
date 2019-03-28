@@ -106,7 +106,7 @@ def tokenise(text):
     # space out singlequotes a bit better (and like stanford)
     text = text.replace("'", " '")
 
-    return tf.keras.preprocessing.text.text_to_word_sequence(text, lower=False, split=' ', filters='\t\n')
+    return tf.keras.preprocessing.text.text_to_word_sequence(text, lower=True, split=' ', filters='\t\n')
 
 def text_to_index(text, word2index):
     tokens = tokenise(text)
