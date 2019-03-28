@@ -37,24 +37,24 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     question_embedding_length = length(question_embedding)
     
     lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
-    lstm_cell = lstm_enc #tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob=dropout_keep_rate)
+    lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob=dropout_keep_rate)
 
     context_encoding, _ = tf.nn.dynamic_rnn(lstm_cell, context_embedding, sequence_length = context_embedding_length, dtype=tf.float32)
     print("context encoding shape: ",context_encoding.shape)
     # Append sentinel vector
     # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
-    sentinel_vec_context = tf.Variable(tf.zeros([1, hidden_unit_size]), dtype = tf.float32)
+    sentinel_vec_context = tf.get_variable("sentinel_context", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     sentinel_vec_context_batch = tf.stack([sentinel_vec_context] * batch_size)
-    context_encoding = tf.concat([context_encoding, sentinel_vec_context_batch], axis  = 1 )
+    context_encoding = tf.concat([sentinel_vec_context_batch, context_encoding], axis  = 1 )
     print("Extended context encoding shape: ", context_encoding.shape)
 
     
     question_encoding, _ = tf.nn.dynamic_rnn(lstm_cell, question_embedding, sequence_length = question_embedding_length, dtype=tf.float32) 
     print("Question encoding shape: ", question_encoding.shape)   
     # Append sentinel vector 
-    sentinel_vec_question = tf.Variable(tf.zeros([1,hidden_unit_size]), dtype = tf.float32)
+    sentinel_vec_question = tf.get_variable("sentinel_question", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     sentinel_vec_q_batch = tf.stack([sentinel_vec_question] * batch_size) 
-    question_encoding = tf.concat([question_encoding, sentinel_vec_q_batch], axis = 1)
+    question_encoding = tf.concat([sentinel_vec_q_batch, question_encoding], axis = 1)
     print("Extended question encoding shape: ",question_encoding.shape)
 
     # assert question_encoding.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "question encoding shape doesn't match (batch size, hidden unit size, max question length + 1) " + str(question_encoding.shape)
@@ -104,12 +104,12 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)  
     cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
     # C_transpose = transpose(C)
-    u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw,dtype=tf.float32,inputs = C)
-    
+    u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw,dtype=tf.float32,inputs = C, sequence_length = context_embedding_length + 1)
+    print("u_state shape", u_states[0].shape)
     U = tf.concat(u_states, axis = 2) # 10x633x400
     #print("U SHAPE LINE 107: ", U.shape)
-    U = U[:,:-1,:] 
-    # U = tf.slice(U, begin = [0,1,0], size = [batch_size, contexts.shape[1], 2*hidden_unit_size]) # Make U to 10x632x400
+    U = U[:,1:,:] 
+    #U = tf.slice(U, begin = [0,1,0], size = [batch_size, contexts.shape[1], 2*hidden_unit_size]) # Make U to 10x632x400
     print("U.shape ",U.shape)
     #print("U SHAPE AFTER SLICE:", U.shape)
     #assert U.shape == (batch_size, contexts.shape[1], 2 * hidden_unit_size), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
