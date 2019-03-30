@@ -72,7 +72,7 @@ def highway_network(U, hs, u_s, u_e, context_seq_length, hidden_unit_size , pool
     #x3_bin_mask = tf.Print(x3_bin_mask, [x3_bin_mask[0][0:2]], "x3 (0:2) after bin mask") # Check that the start words are unaffected
     #x3_bin_mask = tf.Print(x3_bin_mask, [x3_bin_mask[0][600:602]], "x3 (600:602) after bin mask") # Check that the probably padded words are affected.
     
-    output = tf.argmax(x3_bin_mask, axis=1) # Take argmax from the mask.
+    output = tf.argmax(x3_ninf_mask, axis=1) # Take argmax from the mask.
     print("1st output shape: ", output.shape)
     output = tf.squeeze(tf.cast(output, dtype=tf.int32)) # Remove dimensions of size 1
     print("2nd output shape: ", output.shape)
