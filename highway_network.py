@@ -58,7 +58,7 @@ def highway_network(U, hs, u_s, u_e, context_seq_length, hidden_unit_size , pool
     #x3 = tf.Print(x3, [x3[0][600:602]], "x3 (600:602) before mask")
 
     print ("x3.shape: ", x3.shape)
-    ninf_mask = getMask(context_seq_length, CONFIG.MAX_CONTEXT_LENGTH, val_one = 1., val_two = -10**30) # Get two masks from the sequence length (calculated in encoder)
+    ninf_mask = getMask(context_seq_length, CONFIG.MAX_CONTEXT_LENGTH, val_one = 0., val_two = -10**30) # Get two masks from the sequence length (calculated in encoder)
     print("ninf mask shape: ", ninf_mask.shape)
     x3_ninf_mask = x3 + ninf_mask # Ignore elements which were simply padded on. (element wise multiplication)
     #x3_ninf_mask = tf.Print(x3_ninf_mask, [x3_ninf_mask[0][0:2]], "x3 (0:2) after ninf mask") # Check that the start words are unaffected
