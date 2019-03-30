@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from config import CONFIG
 
 # # Returns two masks. One that will help us get the argmax (ninf_mask) and other to mask logits for the loss function (one_zero_mask)
 def getMasks(seq_length, max_seq_length):
@@ -62,7 +63,7 @@ def highway_network(U, hs, u_s, u_e, context_seq_length, hidden_unit_size , pool
     #x3 = tf.Print(x3, [x3[0][600:602]], "x3 (600:602) before mask")
 
     print ("x3.shape: ", x3.shape)
-    bin_mask, ninf_mask = getMasks(seq_length, max_length_context) # Get two masks from the sequence length (calculated in encoder)
+    bin_mask, ninf_mask = getMasks(context_seq_length, CONFIG.MAX_CONTEXT_LENGTH) # Get two masks from the sequence length (calculated in encoder)
     x3_ninf_mask = x3 + ninf_mask # Ignore elements which were simply padded on. (element wise multiplication)
     #x3_ninf_mask = tf.Print(x3_ninf_mask, [x3_ninf_mask[0][0:2]], "x3 (0:2) after ninf mask") # Check that the start words are unaffected
     #x3_ninf_mask = tf.Print(x3_ninf_mask, [x3_ninf_mask[0][600:602]], "x3 (600:602) after ninf mask") # Check that the probably padded words are affected.

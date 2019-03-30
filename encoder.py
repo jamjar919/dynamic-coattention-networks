@@ -91,7 +91,7 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     W_q_batch = tf.stack([W_q] * batch_size)
     b_q_batch = tf.stack([b_q] * batch_size)
     Q = tf.tanh(tf.add(tf.matmul(question_encoding, W_q_batch), b_q_batch))
-    Q_bin_mask = get_mask(question_embedding_length, CONFIG.MAX_QUESTION_LENGTH , hidden_unit_size, val_one = 1, val_two = 0)
+    Q_bin_mask = get_mask(question_embedding_length, CONFIG.MAX_QUESTION_LENGTH + 1, hidden_unit_size, val_one = 1, val_two = 0)
     #Q = tf.Print(Q, [Q[0][1]], " Q SHAPE first row before mask")
     #Q = tf.Print(Q, [Q[0][-1]], " Q SHAPE last row before mask last rows")
     Q = Q * Q_bin_mask
@@ -106,7 +106,7 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     #L = tf.Print(L, [L[0, context_embedding_length[0]+1:,:]], "First padded L row", summarize = 200)
     #L = tf.Print(L, [L[0, : , question_embedding_length[0]]], "last valid element of L question", summarize = 600)
     #L = tf.Print(L, [L[0, : , question_embedding_length[0]+1]], "First padded element of question", summarize = 600)
-    L_mask = get_mask2D(tf.expand_dims(context_embedding_length, -1), tf.expand_dims(question_embedding_length, -1), CONFIG.MAX_CONTEXT_LENGTH, CONFIG.MAX_QUESTION_LENGTH, val_one = 0, val_two = -10**30)
+    L_mask = get_mask2D(tf.expand_dims(context_embedding_length, -1), tf.expand_dims(question_embedding_length, -1), CONFIG.MAX_CONTEXT_LENGTH + 1, CONFIG.MAX_QUESTION_LENGTH + 1, val_one = 0, val_two = -10**30)
     #L_mask = tf.Print(L_mask, [L_mask], "L mask", summarize = 1000)
     print("L.shape : ", L.shape)
     #print("L_mask: ", L_mask.shape)
@@ -147,9 +147,8 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw, dtype=tf.float32,inputs = C, sequence_length = context_embedding_length)
     print("u_state shape", u_states[0].shape)
     U = tf.concat(u_states, axis = 2) # 10x633x400
-    #print("U SHAPE LINE 107: ", U.shape)
     #U = tf.Print(U, [U[0,-1,:]], "U word 632")
-    U = U[:,1:,:] 
+    U = U[:,:-1,:] 
     #U = tf.slice(U, begin = [0,1,0], size = [batch_size, contexts.shape[1], 2*hidden_unit_size]) # Make U to 10x632x400
     print("U.shape ",U.shape)
     #print("U SHAPE AFTER SLICE:", U.shape)

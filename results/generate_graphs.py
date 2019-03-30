@@ -14,6 +14,7 @@ loss_averages_file = path+"/training_loss_means.pkl"
 loss_full_csv = path+'/training_loss_per_batch.csv'
 validation_f1_file = path+"./validation_f1_means.pkl"
 validation_loss_file = path+"./validation_loss_means.pkl"
+validation_em_file = path + "./validation_em_means.pkl"
 
 with open(loss_averages_file, "rb") as f:
     loss_averages = pickle.load(f)
@@ -29,6 +30,9 @@ with open(validation_f1_file, "rb") as f:
 
 with open(validation_loss_file, "rb") as f:
     validation_loss_averages = pickle.load(f)
+
+with open(validation_em_file, "rb") as f:
+    validation_em_averages = pickle.load(f)
 
 def generate_training_loss_graph():
     plt.clf()
@@ -69,9 +73,11 @@ def generate_training_validation_vs_loss():
     par.axis["right"].toggle(all=True)
     host.set_ylim(0, max(loss_averages) + 1)
 
-    plt.plot(list(range(0, len(loss_averages))), loss_averages, 'b-', label="Training loss averages")
-    plt.plot(list(range(0, len(loss_averages))), validation_loss_averages, 'r-', label="Validation loss averages")
-    par.plot(list(range(0, len(loss_averages))), validation_f1_averages, 'y-', label="Validation f1 averages")
+    plt.plot(list(range(0, len(loss_averages))), loss_averages, 'b-', label="Training loss")
+    plt.plot(list(range(0, len(loss_averages))), validation_loss_averages, 'r-', label="Validation loss")
+    par.plot(list(range(0, len(loss_averages))), validation_f1_averages, 'y-', label="Validation F1")
+    par.plot(list(range(0, len(loss_averages))), validation_em_averages, 'g-', label="Validation EM")
+    
 
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
@@ -82,8 +88,6 @@ def generate_training_validation_vs_loss():
     plt.savefig(path + '/loss_validation_loss_graph.png')
 
     plt.clf()
-
-
 
 
 generate_training_validation_vs_loss()
