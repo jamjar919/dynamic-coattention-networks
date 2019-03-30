@@ -3,8 +3,8 @@ import numpy as np
 from config import CONFIG
 
 def masked_matrix(seq_len,m,n,val_one = 1, val_two = 0) :
-    val_one_matrix = val_one * tf.ones(shape = [seq_len, n], dtype = tf.dtypes.float32)
-    val_two_matrix = val_two * tf.ones(shape = [m - seq_len, n], dtype = tf.dtypes.float32)
+    val_one_matrix = val_one * tf.ones(shape = [seq_len, n], dtype = tf.float32)
+    val_two_matrix = val_two * tf.ones(shape = [m - seq_len, n], dtype = tf.float32)
     
     return tf.concat(values = [val_one_matrix, val_two_matrix], axis = 0)
 
@@ -150,7 +150,7 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     #U = tf.Print(U, [U[0,-1,:]], "U word 632")
     U = U[:,1:,:] 
     #U = tf.slice(U, begin = [0,1,0], size = [batch_size, contexts.shape[1], 2*hidden_unit_size]) # Make U to 10x632x400
-    print("U.shape ",U.shape)
+    print("U.shape ", U.shape)
     #print("U SHAPE AFTER SLICE:", U.shape)
     #assert U.shape == (batch_size, contexts.shape[1], 2 * hidden_unit_size), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
     
