@@ -71,7 +71,7 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     sentinel_vec_context = tf.get_variable("sentinel_context", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     #sentinel_vec_context = tf.Print(sentinel_vec_context, [sentinel_vec_context[0:7]], "Sentinel context vector")
     sentinel_vec_context_batch = tf.stack([sentinel_vec_context] * batch_size)
-    context_encoding = tf.concat([sentinel_vec_context_batch, context_encoding], axis  = 1 )
+    context_encoding = tf.concat([context_encoding, sentinel_vec_context_batch], axis  = 1 )
     print("Extended context encoding shape: ", context_encoding.shape)
 
     
@@ -81,11 +81,8 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     sentinel_vec_question = tf.get_variable("sentinel_question", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     #sentinel_vec_question = tf.Print(sentinel_vec_question, [sentinel_vec_question[0:7]], "Sentinel question vector")
     sentinel_vec_q_batch = tf.stack([sentinel_vec_question] * batch_size) 
-    question_encoding = tf.concat([sentinel_vec_q_batch, question_encoding], axis = 1)
+    question_encoding = tf.concat([question_encoding, sentinel_vec_q_batch], axis = 1)
     print("Extended question encoding shape: ",question_encoding.shape)
-
-    # assert question_encoding.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "question encoding shape doesn't match (batch size, hidden unit size, max question length + 1) " + str(question_encoding.shape)
-    # assert context_encoding.shape == (batch_size, hidden_unit_size, contexts.shape[1] + 1), "context encoding shape doesn't match (batch size, hidden unit size, max context length + 1) " + str(context_encoding.shape)
 
     # Append "non linear projection layer" on top of the question encoding
     # Q = tanh(W^{Q} Q' + b^{Q})
@@ -94,10 +91,10 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     W_q_batch = tf.stack([W_q] * batch_size)
     b_q_batch = tf.stack([b_q] * batch_size)
     Q = tf.tanh(tf.add(tf.matmul(question_encoding, W_q_batch), b_q_batch))
-    Q_bin_mask = get_mask(question_embedding_length + 1, CONFIG.MAX_QUESTION_LENGTH + 1, hidden_unit_size, val_one = 1, val_two = 0)
+    Q_bin_mask = get_mask(question_embedding_length, CONFIG.MAX_QUESTION_LENGTH , hidden_unit_size, val_one = 1, val_two = 0)
     #Q = tf.Print(Q, [Q[0][1]], " Q SHAPE first row before mask")
     #Q = tf.Print(Q, [Q[0][-1]], " Q SHAPE last row before mask last rows")
-    #Q = Q * Q_bin_mask
+    Q = Q * Q_bin_mask
     #Q = tf.Print(Q, [Q], " Q SHAPE first row after mask", summarize = 500)
     #Q = tf.Print(Q, [Q[0][-1]], " Q SHAPE last row", summarize = 500)
     print("Q shape :", Q.shape) # B,41,200
@@ -109,11 +106,11 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     #L = tf.Print(L, [L[0, context_embedding_length[0]+1:,:]], "First padded L row", summarize = 200)
     #L = tf.Print(L, [L[0, : , question_embedding_length[0]]], "last valid element of L question", summarize = 600)
     #L = tf.Print(L, [L[0, : , question_embedding_length[0]+1]], "First padded element of question", summarize = 600)
-    #L_mask = get_mask2D(tf.expand_dims(context_embedding_length + 1, -1), tf.expand_dims(question_embedding_length + 1, -1), CONFIG.MAX_CONTEXT_LENGTH+1, CONFIG.MAX_QUESTION_LENGTH + 1, val_one = 0, val_two = -10**30)
+    L_mask = get_mask2D(tf.expand_dims(context_embedding_length, -1), tf.expand_dims(question_embedding_length, -1), CONFIG.MAX_CONTEXT_LENGTH, CONFIG.MAX_QUESTION_LENGTH, val_one = 0, val_two = -10**30)
     #L_mask = tf.Print(L_mask, [L_mask], "L mask", summarize = 1000)
     print("L.shape : ", L.shape)
     #print("L_mask: ", L_mask.shape)
-    #L = L + L_mask
+    L = L + L_mask # Add ninf mask
     # assert L.shape == (batch_size, contexts.shape[1] + 1,  questions.shape[1] + 1), "L shape doesn't match (batch_size, max context length + 1,  max question length + 1)" + str(L.shape)
     #L = tf.Print(L, [L], "Carried out addition")
     # attention weights for questions A^{Q} = softmax(L)
@@ -147,7 +144,7 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)  
     cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
     # C_transpose = transpose(C)
-    u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw,dtype=tf.float32,inputs = C)#, sequence_length = context_embedding_length + 1)
+    u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw, dtype=tf.float32,inputs = C, sequence_length = context_embedding_length)
     print("u_state shape", u_states[0].shape)
     U = tf.concat(u_states, axis = 2) # 10x633x400
     #print("U SHAPE LINE 107: ", U.shape)
@@ -158,7 +155,7 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     #print("U SHAPE AFTER SLICE:", U.shape)
     #assert U.shape == (batch_size, contexts.shape[1], 2 * hidden_unit_size), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
     
-    return U #, context_embedding_length
+    return U, context_embedding_length
 
 
 

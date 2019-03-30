@@ -2,17 +2,16 @@ import tensorflow as tf
 import numpy as np
 
 # # Returns two masks. One that will help us get the argmax (ninf_mask) and other to mask logits for the loss function (one_zero_mask)
-# def getMasks(seq_length, max_seq_length):
-#     one_zero_mask =  tf.map_fn(lambda x: tf.pad(tf.ones([x], dtype=tf.int32), [[0, max_seq_length - x]]), seq_length)
-#     filled_negone = tf.fill([seq_length.shape[0], max_seq_length], value = -1) # Fill same shape tensor with -1.
-#     mask = one_zero_mask + filled_negone
-#     inv_mask =  mask * filled_negone # This is now the inverted mask.
-#     arr = np.full((seq_length.shape[0], max_seq_length), np.NINF)
-#     ninf_mask = inv_mask * arr
-    
-#     return tf.cast(one_zero_mask, tf.float32), tf.cast(ninf_mask, tf.float32) # cast the mask to float so that we can multiply with float logits.
+def getMasks(seq_length, max_seq_length):
+    one_zero_mask =  tf.map_fn(lambda x: tf.pad(tf.ones([x], dtype=tf.int32), [[0, max_seq_length - x]]), seq_length)
+    filled_negone = tf.fill([seq_length.shape[0], max_seq_length], value = -1) # Fill same shape tensor with -1.
+    mask = one_zero_mask + filled_negone
+    inv_mask =  mask * filled_negone # This is now the inverted mask.
+    arr = np.full((seq_length.shape[0], max_seq_length), np.NINF)
+    ninf_mask = inv_mask * arr    
+    return tf.cast(one_zero_mask, tf.float32), tf.cast(ninf_mask, tf.float32) # cast the mask to float so that we can multiply with float logits.
 
-def highway_network(U, hs, u_s, u_e, hidden_unit_size , pool_size):
+def highway_network(U, hs, u_s, u_e, context_seq_length, hidden_unit_size , pool_size):
     keep_rate = 1
 
     ''' Get the weights and biases for the network '''
@@ -63,18 +62,18 @@ def highway_network(U, hs, u_s, u_e, hidden_unit_size , pool_size):
     #x3 = tf.Print(x3, [x3[0][600:602]], "x3 (600:602) before mask")
 
     print ("x3.shape: ", x3.shape)
-    # bin_mask, ninf_mask = getMasks(seq_length, max_length_context) # Get two masks from the sequence length (calculated in encoder)
-    # x3_ninf_mask = x3 + ninf_mask # Ignore elements which were simply padded on. (element wise multiplication)
+    bin_mask, ninf_mask = getMasks(seq_length, max_length_context) # Get two masks from the sequence length (calculated in encoder)
+    x3_ninf_mask = x3 + ninf_mask # Ignore elements which were simply padded on. (element wise multiplication)
     #x3_ninf_mask = tf.Print(x3_ninf_mask, [x3_ninf_mask[0][0:2]], "x3 (0:2) after ninf mask") # Check that the start words are unaffected
     #x3_ninf_mask = tf.Print(x3_ninf_mask, [x3_ninf_mask[0][600:602]], "x3 (600:602) after ninf mask") # Check that the probably padded words are affected.
 
-    # x3_bin_mask = x3 * bin_mask
+    x3_bin_mask = x3 * bin_mask
     #x3_bin_mask = tf.Print(x3_bin_mask, [x3_bin_mask[0][0:2]], "x3 (0:2) after bin mask") # Check that the start words are unaffected
     #x3_bin_mask = tf.Print(x3_bin_mask, [x3_bin_mask[0][600:602]], "x3 (600:602) after bin mask") # Check that the probably padded words are affected.
     
-    output = tf.argmax(x3, axis=1) # Take argmax from the mask.
+    output = tf.argmax(x3_bin_mask, axis=1) # Take argmax from the mask.
     print("1st output shape: ", output.shape)
     output = tf.squeeze(tf.cast(output, dtype=tf.int32)) # Remove dimensions of size 1
     print("2nd output shape: ", output.shape)
 
-    return output, x3
+    return output, x3_bin_mask

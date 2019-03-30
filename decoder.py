@@ -4,7 +4,7 @@ import highway_network as hn
 import numpy as np
 from config import CONFIG
 
-def decoder(U, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
+def decoder(U, context_seq_length, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
     """
     :param U: This is output of the encoder
     :param batch_size:
@@ -76,12 +76,12 @@ def decoder(U, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.PO
         print("usue shape", usue.shape)
         with tf.variable_scope('HMN_start', reuse = True) as scope1:
             # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
-            sv, s_logits = hn.highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+            sv, s_logits = hn.highway_network(U, h_i, u_s, u_e, context_seq_length, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
             # sv = tf.Print(sv,[sv], "s_v START INDEX ESTIMATE")
             alphas.append(s_logits)
         # e is the end index
         with tf.variable_scope('HMN_end', reuse = True) as scope2:
-            ev, e_logits = hn.highway_network(U, h_i, u_s, u_e, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+            ev, e_logits = hn.highway_network(U, h_i, u_s, u_e, context_seq_length, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
             # ev = tf.Print(ev,[ev],"e_v END INDEX ESTIMATE")
             betas.append(e_logits)
 
