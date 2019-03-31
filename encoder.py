@@ -62,7 +62,7 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     print("Context embedding length shape: ", context_embedding_length.shape)
     
     lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
-    lstm_cell = lstm_enc #tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob=dropout_keep_rate)
+    lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob=dropout_keep_rate)
 
     context_encoding, _ = tf.nn.dynamic_rnn(lstm_cell, context_embedding, sequence_length = context_embedding_length, dtype=tf.float32)
     print("context encoding shape: ",context_encoding.shape)
