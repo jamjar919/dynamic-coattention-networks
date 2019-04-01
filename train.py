@@ -18,6 +18,7 @@ tensorboard_filepath = '.'
 D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
 padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
+padded_data = padded_data[0:len(padded_data)//2]
 print("Loaded data")
 
 tf.reset_default_graph()
