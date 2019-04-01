@@ -142,9 +142,9 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
 
     # Bi-LSTM
     cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)  
-    cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
+    #cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
     # C_transpose = transpose(C)
-    u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw, dtype=tf.float32,inputs = C, sequence_length = context_embedding_length + 1)
+    u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_fw,cell_fw=cell_fw, dtype=tf.float32,inputs = C, sequence_length = context_embedding_length + 1)
     print("u_state shape", u_states[0].shape)
     U = tf.concat(u_states, axis = 2) # 10x633x400
     #U = tf.Print(U, [U[0,-1,:]], "U word 632")
