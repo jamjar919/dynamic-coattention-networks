@@ -120,4 +120,3 @@ with tf.Session(config=config) as sess:
             f.write(','.join(list(map(lambda x: str(x), losses))) + '\n')
 
         saver.save(sess, './model/saved', global_step=epoch)
-

@@ -150,5 +150,4 @@ if __name__ == '__main__':
     D = Dataset('data/glove.840B.300d.txt')
     index2embedding = D.index2embedding
     padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")
-
-    print(padded_data[7])
+    print(D.index_to_text(padded_data[0]["context"]))
