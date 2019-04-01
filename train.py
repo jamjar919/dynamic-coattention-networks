@@ -18,6 +18,7 @@ tensorboard_filepath = '.'
 D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
 padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
+padded_data = padded_data[0:len(padded_data)//2]
 print("Loaded data")
 
 tf.reset_default_graph()
@@ -81,7 +82,7 @@ with tf.Session(config=config) as sess:
             question_batch_validation, context_batch_validation, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
             estimated_start_index, estimated_end_index, loss_validation = sess.run([s, e, loss],
-            get_feed_dict(question_batch_validation,context_batch_validation,answer_end_batch_actual,answer_end_batch_actual, 1.0, index2embedding)
+            get_feed_dict(question_batch_validation,context_batch_validation,answer_start_batch_actual,answer_end_batch_actual, 1.0, index2embedding)
             )
 
             validation_losses.append(np.mean(loss_validation))
