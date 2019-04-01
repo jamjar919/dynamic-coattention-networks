@@ -17,7 +17,7 @@ def build_model(embedding):
     question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_QUESTION_LENGTH], name='question_batch_ph')
     context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_CONTEXT_LENGTH], name='context_batch_ph')
     # Create encoder. (Encoder will also return the sequence length of the context (i.e. how much of each batch element is unpadded))
-    U, context_seq_length = encoder(question_batch_placeholder,context_batch_placeholder, dropout_keep_rate, embedding, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, embedding_vector_size=CONFIG.EMBEDDING_DIMENSION)
+    U, context_seq_length = encoder(question_batch_placeholder,context_batch_placeholder, embedding)
     # Word index placeholders
     answer_start = tf.placeholder(dtype=tf.int32,shape=[None], name='answer_start_true_ph')
     answer_end = tf.placeholder(dtype=tf.int32,shape=[None], name='answer_end_true_ph')

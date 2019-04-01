@@ -9,6 +9,7 @@ class Config:
         self.LEARNING_RATE = 0.001
         self.CLIP_NORM = 3.0
         self.DROPOUT_KEEP_PROB = 0.7
+        self.BILSTM_DROPOUT_KEEP_PROB = 0.7
         self.TRAIN_PERCENTAGE = 0.90
         
         self.QUESTION_FILE = 'data/train.json'
