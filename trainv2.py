@@ -53,12 +53,12 @@ with tf.Session(config=config) as sess:
     val_loss_means = []
     val_f1_means = []
     val_em_means = []
-    for epoch in range(1):#CONFIG.MAX_EPOCHS):
+    for epoch in range(CONFIG.MAX_EPOCHS):
         print("Epoch # : ", epoch + 1)
         losses = []
         # Shuffle the data between epochs
         np.random.shuffle(padded_data_train)
-        for iteration in range(0, 1): #len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+        for iteration in range(0, len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_train[iteration:iteration + CONFIG.BATCH_SIZE]
             question_batch, context_batch, answer_start_batch, answer_end_batch = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
@@ -76,7 +76,7 @@ with tf.Session(config=config) as sess:
         validation_losses = []
 
         #validation starting
-        for counter in range(0, 1): #len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+        for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
             question_batch_validation, context_batch_validation, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
