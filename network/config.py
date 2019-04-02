@@ -12,7 +12,9 @@ class Config:
         self.TRAIN_PERCENTAGE = 0.90
         
         self.QUESTION_FILE = 'data/train.json'
+        self.QUESTION_FILE_V2 = 'data/train-v2.0.json'
         self.EMBEDDING_FILE = 'data/glove.840B.300d.txt'
+
 
         self.MAX_CONTEXT_LENGTH = 632
         self.MAX_QUESTION_LENGTH = 40

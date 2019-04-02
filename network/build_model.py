@@ -11,19 +11,37 @@ def get_batch(batch, batch_size = CONFIG.BATCH_SIZE, max_length_question = CONFI
     answer_end_batch = np.array(list(map(lambda qas: (qas["answer_end"]), batch))).reshape(batch_size)
     return question_batch, context_batch, answer_start_batch, answer_end_batch
 
-def build_model(embedding):
+def build_model_v1(embedding):
+    return build_model(embedding, v2 = False)
+
+def build_model_v2(embedding):
+    return build_model(embedding, v2 = True)
+
+def build_model(embedding, v2 = False):
     dropout_keep_rate = tf.placeholder(dtype = tf.float32, name = "dropout_keep_ph")
     batch_size_ph = tf.placeholder(dtype = tf.int32, name = "batch_size_ph")
     question_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_QUESTION_LENGTH], name='question_batch_ph')
     context_batch_placeholder = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_CONTEXT_LENGTH], name='context_batch_ph')
-    # Create encoder. (Encoder will also return the sequence length of the context (i.e. how much of each batch element is unpadded))
-    U, context_seq_length = encoder(question_batch_placeholder,context_batch_placeholder, embedding, dropout_keep_rate)
     # Word index placeholders
     answer_start = tf.placeholder(dtype=tf.int32,shape=[None], name='answer_start_true_ph')
     answer_end = tf.placeholder(dtype=tf.int32,shape=[None], name='answer_end_true_ph')
+    max_context_length = CONFIG.MAX_CONTEXT_LENGTH
+
+    # Create encoder. (Encoder will also return the sequence length of the context (i.e. how much of each batch element is unpadded))
+    U, context_seq_length = encoder(question_batch_placeholder,context_batch_placeholder, embedding, dropout_keep_rate)
+    # throw away sentinel
+    if  v2 :
+        context_seq_length+=1
+        max_context_length+=1
+        answer_start+=1
+        answer_end+=1
+    else :
+        # throw away sentinel
+        U = U[:,1:,:]
+        
 
     # Create decoder 
-    s, e, alphas, betas = decoder(U, context_seq_length, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, pool_size=CONFIG.POOL_SIZE) # Pass also the seq_length from encoder and max_length.
+    s, e, alphas, betas = decoder(U, context_seq_length,max_context_length, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, pool_size=CONFIG.POOL_SIZE) # Pass also the seq_length from encoder and max_length.
 
     s = tf.identity(s, name='answer_start')
     e = tf.identity(e, name='answer_end')
@@ -37,13 +55,9 @@ def build_model(embedding):
     
     losses  = losses_alpha + losses_beta
     print("losses.shape = ",losses.shape)    # should be (4,batch_size)
-    loss = tf.reduce_sum(losses,axis = 0) # get rid of the 4
+    loss = tf.reduce_sum(losses,axis = 0, name = "loss") # get rid of the 4
     print("loss.shape = ", loss.shape) # should be (batch_size,)
 
-    # losses_alpha = [tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_start, logits=a) for a in alphas]
-    # losses_alpha = [tf.reduce_mean(x) for x in losses_alpha]
-    # losses_beta = [tf.nn.sparse_softmax_cross_entropy_with_logits(labels=answer_end, logits=b) for b in betas]
-    # losses_beta = [tf.reduce_mean(x) for x in losses_beta]
 
     original_optimizer = tf.train.AdamOptimizer(CONFIG.LEARNING_RATE)
     optimizer = tf.contrib.estimator.clip_gradients_by_norm(original_optimizer, clip_norm=CONFIG.CLIP_NORM)

@@ -152,7 +152,6 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     print("U1 shape: ", U1.shape)
     U = tf.concat([U1,U2], axis = 2) # 10x633x400
     #U = tf.Print(U, [U[0,-1,:]], "U word 632")
-    U = U[:,1:,:] 
     #U = tf.slice(U, begin = [0,1,0], size = [batch_size, contexts.shape[1], 2*hidden_unit_size]) # Make U to 10x632x400
     print("U.shape ", U.shape)
     #print("U SHAPE AFTER SLICE:", U.shape)
