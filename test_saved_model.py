@@ -62,28 +62,40 @@ with tf.Session(config=config) as sess:
         })
         est_answer = answer_span_to_indices(estimated_start_index[0], estimated_end_index[0], context_batch[0])
         print("Predicted answer: ", D.index_to_text(est_answer))
-        #print("Loss: ", np.mean(loss))
-        #print("estimated start index: ", estimated_start_index)
-        #print("Start batch actual: ", answer_start_batch_actual)
-        #print("estimated end index: ", estimated_end_index)
-        #print("End batch actual: ", answer_end_batch_actual)
+
+        all_answers = np.array(list(map(lambda qas: (qas["all_answers"]), batch))).reshape(CONFIG.BATCH_SIZE)
+
         f1 = 0
         em = 0
-        for i in range(len(estimated_end_index)):
-            f1 += get_f1_from_tokens(
-                answer_start_batch_actual[i],
-                answer_end_batch_actual[i],
-                estimated_start_index[i], estimated_end_index[i],
-                context_batch[i],
-                D)
+        # Calculate f1 and em scores across batch size 
+        for i in range(CONFIG.BATCH_SIZE):
+            # maximise f1 score across answers
+            f1_score_answers = []
+            em_score_answers = []
+            for true_answer in all_answers[i]:
+                f1_score_answers.append(get_f1_from_tokens(
+                    true_answer["answer_start"],
+                    true_answer["answer_end"],
+                    estimated_start_index[i],
+                    estimated_end_index[i],
+                    context_batch[i],
+                    D)
+                )
 
-            em += get_exact_match_from_tokens(answer_start_batch_actual[i],
-                answer_end_batch_actual[i],
-                estimated_start_index[i], estimated_end_index[i],
-                context_batch[i],
-                D)
-        f1score_curr = f1/len(estimated_end_index)
-        emscore_curr = em/len(estimated_end_index)
+                em_score_answers.append(get_exact_match_from_tokens(
+                    true_answer["answer_start"],
+                    true_answer["answer_end"],
+                    estimated_start_index[i],
+                    estimated_end_index[i],
+                    context_batch[i],
+                    D)
+                )
+
+            f1 += max(f1_score_answers)
+            em += max(em_score_answers)
+    
+        f1score_curr = f1/CONFIG.BATCH_SIZE
+        emscore_curr = em/CONFIG.BATCH_SIZE
         print("Current f1 score: ", f1score_curr)
         print("Current em score: ", emscore_curr)
         f1score.append(f1score_curr)

@@ -19,6 +19,7 @@ class Dataset:
         self.word2index = None
         self.vocab_size = 0
         self.embedding_dim = 0
+        self.unknown_word = "<UNKNOWN>"
 
         self.index2embedding = self.load_embeddings(sys.argv[1:])
 
@@ -33,33 +34,44 @@ class Dataset:
                     # Translate character index to word index
                     answers = qas["answers"]
                     
-                    found = False
-                    answer_index = 0
-
-                    try: 
-                        if (len(answers) > 0):
-                            while not found:
-                                split_answer = tokenise(answers[answer_index]["text"])
-
-                                answer_start = next(KnuthMorrisPratt(split_context, split_answer))
-                                if answer_start != None:
-                                    found = True
-                                else:
-                                    answer_index += 1
-                                
+                    answers_found = []
+                    for answer in answers:
+                        split_answer = tokenise(answer["text"])
+                        answer_start = next(KnuthMorrisPratt(split_context, split_answer))
+                        if answer_start != None:
                             answer_end = answer_start + len(split_answer) - 1
-                        elif (version == "v2.0") and (qas["is_impossible"]):
-                            answer_start = -1
-                            answer_end = -1
+                            answers_found.append({"answer_start": answer_start, "answer_end": answer_end})
+
+                    # dedupe list
+                    deduped_answers = []
+                    for answer in answers_found:
+                        if answer not in deduped_answers:
+                            deduped_answers.append(answer)         
+
+                    if (len(answers_found) > 0):
+
+                        answer_start = answers_found[0]["answer_start"]  
+                        answer_end = answers_found[0]["answer_end"]
 
                         data.append({
                             "context": text_to_index(paragraph["context"], word2index),
                             "question": text_to_index(qas["question"], word2index),
                             "answer_start": answer_start,
-                            "answer_end": answer_end
+                            "answer_end": answer_end,
+                            "all_answers": deduped_answers
+                        })           
+           
+                    elif (version == "v2.0") and (qas["is_impossible"]):
+                        data.append({
+                            "context": text_to_index(paragraph["context"], word2index),
+                            "question": text_to_index(qas["question"], word2index),
+                            "answer_start": -1,
+                            "answer_end": -1,
+                            "all_answers": []
                         })
-                    except IndexError:
+                    else:
                         skipped_count += 1
+
         print("Skipped encoding",skipped_count,"/",len(data) + skipped_count,"questions because couldn't find the answer in the text")
         return data
 
@@ -84,8 +96,9 @@ class Dataset:
 
     def index_to_text(self, indexes):
         words = list(map(lambda index: self.index2word[index], indexes))
-        while ((words[-1] == '?') and (len(words) > 1)):
-            words = words[:-1]
+        if (len(words) > 0):
+            while ((words[-1] == self.unknown_word) and (len(words) > 1)):
+                words = words[:-1]
         return ' '.join(words)
 
     def load_embeddings(self, args):
@@ -103,7 +116,7 @@ class Dataset:
             then = lambda x: (defaultdict(lambda: len(x[0]), x[0]), x[1])
         )
         self.word2index = word2index
-        self.index2word = defaultdict(lambda: '?', dict(zip(word2index.values(), word2index.keys())))
+        self.index2word = defaultdict(lambda: self.unknown_word, dict(zip(word2index.values(), word2index.keys())))
 
         print("Loaded embeddings")
         self.vocab_size, self.embedding_dim = index2embedding.shape
@@ -134,6 +147,7 @@ class Dataset:
 
 if __name__ == '__main__':
     from config import CONFIG
-    D = Dataset(CONFIG.EMBEDDING_FILE)
+    D = Dataset('data/glove.840B.300d.txt')
     index2embedding = D.index2embedding
-    padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
+    padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")
+    print(D.index_to_text(padded_data[0]["context"]))
