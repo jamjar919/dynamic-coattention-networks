@@ -16,15 +16,22 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
 padded_data_squad1, (max_length_question, max_length_context) = D.load_questions('data/train.json')
-padded_data_train = padded_data_squad1[0:(int)(CONFIG.TRAIN_PERCENTAGE*len(padded_data_squad1))]
-trained_contexts = [x["context"] for x in padded_data_train]
+padded_data_validation = padded_data_squad1[(int) (CONFIG.TRAIN_PERCENTAGE*len(padded_data_squad1)):]
+untrained_contexts = [x["context"] for x in padded_data_validation]
 print("Loaded data from squad one")
 
 padded_data_squad2, (max_length_question_squad2, max_length_context_squad2) = D.load_questions('data/train-v2.0.json')
-# print("padded_data_squad2.len = ",len(padded_data_squad2))
-# print("Max length from squad 2 q and c: ", max_length_question_squad2, max_length_context_squad2)
-# print("Loaded data from squad two")
+print("padded_data_squad2.len = ",len(padded_data_squad2))
+print("Max length from squad 2 q and c: ", max_length_question_squad2, max_length_context_squad2)
+print("Loaded data from squad two")
 
+padded_data_untrained = [x for x in padded_data_squad2 if x["context"] in untrained_contexts]
+unanswerable_data = [x for x in padded_data_untrained if x["answer_start"]==-1]
+answerable_data = [x for x in padded_data_untrained if x["answer_start"]>=0]
+print("Number of unanswerable questions: ",len(unanswerable_data))
+print("Number of answerable questions: ", len(answerable_data))
+
+padded_data = np.array(padded_data_untrained)
 # # extract unanswerable questions
 # padded_data_squad2 = np.array([x for x in padded_data_squad2 if x['answer_start'] == -1])
 # print("Unanswerable questions: ",padded_data_squad2.shape[0])
