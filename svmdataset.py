@@ -13,17 +13,21 @@ from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-D = Dataset('data/glove.6B.300d.txt')
+D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
 padded_data_squad1, (max_length_question, max_length_context) = D.load_questions('data/train.json')
+padded_data_train = padded_data_squad1[0:(int)(CONFIG.TRAIN_PERCENTAGE*len(padded_data_squad1))]
+trained_contexts = [x["context"] for x in padded_data_train]
 print("Loaded data from squad one")
 
-padded_data_squad1 = np.array(padded_data_squad1)
-padded_data_answerable = padded_data_squad1[(int) (CONFIG.TRAIN_PERCENTAGE * padded_data_squad1.shape[0]):]
 padded_data_squad2, (max_length_question_squad2, max_length_context_squad2) = D.load_questions('data/train-v2.0.json')
-print("Max length from squad 2 q and c: ", max_length_question_squad2, max_length_context_squad2)
-print("Loaded data from squad two")
+# print("padded_data_squad2.len = ",len(padded_data_squad2))
+# print("Max length from squad 2 q and c: ", max_length_question_squad2, max_length_context_squad2)
+# print("Loaded data from squad two")
 
+# # extract unanswerable questions
+# padded_data_squad2 = np.array([x for x in padded_data_squad2 if x['answer_start'] == -1])
+# print("Unanswerable questions: ",padded_data_squad2.shape[0])
 '''
 
 latest_checkpoint_path = './model/saved-7' 
