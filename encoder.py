@@ -38,7 +38,7 @@ def length(sequence):
 def transpose(tensor):
     return tf.transpose(tensor,perm=[0,2,1])
 
-def encoder(questions,contexts,embedding):
+def encoder(questions,contexts,embedding, dropout_keep_rate):
     '''
         Build the model for the document encoder
         questions: Tensor of questions
@@ -66,7 +66,7 @@ def encoder(questions,contexts,embedding):
     print("Context embedding length shape: ", context_embedding_length.shape)
     
     lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
-    lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob=CONFIG.DROPOUT_KEEP_PROB)
+    lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob= dropout_keep_rate)
 
     context_encoding, _ = tf.nn.dynamic_rnn(lstm_cell, context_embedding, sequence_length = context_embedding_length, dtype=tf.float32)
     print("context encoding shape: ",context_encoding.shape)
@@ -147,8 +147,6 @@ def encoder(questions,contexts,embedding):
     # Bi-LSTM
     cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)  
     cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
-    lstm_fw = tf.contrib.rnn.DropoutWrapper(cell_fw, output_keep_prob=CONFIG.BILSTM_DROPOUT_KEEP_PROB)
-    lstm_bw = tf.contrib.rnn.DropoutWrapper(cell_bw, output_keep_prob=CONFIG.BILSTM_DROPOUT_KEEP_PROB)
     (U1,U2), _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw, dtype=tf.float32,
         inputs = C, sequence_length = context_embedding_length + 1)
     print("U1 shape: ", U1.shape)
