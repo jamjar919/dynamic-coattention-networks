@@ -54,39 +54,41 @@ with tf.Session(config=config) as sess:
     embedding = graph.get_tensor_by_name("embedding_ph:0")
     dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
 
+    alpha_raw, beta_raw, labels = [], [], []
 
-alpha_raw, beta_raw, labels = [], [], []
+    for iteration in range(0, len(padded_data) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+            # running on an example batch to debug encoder
+            batch = padded_data[iteration : (iteration + CONFIG.BATCH_SIZE)]
+            question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
-for iteration in range(0, len(padded_data) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
-        # running on an example batch to debug encoder
-        batch = padded_data[iteration : (iteration + CONFIG.BATCH_SIZE)]
-        question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-        print("First context: ", D.index_to_text(context_batch[0]))
-        print("First question: ", D.index_to_text(question_batch[0]))
-        answer = answer_span_to_indices(answer_start_batch_actual[0], answer_end_batch_actual[0], context_batch[0])
-        print("First answer label: ", D.index_to_text(answer))
+            alphas, betas = sess.run([alphas_predict, betas_predict], feed_dict={
+                question_batch_placeholder: question_batch,
+                context_batch_placeholder: context_batch,
+                embedding: index2embedding,
+                dropout_keep_rate: 1.0
+            })
+            #print(alphas.shape)
+            for i in range(answer_start_batch_actual.shape[0]):
+                alpha_raw.append(softmax(alphas[-1][i][:]))
+                beta_raw.append(softmax(betas[-1][i][:]))
+                
+                if answer_start_batch_actual[i] == -1:
+                    labels.append(-1)
+                else:
+                    labels.append(1)
+            
+            #print(labels)
+            #alpha_raw.append(softmax(alphas))
+            #beta_raw.extend(softmax(betas))
+            #print("alphas raw........")
+            #print(alpha_raw)
+            #print("betas raw........")
+            #print(beta_raw)
+            #print(len(alpha_raw))
 
-        for i in range(answer_start_batch_actual.shape[0]):
-            if answer_start_batch_actual[i] == -1:
-                labels.append(-1)
-            else:
-                labels.append(1)
-
-        alphas, betas = sess.run([alphas_predict, betas_predict], feed_dict={
-            question_batch_placeholder: question_batch,
-            context_batch_placeholder: context_batch,
-            embedding: index2embedding,
-            dropout_keep_rate: 1.0
-        })
-
-        alpha_raw.extend(softmax(alphas))
-        beta_raw.extend(softmax(betas))
-        print(len(alpha_raw))
-        
-with open('./SVMdata/alphas_raw.pkl', 'wb') as f:
-    pickle.dump(alpha_raw, f, protocol=3)
-with open('./SVMdata/betas_raw.pkl', 'wb') as f:
-    pickle.dump(beta_raw, f, protocol=3)
-with open('./SVMdata/labels.pkl', 'wb') as f:
-    pickle.dump(labels, f, protocol = 3)
-    
+    with open('./SVMdata/alphas_raw.pkl', 'wb') as f:
+        pickle.dump(alpha_raw, f, protocol=3)
+    with open('./SVMdata/betas_raw.pkl', 'wb') as f:
+        pickle.dump(beta_raw, f, protocol=3)
+    with open('./SVMdata/labels.pkl', 'wb') as f:
+        pickle.dump(labels, f, protocol = 3)
