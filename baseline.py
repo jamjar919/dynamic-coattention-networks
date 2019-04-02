@@ -1,4 +1,4 @@
-from config import CONFIG
+from network.config import CONFIG
 import numpy as np
 import tensorflow as tf
 from dataset import Dataset

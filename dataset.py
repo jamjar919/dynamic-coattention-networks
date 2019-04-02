@@ -146,7 +146,7 @@ class Dataset:
         return (padded_data, (max_length_question, max_length_context))
 
 if __name__ == '__main__':
-    from config import CONFIG
+    from network.config import CONFIG
     D = Dataset('data/glove.840B.300d.txt')
     index2embedding = D.index2embedding
     padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")

@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from config import CONFIG
+from network.config import CONFIG
 
 def masked_matrix(seq_len,m,n,val_one = 1, val_two = 0) :
     val_one_matrix = val_one * tf.ones(shape = [seq_len, n], dtype = tf.float32)

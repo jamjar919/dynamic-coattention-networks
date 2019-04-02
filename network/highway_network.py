@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from config import CONFIG
+from network.config import CONFIG
 
 # # Returns two masks. One that will help us get the argmax (ninf_mask) and other to mask logits for the loss function (one_zero_mask)
 def getMask(seq_length, max_seq_length, val_one, val_two):

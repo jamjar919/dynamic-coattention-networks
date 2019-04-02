@@ -3,8 +3,8 @@ import sys
 import numpy as np
 import tensorflow as tf
 import sklearn as sk
-from config import CONFIG
-from build_model import get_batch, get_feed_dict
+from network.config import CONFIG
+from network.build_model import get_batch, get_feed_dict
 
 # custom imports
 from dataset import Dataset

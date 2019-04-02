@@ -9,7 +9,7 @@ from collections import defaultdict
 from functools import reduce
 import re
 import string
-from config import CONFIG
+from network.config import CONFIG
 
 # https://code.activestate.com/recipes/117214/
 def KnuthMorrisPratt(text, pattern):
