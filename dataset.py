@@ -7,7 +7,8 @@ from collections import defaultdict
 import sys
 import tensorflow as tf
 
-from preprocessing import text_to_index, load_embedding, pad_data, KnuthMorrisPratt, tokenise
+from config import CONFIG
+from preprocessing import text_to_index, load_embedding, pad_data, KnuthMorrisPratt, tokenise, pad_to
 
 class Dataset:
 
@@ -74,6 +75,14 @@ class Dataset:
 
         print("Skipped encoding",skipped_count,"/",len(data) + skipped_count,"questions because couldn't find the answer in the text")
         return data
+
+    def encode_single_question(self, question, context, question_pad_length = CONFIG.MAX_QUESTION_LENGTH, context_pad_length = CONFIG.MAX_CONTEXT_LENGTH):
+        assert question_pad_length != None, "Please supply a question pad length"
+        assert context_pad_length != None, "Please supply a context pad length"
+        question_encoding = text_to_index(question, self.word2index)
+        context_encoding = text_to_index(context, self.word2index)
+        pad_char = self.vocab_size-1
+        return pad_to(question_encoding, question_pad_length, pad_char)[0], pad_to(context_encoding, context_pad_length, pad_char)[0]
 
     def generate_glove_vectors(self):
         print("Generating glove vectors...")
@@ -149,5 +158,6 @@ if __name__ == '__main__':
     from config import CONFIG
     D = Dataset('data/glove.840B.300d.txt')
     index2embedding = D.index2embedding
-    padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")
-    print(D.index_to_text(padded_data[0]["context"]))
+    #padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")
+
+    print(D.encode_single_question("hello this is a question", "this is a context with more words than usual", 30, 30))
