@@ -93,9 +93,10 @@ with tf.Session(config=config) as sess:
                         f1 += 1.0
                         em += 1.0
                 else :
-                    
+                    estimated_start_index[i] -= 1
+                    estimated_end_index[i] -= 1
                     f1 += get_f1_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
-                                    estimated_start_index[i], estimated_end_index[i],
+                                    estimated_start_index[i] , estimated_end_index[i],
                                     context_batch_validation[i], D )
                     em += get_exact_match_from_tokens(answer_start_batch_actual[i], answer_end_batch_actual[i],
                                     estimated_start_index[i], estimated_end_index[i],
