@@ -95,8 +95,8 @@ for i in range(0, 12):
                     alpha_loss += -1. * np.log(np.exp(s_logits[j][i])/np.sum(np.exp(s_logits[j][i])))[all_answers[i][0]["answer_start"]]
                     beta_loss += -1. * np.log(np.exp(e_logits[j][i]) / np.sum(np.exp(e_logits[j][i])))[all_answers[i][0]["answer_end"]]
 
-                print(str(alpha_loss) + "THIS IS alpha" + str(i))
-                print(str(beta_loss) + "THIS IS " + str(i))
+                #print(str(alpha_loss) + "THIS IS alpha" + str(i))
+                #print(str(beta_loss) + "THIS IS " + str(i))
                 if alpha_loss == float("inf") or alpha_loss == float("-inf"):
                     ignored_alpha_losses += 1
                 else:
@@ -141,7 +141,7 @@ for i in range(0, 12):
             print("Current f1 score: ", f1score_curr)
             print("Current em score: ", emscore_curr)
             print("Current alpha loss: ", alpha_loss_curr)
-            print("Current em score: ", beta_loss_curr)
+            print("Current beta loss: ", beta_loss_curr)
             f1score.append(f1score_curr)
             emscore.append(emscore_curr)
             loss.append(total_loss)
