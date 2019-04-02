@@ -6,12 +6,9 @@ import pickle
 from functools import reduce
 import os
 # custom imports
-from encoder import encoder
-from decoder import decoder
-from dataset import Dataset
-from config import CONFIG
+from network.config import CONFIG
+from network.build_model import build_model, get_feed_dict, get_batch
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
-from build_model import build_model, get_feed_dict, get_batch
 
 tensorboard_filepath = '.'
 
