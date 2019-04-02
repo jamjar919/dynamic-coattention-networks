@@ -76,14 +76,7 @@ with tf.Session(config=config) as sess:
                     labels.append(-1)
                 else:
                     labels.append(1)
-            
-            #print(labels)
-            #alpha_raw.append(softmax(alphas))
-            #beta_raw.extend(softmax(betas))
-            #print("alphas raw........")
-            #print(alpha_raw)
-            #print("betas raw........")
-            #print(beta_raw)
+  
             #print(len(alpha_raw))
 
     with open('./SVMdata/alphas_raw.pkl', 'wb') as f:
