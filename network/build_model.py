@@ -29,7 +29,6 @@ def build_model(embedding, v2 = False):
 
     # Create encoder. (Encoder will also return the sequence length of the context (i.e. how much of each batch element is unpadded))
     U, context_seq_length = encoder(question_batch_placeholder,context_batch_placeholder, embedding, dropout_keep_rate)
-    # throw away sentinel
     if  v2 :
         context_seq_length+=1
         max_context_length+=1
