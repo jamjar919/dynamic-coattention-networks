@@ -38,7 +38,7 @@ def length(sequence):
 def transpose(tensor):
     return tf.transpose(tensor,perm=[0,2,1])
 
-def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE,embedding_vector_size=CONFIG.EMBEDDING_DIMENSION):
+def encoder(questions,contexts,embedding):
     '''
         Build the model for the document encoder
         questions: Tensor of questions
@@ -49,6 +49,10 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     batch_size = questions.shape[0].value
     #contexts_size = contexts.shape[1].value
     questions_size = questions.shape[1].value
+    hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE
+    embedding_dimension = CONFIG.EMBEDDING_DIMENSION
+
+
 
     print("Batch size", batch_size)
 
@@ -62,11 +66,11 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     print("Context embedding length shape: ", context_embedding_length.shape)
     
     lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
-    lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob=dropout_keep_rate)
+    lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob=CONFIG.DROPOUT_KEEP_PROB)
 
     context_encoding, _ = tf.nn.dynamic_rnn(lstm_cell, context_embedding, sequence_length = context_embedding_length, dtype=tf.float32)
     print("context encoding shape: ",context_encoding.shape)
-    # Append sentinel vector
+    # Prepend sentinel vector
     # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
     sentinel_vec_context = tf.get_variable("sentinel_context", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     #sentinel_vec_context = tf.Print(sentinel_vec_context, [sentinel_vec_context[0:7]], "Sentinel context vector")
@@ -77,7 +81,7 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
     
     question_encoding, _ = tf.nn.dynamic_rnn(lstm_cell, question_embedding, sequence_length = question_embedding_length, dtype=tf.float32) 
     print("Question encoding shape: ", question_encoding.shape)   
-    # Append sentinel vector 
+    # Prepend sentinel vector 
     sentinel_vec_question = tf.get_variable("sentinel_question", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     #sentinel_vec_question = tf.Print(sentinel_vec_question, [sentinel_vec_question[0:7]], "Sentinel question vector")
     sentinel_vec_q_batch = tf.stack([sentinel_vec_question] * batch_size) 
@@ -142,11 +146,13 @@ def encoder(questions,contexts, dropout_keep_rate, embedding,  hidden_unit_size=
 
     # Bi-LSTM
     cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)  
-    #cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
-    # C_transpose = transpose(C)
-    u_states, _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_fw,cell_fw=cell_fw, dtype=tf.float32,inputs = C, sequence_length = context_embedding_length + 1)
-    print("u_state shape", u_states[0].shape)
-    U = tf.concat(u_states, axis = 2) # 10x633x400
+    cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
+    lstm_fw = tf.contrib.rnn.DropoutWrapper(cell_fw, output_keep_prob=CONFIG.BILSTM_DROPOUT_KEEP_PROB)
+    lstm_bw = tf.contrib.rnn.DropoutWrapper(cell_bw, output_keep_prob=CONFIG.BILSTM_DROPOUT_KEEP_PROB)
+    (U1,U2), _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw, dtype=tf.float32,
+        inputs = C, sequence_length = context_embedding_length + 1)
+    print("U1 shape: ", U1.shape)
+    U = tf.concat([U1,U2], axis = 2) # 10x633x400
     #U = tf.Print(U, [U[0,-1,:]], "U word 632")
     U = U[:,1:,:] 
     #U = tf.slice(U, begin = [0,1,0], size = [batch_size, contexts.shape[1], 2*hidden_unit_size]) # Make U to 10x632x400
