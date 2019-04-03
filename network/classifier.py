@@ -1,5 +1,13 @@
 import tensorflow as tf
 from network.encoder import encoder
+from config import CONFIG
+
+def get_batch(batch, batch_size = CONFIG.BATCH_SIZE, max_length_question = CONFIG.MAX_QUESTION_LENGTH, max_length_context = CONFIG.MAX_CONTEXT_LENGTH):
+    question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size, max_length_question)
+    context_batch = np.array(list(map(lambda qas: (qas["context"]), batch))).reshape(batch_size, max_length_context)
+    answer_batch = np.array(list(map(lambda qas: (qas["is_impossible"]), batch))).reshape(batch_size)
+    
+    return question_batch, context_batch, answer_start_batch, answer_end_batch
 
 def build_classifier(embedding):
     dropout_keep_rate = tf.placeholder(dtype = tf.float32, name = "dropout_keep_ph")
@@ -30,4 +38,5 @@ def build_classifier(embedding):
     out = tf.tanh(tf.matmul(out,W2_batch)+b2_batch)
     out = tf.tanh(tf.matmul(out, W3_batch) + b3_batch)
     loss = tf.nn.softmax_cross_entropy_with_logits(labels = answer_start, logits = out)
+    optimizer = tf.train.AdamOptimizer(CONFIG.LEARNING_RATE)
     train_op = optimizer.minimize(loss, name = "train_op")
