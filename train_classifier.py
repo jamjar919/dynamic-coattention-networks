@@ -35,6 +35,7 @@ if '--noGPU' in sys.argv[1:]:
 saver = tf.train.Saver(max_to_keep = CONFIG.MAX_EPOCHS) 
 init = tf.global_variables_initializer()
 
+THRESHOLD = 0.5
 with tf.Session(config=config) as sess:
     sess.run(init)
     print("SESSION INITIALIZED")
@@ -50,6 +51,7 @@ with tf.Session(config=config) as sess:
     print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
     loss_means = []
     val_loss_means = []
+    val_scores = []
     for epoch in range(CONFIG.MAX_EPOCHS):
         print("Epoch # : ", epoch + 1)
         losses = []
@@ -71,6 +73,7 @@ with tf.Session(config=config) as sess:
 
         validation_losses = []
         validation_scores = []
+        score = Score()
         #validation starting
         for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
@@ -78,10 +81,16 @@ with tf.Session(config=config) as sess:
 
             answer_predicted, loss_validation = sess.run([classifier_out, loss],
             get_feed_dict(question_batch_validation,context_batch_validation,has_answer_valid, 1.0,  index2embedding))
-
             validation_losses.append(loss_validation)
+            predicted_labels = np.where(answer_predicted > THRESHOLD, 1, 0)
+            score.update(predicted_labels,actual_labels)
 
 
+        # TODO handle validation
+        val_scores.append(score)
+
+        with open (results_path+'/validation_scores_classifier,pkl', 'wb') as f :
+            pickle.dump(val_scores, f, protocol = 3) 
         with open(results_path + '/validation_loss_means_classifier.pkl', 'wb') as f:
             pickle.dump(val_loss_means, f, protocol=3)
         with open(results_path + '/training_loss_means_classifier.pkl', 'wb') as f:
@@ -91,3 +100,33 @@ with tf.Session(config=config) as sess:
 
         saver.save(sess, model_path + '/saved', global_step=epoch)
 
+class Score :
+    self.true_positives = 0
+    self.true_negatives = 0
+    self.false_positives = 0 
+    self.false_negatives = 0
+    self.precision = 0
+    self.recall = 0 
+    self.accuracy = 0
+    self.F1 = 0
+
+    def update(predicted_labels, actual_labels):
+        for i in range(predicted_labels.shape[0]):
+            if actual_labels[i] == 0 :
+                if predicted_labels[i] == 0 :
+                    self.true_negatives+=1
+                elif predicted_labels[i] == 1:
+                    self.false_positives+=1
+            elif actual_labels[i] == 1 :
+                if predicted_labels[i] == 0:
+                    self.false_negatives+=1
+                elif predicted_labels[i] == 1:
+                    self.true_positives+=1
+        self.update_stats()
+    
+    def update_stats() :
+        self.precision = self.true_positives / (self.true_positives + self.false_positives)
+        self.recall = self.true_positives / (self.true_positives+self.false_negatives)
+        self.f1 = 2 * (self.precision * self.recall) / (self.precision * self.recall)
+        self.accuracy = (self.true_positives + self.true_negatives) / (self.true_positives + 
+            self.true_negatives + self.false_positives + self.false_negatives)
