@@ -13,7 +13,7 @@ from dataset import Dataset
 
 tensorboard_filepath = '.'
 
-D = Dataset(CONFIG.EMBEDDING_FILE)
+D = Dataset('data/glove.6B.300d.txt') #(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
 padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE_V2)
 print("Loaded data")
@@ -70,6 +70,7 @@ with tf.Session(config=config) as sess:
         print("Mean epoch loss: ", mean_epoch_loss)
 
         validation_losses = []
+        validation_scores = []
         #validation starting
         for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
@@ -78,10 +79,14 @@ with tf.Session(config=config) as sess:
             answer_predicted, loss_validation = sess.run([classifier_out, loss],
             get_feed_dict(question_batch_validation,context_batch_validation,has_answer_valid, 1.0,  index2embedding))
 
-            
-        with open(results_path + '/validation_loss_means.pkl', 'wb') as f:
+            validation_losses.append(loss_validation)
+
+
+        with open(results_path + '/validation_loss_means_classifier.pkl', 'wb') as f:
             pickle.dump(val_loss_means, f, protocol=3)
-        with open(results_path + '/training_loss_means.pkl', 'wb') as f:
+        with open(results_path + '/training_loss_means_classifier.pkl', 'wb') as f:
+            pickle.dump(loss_means, f, protocol = 3)
+        with open(results_path + '/training_loss_means_classifier.pkl', 'wb') as f:
             pickle.dump(loss_means, f, protocol = 3)
 
         saver.save(sess, model_path + '/saved', global_step=epoch)
