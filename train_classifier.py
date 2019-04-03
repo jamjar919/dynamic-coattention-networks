@@ -10,6 +10,7 @@ from network.config import CONFIG
 from network.classifier import build_classifier, get_batch, get_feed_dict
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 from dataset import Dataset
+from score import Score
 
 tensorboard_filepath = '.'
 
@@ -24,7 +25,6 @@ train_op, loss, classifier_out  = build_classifier(embedding)
 
 results_path = './resultsv2'
 model_path = './modelv2'
-open(results_path + '/training_loss_per_batch.csv', 'w').close()
 
 config = tf.ConfigProto()
 if '--noGPU' in sys.argv[1:]:
@@ -34,6 +34,7 @@ if '--noGPU' in sys.argv[1:]:
 # Train now
 saver = tf.train.Saver(max_to_keep = CONFIG.MAX_EPOCHS) 
 init = tf.global_variables_initializer()
+
 
 THRESHOLD = 0.5
 with tf.Session(config=config) as sess:
@@ -49,84 +50,56 @@ with tf.Session(config=config) as sess:
     np.random.shuffle(padded_data_validation)
 
     print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
-    loss_means = []
-    val_loss_means = []
+    losses_epoch = []
+    validation_epoch_loss = []
     val_scores = []
+    score = Score()
     for epoch in range(CONFIG.MAX_EPOCHS):
         print("Epoch # : ", epoch + 1)
-        losses = []
+        losses_in_epoch = []
         # Shuffle the data between epochs
         np.random.shuffle(padded_data_train)
-        for iteration in range(0, len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+        for iteration in range(0, 2): #len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_train[iteration:iteration + CONFIG.BATCH_SIZE]
             question_batch, context_batch, answer_batch = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
             _ , loss_val = sess.run([train_op, loss],feed_dict = get_feed_dict(question_batch, context_batch, answer_batch, CONFIG.DROPOUT_KEEP_PROB, index2embedding))
-            loss_val_mean = np.mean(loss_val)
+            loss_value_mean = np.mean(loss_val)
             if(iteration % ((CONFIG.BATCH_SIZE)-1) == 0):
-                print("Loss in epoch: ", loss_val_mean, "(",iteration,"/",len(padded_data_train),")")
+                print("Loss in epoch: ", loss_value_mean, "(",iteration,"/",len(padded_data_train),")")
 
-            losses.append(loss_val_mean.item())
-        mean_epoch_loss = np.mean(np.array(losses))
-        loss_means.append(mean_epoch_loss)
-        print("Mean epoch loss: ", mean_epoch_loss)
+            losses_in_epoch.append(loss_value_mean.item())
+        losses_epoch.append(np.mean(np.array(losses_in_epoch)))
+        print("Mean epoch loss: ", np.mean(np.array(losses_in_epoch)))
 
-        validation_losses = []
-        validation_scores = []
-        score = Score()
+        validation_loss_in_epoch = []
+        score.reset()
         #validation starting
-        for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+        for counter in range(0, 2): #len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
             question_batch_validation, context_batch_validation, has_answer_valid = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
             answer_predicted, loss_validation = sess.run([classifier_out, loss],
             get_feed_dict(question_batch_validation,context_batch_validation,has_answer_valid, 1.0,  index2embedding))
-            validation_losses.append(loss_validation)
+            validation_loss_in_epoch.append(np.mean(loss_validation))
             predicted_labels = np.where(answer_predicted > THRESHOLD, 1, 0)
-            score.update(predicted_labels,actual_labels)
+            print("predicted labels shape": predicted_labels.shape)
+            score.update(predicted_labels, has_answer_valid)
 
-
-        # TODO handle validation
+        print("Validation loss of epoch: ", np.mean(validation_loss_in_epoch))
+        print("Validation accuracy score of epoch: ", score.accuracy)
+        print("Validation precision score of epoch: ", score.precision)
+        print("Validation F1 score of epoch: ", score.F1)
+        validation_epoch_loss.append(np.mean(validation_loss_in_epoch))
         val_scores.append(score)
 
-        with open (results_path+'/validation_scores_classifier,pkl', 'wb') as f :
+        with open (results_path+'/validation_scores_classifier.pkl', 'wb') as f :
             pickle.dump(val_scores, f, protocol = 3) 
         with open(results_path + '/validation_loss_means_classifier.pkl', 'wb') as f:
-            pickle.dump(val_loss_means, f, protocol=3)
+            pickle.dump(validation_epoch_loss, f, protocol=3)
         with open(results_path + '/training_loss_means_classifier.pkl', 'wb') as f:
-            pickle.dump(loss_means, f, protocol = 3)
-        with open(results_path + '/training_loss_means_classifier.pkl', 'wb') as f:
-            pickle.dump(loss_means, f, protocol = 3)
+            pickle.dump(losses_epoch, f, protocol = 3)
+
 
         saver.save(sess, model_path + '/saved', global_step=epoch)
 
-class Score :
-    self.true_positives = 0
-    self.true_negatives = 0
-    self.false_positives = 0 
-    self.false_negatives = 0
-    self.precision = 0
-    self.recall = 0 
-    self.accuracy = 0
-    self.F1 = 0
-
-    def update(predicted_labels, actual_labels):
-        for i in range(predicted_labels.shape[0]):
-            if actual_labels[i] == 0 :
-                if predicted_labels[i] == 0 :
-                    self.true_negatives+=1
-                elif predicted_labels[i] == 1:
-                    self.false_positives+=1
-            elif actual_labels[i] == 1 :
-                if predicted_labels[i] == 0:
-                    self.false_negatives+=1
-                elif predicted_labels[i] == 1:
-                    self.true_positives+=1
-        self.update_stats()
-    
-    def update_stats() :
-        self.precision = self.true_positives / (self.true_positives + self.false_positives)
-        self.recall = self.true_positives / (self.true_positives+self.false_negatives)
-        self.F1 = 2 * (self.precision * self.recall) / (self.precision * self.recall)
-        self.accuracy = (self.true_positives + self.true_negatives) / (self.true_positives + 
-            self.true_negatives + self.false_positives + self.false_negatives)
