@@ -23,8 +23,8 @@ tf.reset_default_graph()
 embedding = tf.placeholder(shape = [len(index2embedding), CONFIG.EMBEDDING_DIMENSION], dtype=tf.float32, name='embedding_ph')
 train_op, loss, classifier_out  = build_classifier(embedding)
 
-results_path = './resultsv2'
-model_path = './modelv2'
+results_path = './resultsclassifier'
+model_path = './modelclassifier'
 
 config = tf.ConfigProto()
 if '--noGPU' in sys.argv[1:]:
@@ -59,7 +59,7 @@ with tf.Session(config=config) as sess:
         losses_in_epoch = []
         # Shuffle the data between epochs
         np.random.shuffle(padded_data_train)
-        for iteration in range(0, 2): #len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+        for iteration in range(0, len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_train[iteration:iteration + CONFIG.BATCH_SIZE]
             question_batch, context_batch, answer_batch = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
@@ -75,7 +75,7 @@ with tf.Session(config=config) as sess:
         validation_loss_in_epoch = []
         score.reset()
         #validation starting
-        for counter in range(0, 2): #len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+        for counter in range(0, len(padded_data_validation) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_validation[counter:(counter + CONFIG.BATCH_SIZE)]
             question_batch_validation, context_batch_validation, has_answer_valid = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
 
@@ -83,12 +83,12 @@ with tf.Session(config=config) as sess:
             get_feed_dict(question_batch_validation,context_batch_validation,has_answer_valid, 1.0,  index2embedding))
             validation_loss_in_epoch.append(np.mean(loss_validation))
             predicted_labels = np.where(answer_predicted > THRESHOLD, 1, 0)
-            print("predicted labels shape": predicted_labels.shape)
             score.update(predicted_labels, has_answer_valid)
 
         print("Validation loss of epoch: ", np.mean(validation_loss_in_epoch))
         print("Validation accuracy score of epoch: ", score.accuracy)
         print("Validation precision score of epoch: ", score.precision)
+        print("Validation recall score of epoch: ", score.precision)
         print("Validation F1 score of epoch: ", score.F1)
         validation_epoch_loss.append(np.mean(validation_loss_in_epoch))
         val_scores.append(score)

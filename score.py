@@ -27,7 +27,7 @@ class Score :
     def update_stats(self) :
         self.precision = self.true_positives / (self.true_positives + self.false_positives)
         self.recall = self.true_positives / (self.true_positives+self.false_negatives)
-        self.F1 = 2 * (self.precision * self.recall) / (self.precision * self.recall)
+        self.F1 = 2 * (self.precision * self.recall) / (self.precision + self.recall)
         self.accuracy = (self.true_positives + self.true_negatives) / (self.true_positives + 
             self.true_negatives + self.false_positives + self.false_negatives)
     
