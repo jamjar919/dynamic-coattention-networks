@@ -59,7 +59,7 @@ for i in range(0, 12):
         losses_list = []
 
         print("SESSION INITIALIZED")
-        for iteration in range(0, 1): #len(padded_data) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
+        for iteration in range(0, len(padded_data) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             # running on an example batch to debug encoder
             batch = padded_data[iteration:(iteration + CONFIG.BATCH_SIZE)]
             question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
