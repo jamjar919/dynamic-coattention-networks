@@ -69,7 +69,8 @@ def pad_data(data, pad_char):
                 "context_mask": context_mask,
                 "answer_start": q["answer_start"],
                 "answer_end": q["answer_end"],
-                "all_answers": q["all_answers"]
+                "all_answers": q["all_answers"],
+                "has_answer": q["has_answer"]
             })
     return padded_data, (max_length_question, max_length_context)
 
