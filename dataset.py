@@ -58,7 +58,8 @@ class Dataset:
                             "question": text_to_index(qas["question"], word2index),
                             "answer_start": answer_start,
                             "answer_end": answer_end,
-                            "all_answers": deduped_answers
+                            "all_answers": deduped_answers,
+                            "has_answer": 1
                         })           
            
                     elif (version == "v2.0") and (qas["is_impossible"]):
@@ -67,7 +68,8 @@ class Dataset:
                             "question": text_to_index(qas["question"], word2index),
                             "answer_start": -1,
                             "answer_end": -1,
-                            "all_answers": []
+                            "all_answers": [],
+                            "has_answer": 0
                         })
                     else:
                         skipped_count += 1
@@ -150,4 +152,4 @@ if __name__ == '__main__':
     D = Dataset('data/glove.840B.300d.txt')
     index2embedding = D.index2embedding
     padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")
-    print(D.index_to_text(padded_data[0]["context"]))
+    print(padded_data[0])
