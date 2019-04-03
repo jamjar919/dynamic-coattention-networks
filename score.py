@@ -48,22 +48,22 @@ class Score :
         self.accuracy = 0
         self.F1 = 0
 
-    def print_stats(self):
-        print(f"tp: {self.true_positives}, tn: {self.true_negatives}, fp: {self.false_positives}, fn: {self.false_negatives}")
-        print(f"precision = {self.precision}, recall = {self.recall}, F1 = {self.F1}, accuracy = {self.accuracy}")
+    # def print_stats(self):
+    #     print(f"tp: {self.true_positives}, tn: {self.true_negatives}, fp: {self.false_positives}, fn: {self.false_negatives}")
+    #     print(f"precision = {self.precision}, recall = {self.recall}, F1 = {self.F1}, accuracy = {self.accuracy}")
 
-if __name__ == '__main__':
-    score = Score()
-    score.print_stats()
-    score.update([1,1,1,1],[1,1,1,1])
-    score.print_stats()
-    # test with np array
-    score.update(np.array([0,0,0,0]),[0,0,0,0])
-    score.print_stats()
-    score.update([1,1,0,0],[0,0,1,1])
-    score.print_stats()
-    score.update([1],[0])
-    score.print_stats()
-    score.update([0],[1])
-    score.print_stats()
+# if __name__ == '__main__':
+#     score = Score()
+#     score.print_stats()
+#     score.update([1,1,1,1],[1,1,1,1])
+#     score.print_stats()
+#     # test with np array
+#     score.update(np.array([0,0,0,0]),[0,0,0,0])
+#     score.print_stats()
+#     score.update([1,1,0,0],[0,0,1,1])
+#     score.print_stats()
+#     score.update([1],[0])
+#     score.print_stats()
+#     score.update([0],[1])
+#     score.print_stats()
 
