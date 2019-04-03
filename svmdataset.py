@@ -62,7 +62,7 @@ with tf.Session(config=config) as sess:
     for iteration in range(0, len(padded_data) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
         # running on an example batch to debug encoder
         batch = padded_data[iteration : (iteration + CONFIG.BATCH_SIZE)]
-        question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, ax_length_question_squad2, max_length_context_squad2)
+        question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question_squad2, max_length_context_squad2)
         print("Iteration: ", iteration , "out of ", len(padded_data))
         alphas, betas = sess.run([alphas_predict, betas_predict], feed_dict={
             question_batch_placeholder: question_batch,
