@@ -5,7 +5,6 @@ import pickle
 from functools import reduce
 import os
 from preprocessing import answer_span_to_indices
-from scipy.special import softmax
 # custom imports
 from dataset import Dataset
 from network.config import CONFIG
