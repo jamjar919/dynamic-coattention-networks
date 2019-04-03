@@ -14,7 +14,7 @@ from score import Score
 
 tensorboard_filepath = '.'
 
-D = Dataset('data/glove.6B.300d.txt') #(CONFIG.EMBEDDING_FILE)
+D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
 padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE_V2)
 print("Loaded data")
