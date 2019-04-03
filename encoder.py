@@ -76,6 +76,7 @@ def encoder(questions,contexts,embedding):
     #sentinel_vec_context = tf.Print(sentinel_vec_context, [sentinel_vec_context[0:7]], "Sentinel context vector")
     sentinel_vec_context_batch = tf.stack([sentinel_vec_context] * batch_size)
     context_encoding = tf.concat([sentinel_vec_context_batch, context_encoding], axis  = 1 )
+    context_encoding = tf.identity(context_encoding, name='context_encoding')
     print("Extended context encoding shape: ", context_encoding.shape)
 
     
@@ -95,6 +96,7 @@ def encoder(questions,contexts,embedding):
     W_q_batch = tf.stack([W_q] * batch_size)
     b_q_batch = tf.stack([b_q] * batch_size)
     Q = tf.tanh(tf.add(tf.matmul(question_encoding, W_q_batch), b_q_batch))
+    Q = tf.identity(Q, name='Q')
     Q_bin_mask = get_mask(question_embedding_length + 1, CONFIG.MAX_QUESTION_LENGTH + 1, hidden_unit_size, val_one = 1, val_two = 0)
     #Q = tf.Print(Q, [Q[0][1]], " Q SHAPE first row before mask")
     #Q = tf.Print(Q, [Q[0][-1]], " Q SHAPE last row before mask last rows")
@@ -106,6 +108,7 @@ def encoder(questions,contexts,embedding):
     # assert Q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "Q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)"+ str(Q.shape)
 
     L = tf.matmul(context_encoding, transpose(Q))
+    L = tf.identity(L, name='L')
     #L = tf.Print(L, [L[0, 0,:]], "Last row of L batch element", summarize = 200)
     #L = tf.Print(L, [L[0, context_embedding_length[0]+1:,:]], "First padded L row", summarize = 200)
     #L = tf.Print(L, [L[0, : , question_embedding_length[0]]], "last valid element of L question", summarize = 600)
@@ -118,28 +121,33 @@ def encoder(questions,contexts,embedding):
     # assert L.shape == (batch_size, contexts.shape[1] + 1,  questions.shape[1] + 1), "L shape doesn't match (batch_size, max context length + 1,  max question length + 1)" + str(L.shape)
     #L = tf.Print(L, [L], "Carried out addition")
     # attention weights for questions A^{Q} = softmax(L)
-    A_q = tf.nn.softmax(L) # rowwise on the rows of the matrices in the tensor. 
+    A_q = tf.nn.softmax(L) # rowwise on the rows of the matrices in the tensor.
+    A_q = tf.identity(A_q, name='A_q')
     print("A_q.shape ", A_q.shape)
     #A_q = tf.Print(A_q, [A_q[0, 0,:]], "A_q row values")
     # assert A_q.shape == (batch_size, contexts.shape[1] + 1,  questions.shape[1] + 1), "A_q shape doesn't match (batch_size, max context length + 1,  max question length + 1)" + str(A_q.shape)
 
     # attention weights for documents A^{D} = softmax(L')
     A_d = tf.nn.softmax(transpose(L))
+    A_d = tf.identity(A_d, name='A_d')
     print("A_d.shape ", A_d.shape)
     # assert A_d.shape == (batch_size, questions.shape[1] + 1, contexts.shape[1] + 1), "A_d shape doesn't match (batch_size, max question length + 1, max context length + 1)" + str(A_d.shape)
     
     # Attention Context C^{Q}
     C_q = tf.matmul(transpose(A_q),context_encoding)
+    C_q = tf.identity(C_q, name='C_q')
     print("C_q.shape :", C_q.shape)
     # assert C_q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "C_q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)" + str(C_q)
 
     # C^{D} = [Q ; C^{Q}] A^{D}
     C_d = tf.matmul(transpose(A_d),tf.concat((Q,C_q), axis=2))
+    C_d = tf.identity(C_d, name='C_d')
     print("C_d.shape: ",C_d.shape)
     # assert C_d.shape == (batch_size, 2 * hidden_unit_size, contexts.shape[1] + 1), "C_d shape doesn't match (batch_size, 2 * hidden_unit_size, max context length + 1)" + str(C_d)
 
     # Final context. Has no name in the paper, so we call it C
     C = tf.concat((context_encoding,C_d),axis=2)
+    C = tf.identity(C, name='C_d')
     # assert C.shape == (batch_size, 3 * hidden_unit_size, contexts.shape[1] + 1), "C shape doesn't match (batch_size, 3 * hidden_unit_size, max context length + 1)" + str(C)
     
     print("C.shape : ",C.shape)
@@ -175,4 +183,5 @@ if __name__ == "__main__":
     batch_size = 10
 
     encoder(question_batch_placeholder, context_batch_placeholder, 1.0, embedding)
-    
+
+
