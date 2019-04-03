@@ -88,7 +88,7 @@ with tf.Session(config=config) as sess:
         print("Validation loss of epoch: ", np.mean(validation_loss_in_epoch))
         print("Validation accuracy score of epoch: ", score.accuracy)
         print("Validation precision score of epoch: ", score.precision)
-        print("Validation recall score of epoch: ", score.precision)
+        print("Validation recall score of epoch: ", score.recall)
         print("Validation F1 score of epoch: ", score.F1)
         validation_epoch_loss.append(np.mean(validation_loss_in_epoch))
         val_scores.append(score)
