@@ -28,14 +28,14 @@ def build_classifier(embedding):
 
     #U = tf.placeholder(dtype = tf.float32, shape = [64,633,400])
     U, _ = encoder(question_batch_ph,context_batch_ph, embedding, dropout_keep_rate)
-    U = U[:,0:400,:]
+    U = U[:,0:410,:]
     print("U shape", U.shape)
     initer = tf.contrib.layers.xavier_initializer()
-    LAYER_SIZE = 10
+    LAYER_SIZE = 20
     W1 = tf.get_variable("W1", shape = [U.shape[2],LAYER_SIZE], initializer = initer, dtype = tf.float32)
     b1 = tf.get_variable("b1", shape = [U.shape[1],LAYER_SIZE], initializer = initer, dtype = tf.float32)
     W2 = tf.get_variable("W2", shape = [LAYER_SIZE,1], initializer = initer, dtype = tf.float32)
-    W2 = tf.Print(W2, [W2], "W2 values", summarize = 10)
+    #W2 = tf.Print(W2, [W2], "W2 values", summarize = 10)
     b2 = tf.get_variable("b2", shape = [U.shape[1],1], initializer = initer, dtype = tf.float32)
     W3 = tf.get_variable("W3", shape = [U.shape[1],1], initializer = initer, dtype = tf.float32)
     b3 = tf.get_variable("b3", shape = [1,1], initializer = initer, dtype = tf.float32)
@@ -51,9 +51,11 @@ def build_classifier(embedding):
     #out = tf.nn.dropout(out, keep_prob = dropout_keep_rate)
     print("after second matmul: ", out.shape)
     out = tf.matmul(tf.transpose(out, perm = [0,2,1]), W3_batch) + b3_batch
+    print("OUT.shape = ",out.shape)
     out = tf.squeeze(out)
     out_2 = tf.sigmoid(out, name = "classifier_output")
     print("output shape from classifier: ", out.shape)
+    print("output shape 2 from classifier: ", out_2.shape)
     loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = has_answer_ph, logits = out)
     loss = tf.identity(loss, name = "loss_v2_classifier")
     #loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = has_answer_ph, logits = out, name = "loss_v2_classifier")

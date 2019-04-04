@@ -45,9 +45,6 @@ with tf.Session(config=config) as sess:
     
     #print("PADDED DATA SHAPE: ", padded_data.shape)
     padded_data_train = padded_data[0:(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0])]
-    padded_data_validation = padded_data[(int) (CONFIG.TRAIN_PERCENTAGE*padded_data.shape[0]):]
-    np.random.shuffle(padded_data_train)
-    np.random.shuffle(padded_data_validation)
 
     print("LEN PADDED DATA TRAIN: ", len(padded_data_train))
     losses_epoch = []
@@ -62,18 +59,18 @@ with tf.Session(config=config) as sess:
         for iteration in range(0, 1): #len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_train[iteration:iteration + CONFIG.BATCH_SIZE]
             question_batch, context_batch, answer_batch = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-            print("ANSWER BATCH: ", answer_batch)
+            #print("ANSWER BATCH: ", answer_batch)
             _ , loss_val = sess.run([train_op, loss],feed_dict = get_feed_dict(question_batch, context_batch, answer_batch, CONFIG.DROPOUT_KEEP_PROB, index2embedding))
             loss_value_mean = np.mean(loss_val)
-            if(iteration % ((CONFIG.BATCH_SIZE)-1) == 0):
-                print("Loss in epoch: ", loss_value_mean, "(",iteration,"/",len(padded_data_train),")")
-            if(iteration % ((3*CONFIG.BATCH_SIZE)-1) == 0):
-                print("Running validation...")
-                batch = padded_data_validation[0:0 + CONFIG.BATCH_SIZE]
-                question_batch_validation, context_batch_validation, has_answer_valid = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-                answer_predicted = sess.run([classifier_out],
-                    get_feed_dict(question_batch_validation,context_batch_validation,has_answer_valid, 1.0,  index2embedding))
-                #answer_predicted = np.reshape(answer_predicted, shape = (answer_predicted.shape[0], answer_predicted.shape[1]))
-                #print(answer_predicted)
-                print(answer_predicted)
-                print("Resuming training...")
+            
+            print("Loss in epoch: ", loss_value_mean, "(",iteration,"/",len(padded_data_train),")")
+
+            question_batch_validation, context_batch_validation, has_answer_valid = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
+            print(has_answer_valid)
+            answer_predicted = sess.run(classifier_out,
+                 get_feed_dict(question_batch_validation,context_batch_validation,has_answer_valid, 1.0,  index2embedding))
+            # #answer_predicted = np.reshape(answer_predicted, shape = (answer_predicted.shape[0], answer_predicted.shape[1]))
+            print(answer_predicted)
+            # print(type(answer_predicted))
+            # print(np.array(answer_predicted))
+            # print("Resuming training...")
