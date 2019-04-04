@@ -52,7 +52,7 @@ def build_classifier(embedding):
     print("after second matmul: ", out.shape)
     out = tf.matmul(tf.transpose(out, perm = [0,2,1]), W3_batch) + b3_batch
     out = tf.squeeze(out)
-    #out = tf.reshape(out, shape = [out.shape[0], out.shape[1]] )
+    out_2 = tf.sigmoid(out, name = "classifier_output")
     print("output shape from classifier: ", out.shape)
     loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = has_answer_ph, logits = out)
     loss = tf.identity(loss, name = "loss_v2_classifier")
@@ -60,7 +60,7 @@ def build_classifier(embedding):
     optimizer = tf.train.AdamOptimizer(CONFIG.LEARNING_RATE)
     train_op = optimizer.minimize(loss, name = "train_op_classifier")
 
-    return train_op, loss, out
+    return train_op, loss, out_2
 
 
 if __name__ == "__main__":
