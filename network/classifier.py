@@ -45,10 +45,10 @@ def build_classifier(embedding):
     W2_batch = tf.stack([W2] * batch_size); b2_batch = tf.stack([b2] * batch_size)
     W3_batch = tf.stack([W3] * batch_size); b3_batch = tf.stack([b3] * batch_size)
     out = tf.nn.tanh(tf.matmul(U,W1_batch) + b1_batch)
-    #out = tf.nn.dropout(out, keep_prob = dropout_keep_rate)
+    out = tf.nn.dropout(out, keep_prob = dropout_keep_rate)
     print("after first matmul: ", out.shape)
-    out = tf.nn.tanh(tf.matmul(out,W2_batch)+b2_batch)
-    #out = tf.nn.dropout(out, keep_prob = dropout_keep_rate)
+    out = tf.nn.tanh(tf.matmul(out, W2_batch)+b2_batch)
+    out = tf.nn.dropout(out, keep_prob = dropout_keep_rate)
     print("after second matmul: ", out.shape)
     out = tf.matmul(tf.transpose(out, perm = [0,2,1]), W3_batch) + b3_batch
     print("OUT.shape = ",out.shape)
