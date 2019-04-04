@@ -62,7 +62,7 @@ with tf.Session(config=config) as sess:
         for iteration in range(0, 1): #len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_train[iteration:iteration + CONFIG.BATCH_SIZE]
             question_batch, context_batch, answer_batch = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-
+            print("ANSWER BATCH: ", answer_batch)
             _ , loss_val = sess.run([train_op, loss],feed_dict = get_feed_dict(question_batch, context_batch, answer_batch, CONFIG.DROPOUT_KEEP_PROB, index2embedding))
             loss_value_mean = np.mean(loss_val)
             if(iteration % ((CONFIG.BATCH_SIZE)-1) == 0):
