@@ -6,7 +6,7 @@ class Config:
         self.HIDDEN_UNIT_SIZE = 200
         self.POOL_SIZE = 4
 
-        self.LEARNING_RATE = 0.001
+        self.LEARNING_RATE = 0.01
         self.CLIP_NORM = 3.0
         self.DROPOUT_KEEP_PROB = 0.7
         self.TRAIN_PERCENTAGE = 0.90

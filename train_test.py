@@ -73,5 +73,6 @@ with tf.Session(config=config) as sess:
                 question_batch_validation, context_batch_validation, has_answer_valid = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
                 answer_predicted = sess.run([classifier_out],
                     get_feed_dict(question_batch_validation,context_batch_validation,has_answer_valid, 1.0,  index2embedding))
+                answer_predicted =answer_predicted.reshape(shape = (answer_predicted.shape[0], answer_predicted.shape[1]))
                 print(answer_predicted[0:10])
                 print("Resuming training...")

@@ -35,6 +35,7 @@ def build_classifier(embedding):
     W1 = tf.get_variable("W1", shape = [U.shape[2],LAYER_SIZE], initializer = initer, dtype = tf.float32)
     b1 = tf.get_variable("b1", shape = [U.shape[1],LAYER_SIZE], initializer = initer, dtype = tf.float32)
     W2 = tf.get_variable("W2", shape = [LAYER_SIZE,1], initializer = initer, dtype = tf.float32)
+    W2 = tf.Print(W2, [W2], "W2 values", summarize = 10)
     b2 = tf.get_variable("b2", shape = [U.shape[1],1], initializer = initer, dtype = tf.float32)
     W3 = tf.get_variable("W3", shape = [U.shape[1],1], initializer = initer, dtype = tf.float32)
     b3 = tf.get_variable("b3", shape = [1,1], initializer = initer, dtype = tf.float32)
