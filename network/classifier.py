@@ -28,6 +28,7 @@ def build_classifier(embedding):
 
     #U = tf.placeholder(dtype = tf.float32, shape = [64,633,400])
     U, _ = encoder(question_batch_ph,context_batch_ph, embedding, dropout_keep_rate)
+    U = U[:,0:400,:]
     print("U shape", U.shape)
     initer = tf.contrib.layers.xavier_initializer()
     LAYER_SIZE = 10
@@ -42,7 +43,7 @@ def build_classifier(embedding):
     W1_batch = tf.stack([W1] * batch_size); b1_batch = tf.stack([b1] * batch_size)
     W2_batch = tf.stack([W2] * batch_size); b2_batch = tf.stack([b2] * batch_size)
     W3_batch = tf.stack([W3] * batch_size); b3_batch = tf.stack([b3] * batch_size)
-    out = tf.nn.relu(tf.matmul(U,W1_batch)+b1_batch)
+    out = tf.nn.relu(tf.matmul(U,W1_batch) + b1_batch)
     out = tf.nn.dropout(out, keep_prob = dropout_keep_rate)
     print("after first matmul: ", out.shape)
     out = tf.nn.relu(tf.matmul(out,W2_batch)+b2_batch)

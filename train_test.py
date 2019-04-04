@@ -58,7 +58,7 @@ with tf.Session(config=config) as sess:
         print("Epoch # : ", epoch + 1)
         losses_in_epoch = []
         # Shuffle the data between epochs
-        np.random.shuffle(padded_data_train)
+        #np.random.shuffle(padded_data_train)
         for iteration in range(0, 1): #len(padded_data_train) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             batch = padded_data_train[iteration:iteration + CONFIG.BATCH_SIZE]
             question_batch, context_batch, answer_batch = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
