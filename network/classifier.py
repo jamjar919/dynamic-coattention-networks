@@ -24,7 +24,7 @@ def build_classifier(embedding):
     question_batch_ph = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_QUESTION_LENGTH], name='question_batch_ph')
     context_batch_ph = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_CONTEXT_LENGTH], name='context_batch_ph')
     # Word index placeholders
-    has_answer_ph = tf.placeholder(dtype=tf.float32,shape=[None], name='has_answer_ph')
+    has_answer_ph = tf.placeholder(dtype=tf.float32,shape=[CONFIG.BATCH_SIZE,1], name='has_answer_ph')
 
     #U = tf.placeholder(dtype = tf.float32, shape = [64,633,400])
     U, _ = encoder(question_batch_ph,context_batch_ph, embedding, dropout_keep_rate)
