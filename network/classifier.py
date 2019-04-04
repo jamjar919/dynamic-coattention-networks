@@ -51,7 +51,8 @@ def build_classifier(embedding):
     #out = tf.nn.dropout(out, keep_prob = dropout_keep_rate)
     print("after second matmul: ", out.shape)
     out = tf.matmul(tf.transpose(out, perm = [0,2,1]), W3_batch) + b3_batch
-    out = tf.reshape(out, shape = [out.shape[0], out.shape[1]] )
+    out = tf.squeeze(out)
+    #out = tf.reshape(out, shape = [out.shape[0], out.shape[1]] )
     print("output shape from classifier: ", out.shape)
     loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = has_answer_ph, logits = out)
     loss = tf.identity(loss, name = "loss_v2_classifier")
