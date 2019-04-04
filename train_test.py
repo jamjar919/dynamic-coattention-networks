@@ -16,7 +16,7 @@ tensorboard_filepath = '.'
 
 D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
-padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE_V2)
+padded_data, (max_length_question, max_length_context) = D.load_questions('data/dev-v2.0.json')
 print("Loaded data")
 
 tf.reset_default_graph()
@@ -73,6 +73,7 @@ with tf.Session(config=config) as sess:
                 question_batch_validation, context_batch_validation, has_answer_valid = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
                 answer_predicted = sess.run([classifier_out],
                     get_feed_dict(question_batch_validation,context_batch_validation,has_answer_valid, 1.0,  index2embedding))
-                answer_predicted = np.reshape(answer_predicted, shape = (answer_predicted.shape[0], answer_predicted.shape[1]))
+                #answer_predicted = np.reshape(answer_predicted, shape = (answer_predicted.shape[0], answer_predicted.shape[1]))
+                #print(answer_predicted)
                 print(answer_predicted)
                 print("Resuming training...")
