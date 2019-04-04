@@ -67,6 +67,14 @@ with tf.Session(config=config) as sess:
             loss_value_mean = np.mean(loss_val)
             if(iteration % ((CONFIG.BATCH_SIZE)-1) == 0):
                 print("Loss in epoch: ", loss_value_mean, "(",iteration,"/",len(padded_data_train),")")
+            if(iteration % ((2*CONFIG.BATCH_SIZE)-1) == 0):
+                print("Running quick validation...")
+                batch = padded_data_validation[0:0 + CONFIG.BATCH_SIZE)]
+                question_batch_validation, context_batch_validation, has_answer_valid = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
+                answer_predicted = sess.run([classifier_out],
+                    get_feed_dict(question_batch_validation,context_batch_validation,has_answer_valid, 1.0,  index2embedding))
+                print(answer_predicted)
+                print("Resuming training.")
 
             losses_in_epoch.append(loss_value_mean.item())
         losses_epoch.append(np.mean(np.array(losses_in_epoch)))

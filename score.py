@@ -34,7 +34,7 @@ class Score :
     def update_stats(self) :
         self.precision = self.safe_div(self.true_positives,self.true_positives + self.false_positives)
         self.recall = self.safe_div(self.true_positives, self.true_positives+self.false_negatives)
-        self.F1 = self.safe_div(2 * (self.precision + self.recall), (self.precision * self.recall))
+        self.F1 = self.safe_div(2 * (self.precision * self.recall), (self.precision + self.recall))
         self.accuracy = self.safe_div(self.true_positives + self.true_negatives , self.true_positives + 
             self.true_negatives + self.false_positives + self.false_negatives)
     
