@@ -50,7 +50,7 @@ def build_classifier(embedding):
     out = tf.nn.tanh(tf.matmul(out,W2_batch)+b2_batch)
     #out = tf.nn.dropout(out, keep_prob = dropout_keep_rate)
     print("after second matmul: ", out.shape)
-    out = tf.sigmoid(tf.matmul(tf.transpose(out, perm = [0,2,1]), W3_batch) + b3_batch , name = "classifier_output")
+    out = tf.matmul(tf.transpose(out, perm = [0,2,1]), W3_batch) + b3_batch
     out = tf.reshape(out, shape = [out.shape[0], out.shape[1]] )
     print("output shape from classifier: ", out.shape)
     loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = has_answer_ph, logits = out)
