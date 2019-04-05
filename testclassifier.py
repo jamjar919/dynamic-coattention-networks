@@ -19,7 +19,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 print("Starting testing on dev file...")
 D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
-padded_data, (max_length_question, max_length_context) = D.load_questions('data/train-v2.0.json')
+padded_data, (max_length_question, max_length_context) = D.load_questions('data/dev-v2.0.json')
 print("Loaded data")
 
 model_path = './modelclassifier'
@@ -91,10 +91,10 @@ with tf.Session(config=config) as sess:
         score_95.update(predicted_labels_95, answer_actual)
         score_5.update(predicted_labels_5, answer_actual)
 
-    # score50_file = results_path + '/score50.pkl'
-    # score67_file = results_path + '/score67.pkl'
-    # score30_file = results_path + '/score30.pkl'
-    # score80_file = results_path + '/score80.pkl'
+    score50_file = results_path + '/score50.pkl'
+    score67_file = results_path + '/score67.pkl'
+    score30_file = results_path + '/score30.pkl'
+    score80_file = results_path + '/score80.pkl'
     score5_file = results_path + '/score5.pkl'
     score95_file = results_path + '/score95.pkl'
     print("Mean accuracy using 67 threshold: ", score_67.accuracy)
@@ -105,20 +105,20 @@ with tf.Session(config=config) as sess:
     print("Mean accuracy using 95 threshold: ", score_95.accuracy)
     print("Mean testing loss: ", np.mean(losses))
     append_write = 'wb'  # make a new file if not
-    # with open(score50_file, append_write) as f:
-    #     pickle.dump(score_50, f, protocol=3)
-    # with open(score67_file, append_write) as f:
-    #     pickle.dump(score_67, f, protocol=3)
-    # with open(score80_file, append_write) as f:
-    #     pickle.dump(score_80, f, protocol=3)
-    # with open(score30_file, append_write) as f:
-    #     pickle.dump(score_30, f, protocol=3)
-    # with open(results_path + '/predicted_outputs.pkl', append_write) as f:
-    #     pickle.dump(predicted_labels, f, protocol=3)
-    # with open(results_path + '/actual_labels.pkl', append_write) as f:
-    #     pickle.dump(actual_labels, f, protocol=3)
-    # with open(results_path + '/test_losses.pkl', append_write) as f:
-    #     pickle.dump(losses, f, protocol=3) 
+    with open(score50_file, append_write) as f:
+        pickle.dump(score_50, f, protocol=3)
+    with open(score67_file, append_write) as f:
+        pickle.dump(score_67, f, protocol=3)
+    with open(score80_file, append_write) as f:
+        pickle.dump(score_80, f, protocol=3)
+    with open(score30_file, append_write) as f:
+        pickle.dump(score_30, f, protocol=3)
+    with open(results_path + '/predicted_outputs.pkl', append_write) as f:
+        pickle.dump(predicted_labels, f, protocol=3)
+    with open(results_path + '/actual_labels.pkl', append_write) as f:
+        pickle.dump(actual_labels, f, protocol=3)
+    with open(results_path + '/test_losses.pkl', append_write) as f:
+        pickle.dump(losses, f, protocol=3) 
     with open(score5_file, append_write) as f:
         pickle.dump(score_5, f, protocol=3)
     with open(score95_file, append_write) as f:
