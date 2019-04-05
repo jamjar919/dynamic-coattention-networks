@@ -31,13 +31,14 @@ The file located at `network/config.py` supplies the config for most aspects of 
     CONFIG = Config()
 
 ### Training
-Run `train.py` to train the model. This mode, loads cached word embeddings from  You can supply additional parameters:
- - `--regenerateEmbeddings` to resave the cached word embeddings to disk 
+Run `train.py` to train the model. This loads cached word embeddings from the /data/ folder, or generates and saves them if they haven't been generated before. You can supply additional parameters:
+ - `--regenerateEmbeddings` to force generating and resaving the cached word embeddings to disk 
  - `--noGPU` to disable running with the GPU.
+ 
 The training will automatically test on a validation subset, and log loss, f1, and exact match statistics to CSV in the /results/ folder. The model is also saved every epoch in the /models/ folder.
 
 ### Evaluating
-To evaluate F1/EM performance on the dev set, the file `test_saved_model.py` is what you need. 
+To evaluate F1/EM performance on the dev set, the file `test_saved_model.py` is what you need. You can also use the file 
 
 ## Results
 Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the test set after 7 epochs, compared to the paper’s F1 of 75.9%
@@ -45,3 +46,12 @@ Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the test set a
 ![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/master/loss_graph.png?token=AFYtbLdhVAmZilLdFlcjc5oMH0_SQslGks5crPkfwA%3D%3D)
 
 ![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/master/loss_validation_loss_graph.png?token=AFYtbDFLaIc-BqPfHpVwKztj5_yKBoQtks5crPlTwA%3D%3D)
+
+### Dataset Statistics
+
+![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/data/dev_question_histogram.png?raw=true)
+![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/data/train_question_histogram.png?raw=true)
+
+### Example Context Heatmap (zoom in)
+
+![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/question.png?raw=true)
