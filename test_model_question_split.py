@@ -9,8 +9,8 @@ from preprocessing import answer_span_to_indices
 
 # custom imports
 from dataset import Dataset
-from config import CONFIG
-from build_model import get_batch
+from network.config import CONFIG
+from network.build_model import get_batch
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 

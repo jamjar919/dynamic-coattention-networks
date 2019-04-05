@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-from config import CONFIG
+from network.config import CONFIG
 from dataset import Dataset
 from preprocessing import answer_span_to_indices
 
