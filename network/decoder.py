@@ -55,15 +55,10 @@ def decoder(U, context_seq_length, max_context_length, hidden_unit_size = CONFIG
     s = tf.zeros(tf.TensorShape([batch_size]), dtype=tf.int32)
     e = tf.zeros(tf.TensorShape([batch_size]), dtype=tf.int32)
 
-    print(s)
-    print(e)
-
     lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = hidden_unit_size, dtype = tf.float32)
     lstm_state = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
     h_i, _ = lstm_state
     print("h_i.shape", h_i.shape) # 10x200
-
-    # Weights and biases for the HMN that will calculate a start index. 
    
     alphas, betas = [] , []
     for i in range(iterations):
