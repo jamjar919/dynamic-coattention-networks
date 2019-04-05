@@ -60,18 +60,14 @@ with tf.Session(config=config) as sess:
         # running on an example batch to debug encoder
         batch = padded_data[iteration:(iteration + CONFIG.BATCH_SIZE)]
         question_batch, context_batch, answer_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-        _ , _ , answer_start_batch_actual, answer_end_batch_actual = get_batch_span(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-        #print("First context: ", D.index_to_text(context_batch[0]))
-        #print("First question: ", D.index_to_text(question_batch[0]))
-        #answer = answer_span_to_indices(answer_start_batch_actual[0], answer_end_batch_actual[0], context_batch[0])
-        #print("First answer label: ", D.index_to_text(answer))
-        #print("First 'has answer' :", answer_actual[0])
+        #_ , _ , answer_start_batch_actual, answer_end_batch_actual = get_batch_span(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
+
         yhat, loss_value = sess.run([answer_predict, loss], 
             get_feed_dict(question_batch,context_batch,answer_actual, 1.0,  index2embedding))
 
         yhat = np.reshape(yhat, (yhat.shape[0], yhat.shape[1]))
         #print(yhat.shape)
-        print("predicted values: ", yhat)
+        #print("predicted values: ", yhat)
         print("current loss: ", np.mean(loss_value), "(",iteration,"/",len(padded_data),")")
         for i in range (yhat.shape[0]):
             predicted_labels.append(yhat[i])
