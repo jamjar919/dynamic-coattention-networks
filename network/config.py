@@ -4,7 +4,7 @@ class Config:
         self.EMBEDDING_DIMENSION = 300
         self.MAX_EPOCHS = 100
         self.HIDDEN_UNIT_SIZE = 200
-        self.POOL_SIZE = 4
+        self.POOL_SIZE = 16
 
         self.LEARNING_RATE = 0.001
         self.CLIP_NORM = 3.0

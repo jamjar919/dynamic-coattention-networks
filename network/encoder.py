@@ -106,30 +106,24 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     # assert Q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "Q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)"+ str(Q.shape)
 
     L = tf.matmul(context_encoding, transpose(Q))
-    #L = tf.Print(L, [L[0, 0,:]], "Last row of L batch element", summarize = 200)
-    #L = tf.Print(L, [L[0, context_embedding_length[0]+1:,:]], "First padded L row", summarize = 200)
-    #L = tf.Print(L, [L[0, : , question_embedding_length[0]]], "last valid element of L question", summarize = 600)
-    #L = tf.Print(L, [L[0, : , question_embedding_length[0]+1]], "First padded element of question", summarize = 600)
     L_mask = get_mask2D(tf.expand_dims(context_embedding_length + 1, -1), tf.expand_dims(question_embedding_length + 1, -1), CONFIG.MAX_CONTEXT_LENGTH + 1, CONFIG.MAX_QUESTION_LENGTH + 1, val_one = 0, val_two = -10**30)
     #L_mask = tf.Print(L_mask, [L_mask], "L mask", summarize = 1000)
     print("L.shape : ", L.shape)
-    #print("L_mask: ", L_mask.shape)
     L = L + L_mask # Add ninf mask
-    # assert L.shape == (batch_size, contexts.shape[1] + 1,  questions.shape[1] + 1), "L shape doesn't match (batch_size, max context length + 1,  max question length + 1)" + str(L.shape)
-    #L = tf.Print(L, [L], "Carried out addition")
-    # attention weights for questions A^{Q} = softmax(L)
-    A_q = tf.nn.softmax(L) # rowwise on the rows of the matrices in the tensor. 
+    A_q = tf.nn.softmax(L) # rowwise on the rows of the matrices in the tensor.
+    A_q_mask = get_mask2D(tf.expand_dims(context_embedding_length + 1, -1), tf.expand_dims(question_embedding_length + 1, -1), CONFIG.MAX_CONTEXT_LENGTH + 1, CONFIG.MAX_QUESTION_LENGTH + 1, val_one = 1, val_two = 0)
+    A_q = A_q * A_q_mask
     print("A_q.shape ", A_q.shape)
-    #A_q = tf.Print(A_q, [A_q[0, 0,:]], "A_q row values")
-    # assert A_q.shape == (batch_size, contexts.shape[1] + 1,  questions.shape[1] + 1), "A_q shape doesn't match (batch_size, max context length + 1,  max question length + 1)" + str(A_q.shape)
-
-    # attention weights for documents A^{D} = softmax(L')
+    
     A_d = tf.nn.softmax(transpose(L))
+    A_d_mask = transpose(A_q_mask)
+    A_d = A_d * A_d_mask
+    
     print("A_d.shape ", A_d.shape)
     # assert A_d.shape == (batch_size, questions.shape[1] + 1, contexts.shape[1] + 1), "A_d shape doesn't match (batch_size, max question length + 1, max context length + 1)" + str(A_d.shape)
     
     # Attention Context C^{Q}
-    C_q = tf.matmul(transpose(A_q),context_encoding)
+    C_q = tf.matmul(transpose(A_q),context_encoding) # D*Aq
     print("C_q.shape :", C_q.shape)
     # assert C_q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "C_q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)" + str(C_q)
 
