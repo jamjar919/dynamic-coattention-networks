@@ -45,6 +45,8 @@ Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the dev set (w
 
 ![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/squad2/loss_validation_loss_graph.png?token=AcE8s5NV9kM-hmLJNj7dGz3vSo3Ok4Atks5csJI0wA%3D%3D)
 
+![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/results/question_split_statistics.png?raw=true)
+
 ### Dataset Statistics
 
 ![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/data/dev_question_histogram.png?raw=true)
