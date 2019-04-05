@@ -117,7 +117,7 @@ with tf.Session() as sess:
     })
 
     s_result = int(np.median(s_result))
-    e_result = int(np.median(s_result))
+    e_result = int(np.median(e_result))
     answer = answer_span_to_indices(s_result, e_result, random_question["context"])
 
     print()

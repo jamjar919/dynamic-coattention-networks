@@ -36,10 +36,15 @@ for i in range(0, 12):
     print("restoring from "+latest_checkpoint_path)
     saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
 
+    config = tf.ConfigProto()
+    if '--noGPU' in sys.argv[1:]:
+        print("Not using the GPU...")
+        config = tf.ConfigProto(device_count = {'GPU': 0})
+
     with tf.Session(config=config) as sess:
         saver.restore(sess, latest_checkpoint_path)
         graph = tf.get_default_graph()
-
+        
         answer_start_batch_predict = graph.get_tensor_by_name("answer_start:0")
         answer_end_batch_predict = graph.get_tensor_by_name("answer_end:0")
         answer_start_true = graph.get_tensor_by_name("answer_start_true_ph:0")
@@ -76,8 +81,35 @@ for i in range(0, 12):
 
             f1 = 0
             em = 0
+            alpha_loss_total = 0
+            beta_loss_total = 0
+            ignored_alpha_losses = 0
+            ignored_beta_losses = 0
             # Calculate f1 and em scores across batch size
             for i in range(CONFIG.BATCH_SIZE):
+                # print(np.sum(np.exp(s_logits)))
+                # print(np.exp(s_logits))
+                # print( np.log(np.exp(s_logits)/np.sum(np.exp(s_logits))))
+                #print(s_logits.shape)
+                #print(len(np.exp(s_logits[i])))
+                alpha_loss = 0
+                beta_loss = 0
+                for j in range(4):
+                    alpha_loss += -1. * np.log(np.exp(s_logits[j][i])/np.sum(np.exp(s_logits[j][i])))[all_answers[i][0]["answer_start"]]
+                    beta_loss += -1. * np.log(np.exp(e_logits[j][i]) / np.sum(np.exp(e_logits[j][i])))[all_answers[i][0]["answer_end"]]
+
+                #print(str(alpha_loss) + "THIS IS alpha" + str(i))
+                #print(str(beta_loss) + "THIS IS " + str(i))
+                if alpha_loss == float("inf") or alpha_loss == float("-inf"):
+                    ignored_alpha_losses += 1
+                else:
+                    alpha_loss_total += alpha_loss
+
+                if beta_loss == float("inf") or beta_loss == float("-inf"):
+                    ignored_beta_losses += 1
+                else:
+                    beta_loss_total += beta_loss
+                print("*****")
                 # maximise f1 score across answers
                 f1_score_answers = []
                 em_score_answers = []
@@ -106,23 +138,27 @@ for i in range(0, 12):
             f1score_curr = f1/CONFIG.BATCH_SIZE
             emscore_curr = em/CONFIG.BATCH_SIZE
 
+            alpha_loss_curr = alpha_loss_total/(CONFIG.BATCH_SIZE)
+            beta_loss_curr = beta_loss_total/(CONFIG.BATCH_SIZE)
+            total_loss = alpha_loss_curr + beta_loss_curr
             print("Current f1 score: ", f1score_curr)
             print("Current em score: ", emscore_curr)
+            print("Current alpha loss: ", alpha_loss_curr)
+            print("Current beta loss: ", beta_loss_curr)
             f1score.append(f1score_curr)
             emscore.append(emscore_curr)
-            
+            loss.append(total_loss)
 
             #if(iteration % ((CONFIG.BATCH_SIZE)-1) == 0):
             print("Tested (",iteration,"/",len(padded_data),")")
 
         print("F1 mean: ", np.mean(f1score))
         print("EM mean: ", np.mean(emscore))
-        print("Loss mean: ", np.mean(losses_list))
+        print("Loss mean: ", np.mean(total_loss))
 
-        f1_pickle_file = results_path +'./testing_f1_means.pkl'
-        em_pickle_file = results_path +'./testing_em_means.pkl'
-        loss_pickle_file = results_path +'./testing_loss_means.pkl'
-        
+        f1_pickle_file = './RESULTS/testing_f1_means.pkl'
+        em_pickle_file = './RESULTS/testing_em_means.pkl'
+        loss_pickle_file = './RESULTS/testing_loss_means.pkl'
         if os.path.exists(f1_pickle_file):
             append_write = 'ab'  # append if already exists
         else:
@@ -132,4 +168,4 @@ for i in range(0, 12):
         with open(em_pickle_file, append_write) as f:
             pickle.dump(np.mean(emscore), f, protocol=3)
         with open(loss_pickle_file, append_write) as f:
-            pickle.dump(np.mean(losses_list), f, protocol=3)
+            pickle.dump(np.mean(total_loss), f, protocol=3)

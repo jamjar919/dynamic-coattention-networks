@@ -70,6 +70,7 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     sentinel_vec_context = tf.get_variable("sentinel_context", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     sentinel_vec_context_batch = tf.stack([sentinel_vec_context] * batch_size)
     context_encoding = tf.concat([sentinel_vec_context_batch, context_encoding], axis  = 1 )
+    context_encoding = tf.identity(context_encoding, name='context_encoding')
     print("Extended context encoding shape: ", context_encoding.shape)
 
     
@@ -88,6 +89,7 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     W_q_batch = tf.stack([W_q] * batch_size)
     b_q_batch = tf.stack([b_q] * batch_size)
     Q = tf.tanh(tf.add(tf.matmul(question_encoding, W_q_batch), b_q_batch))
+    Q = tf.identity(Q, name='Q')
     Q_bin_mask = get_mask(question_embedding_length + 1, CONFIG.MAX_QUESTION_LENGTH + 1, hidden_unit_size, val_one = 1, val_two = 0)
     Q = Q * Q_bin_mask
     print("Q shape :", Q.shape) # B,41,200
@@ -99,22 +101,29 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     A_q = tf.nn.softmax(L) # rowwise on the rows of the matrices in the tensor.
     A_q_mask = get_mask2D(tf.expand_dims(context_embedding_length + 1, -1), tf.expand_dims(question_embedding_length + 1, -1), CONFIG.MAX_CONTEXT_LENGTH + 1, CONFIG.MAX_QUESTION_LENGTH + 1, val_one = 1, val_two = 0)
     A_q = A_q * A_q_mask
+    A_q = tf.identity(A_q, name='A_q')
+
     print("A_q.shape ", A_q.shape)
     
     A_d = tf.nn.softmax(transpose(L))
     A_d_mask = transpose(A_q_mask)
     A_d = A_d * A_d_mask 
+    A_d = tf.identity(A_d, name='A_d')
     print("A_d.shape ", A_d.shape)
     
     # Attention Context C^{Q}
-    C_q = tf.matmul(transpose(A_q),context_encoding) # D*Aq
+    C_q = tf.matmul(transpose(A_q),context_encoding)
+    C_q = tf.identity(C_q, name='C_q')
     print("C_q.shape :", C_q.shape)
 
     C_d = tf.matmul(transpose(A_d),tf.concat((Q,C_q), axis=2))
+    C_d = tf.identity(C_d, name='C_d')
     print("C_d.shape: ",C_d.shape)
 
     # Final context before BiLSTM. Has no name in the paper, so we call it C
     C = tf.concat((context_encoding,C_d),axis=2)
+    C = tf.identity(C, name='C_d')
+    
     print("C.shape : ",C.shape)
 
     # Bi-LSTM

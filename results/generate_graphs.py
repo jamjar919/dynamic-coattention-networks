@@ -16,9 +16,11 @@ path = os.path.dirname(os.path.abspath(__file__))
 loss_averages_file = path+"/training_loss_means.pkl"
 loss_full_csv = path+'/training_loss_per_batch.csv'
 
-validation_f1_file = path+"./validation_f1_means.pkl"
-validation_loss_file = path+"./validation_loss_means.pkl"
-validation_em_file = path + "./validation_em_means.pkl"
+validation_f1_file = path+"/validation_f1_means.pkl"
+validation_loss_file = path+"/validation_loss_means.pkl"
+validation_em_file = path + "/validation_em_means.pkl"
+
+question_split_file = path + "/test_question_split.pkl"
 
 with open(loss_averages_file, "rb") as f:
     loss_averages = pickle.load(f)
@@ -37,6 +39,9 @@ with open(validation_loss_file, "rb") as f:
 
 with open(validation_em_file, "rb") as f:
     validation_em_averages = pickle.load(f)
+
+with open(question_split_file, "rb") as f:
+    question_split_data = pickle.load(f)
 
 def generate_training_loss_graph():
     plt.clf()
@@ -93,6 +98,33 @@ def generate_training_validation_vs_loss():
 
     plt.clf()
 
+def generate_question_split_graph():
+    plt.clf()
+    print(question_split_data)
+    n = len(question_split_data)
+    xlabels = question_split_data.keys()
+    means = []
+    maxes = []
+    mins = []
+    for key in xlabels:
+        means.append(question_split_data[key]["average"])
+        maxes.append(question_split_data[key]["max"] - question_split_data[key]["average"])
+        mins.append(question_split_data[key]["average"] - question_split_data[key]["min"])
+
+    errors = [maxes, mins]
+
+    plt.ylabel('F1 Score')
+    plt.xlabel('Question type')
+    plt.title('F1 Score By Question Type')
+    plt.xticks(np.arange(n), xlabels)
+    plt.bar(np.arange(n), means, 0.9, yerr=errors)
+
+    plt.draw()
+    plt.savefig(path + '/question_split_statistics.png')
+
+    plt.clf()
+
 
 generate_training_validation_vs_loss()
 generate_training_loss_graph()
+generate_question_split_graph()
