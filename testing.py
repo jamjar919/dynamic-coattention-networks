@@ -14,28 +14,18 @@ question_asked = input("Enter a \'wh\' question, for example: Who is Sachin Rame
 text = nltk.word_tokenize(question_asked)
 processed_pos = nltk.pos_tag(text)
 text_to_search = ''
-print(processed_pos)
 for index in range(len(processed_pos)):
     if( "VB" in processed_pos[index][1]):
         text_to_search = ' '.join(question_asked.split(' ')[index+1:])
         break
 
 
-print("the test to search " + text_to_search)
 summary = wikipedia.summary(text_to_search)
 
-print(len(summary))
 context = ' '.join(summary.split()[:CONFIG.MAX_CONTEXT_LENGTH - 2])
-print("searching in  " + context)
 D = Dataset( CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
-padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
 question_encoding, context_encoding = D.encode_single_question(question_asked, context, CONFIG.MAX_QUESTION_LENGTH, CONFIG.MAX_CONTEXT_LENGTH)
-
-# random_question = np.random.choice(padded_data)
-# print(len(random_question))
-# print(len(padded_data))
-# print(random_question)
 
 
 embedding_dimension = 300
@@ -66,11 +56,6 @@ with tf.Session() as sess:
         dropout_keep_rate: 1
     })
 
-    print("****8")
-    print(s_result)
-
-    print("****8")
-    print(e_result)
     s_result = int(np.median(s_result))
     e_result = int(np.median(e_result))
     answer = answer_span_to_indices(s_result, e_result, context_encoding)
