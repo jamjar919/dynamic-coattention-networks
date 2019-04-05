@@ -5,14 +5,6 @@ import numpy as np
 from network.config import CONFIG
 
 def decoder(U, context_seq_length, max_context_length, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
-    """
-    :param U: This is output of the encoder
-    :param batch_size:
-    :param s_init:
-    :param e_init:
-    :return:
-    """
-
     batch_size = U.shape[0]
     iterations = 4
 
