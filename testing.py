@@ -1,6 +1,6 @@
 # This file trains the neural network using the encoder and decoder.
 import nltk
-import nltk
+import sys
 import wikipedia
 from dataset import Dataset
 from config import CONFIG
@@ -29,7 +29,6 @@ context = ' '.join(summary.split()[:CONFIG.MAX_CONTEXT_LENGTH - 2])
 print("searching in  " + context)
 D = Dataset( CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
-padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
 question_encoding, context_encoding = D.encode_single_question(question_asked, context, CONFIG.MAX_QUESTION_LENGTH, CONFIG.MAX_CONTEXT_LENGTH)
 
 # random_question = np.random.choice(padded_data)
@@ -45,7 +44,12 @@ latest_checkpoint_path = './model/saved-7'
 print("restoring from "+latest_checkpoint_path)
 saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
 
-with tf.Session() as sess:
+config = tf.ConfigProto()
+if '--noGPU' in sys.argv[1:]:
+    print("Not using the GPU...")
+    config = tf.ConfigProto(device_count = {'GPU': 0})
+
+with tf.Session(config=config) as sess:
     sess.run(init)
     saver.restore(sess, latest_checkpoint_path)
     graph = tf.get_default_graph()
