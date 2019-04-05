@@ -26,7 +26,6 @@ def build_classifier(embedding):
     # Word index placeholders
     has_answer_ph = tf.placeholder(dtype=tf.float32,shape=[CONFIG.BATCH_SIZE,], name='has_answer_ph')
 
-    #U = tf.placeholder(dtype = tf.float32, shape = [64,633,400])
     U, _ = encoder(question_batch_ph,context_batch_ph, embedding, dropout_keep_rate)
     U = U[:,0:410,:]
     print("U shape", U.shape)
@@ -58,7 +57,6 @@ def build_classifier(embedding):
     print("output shape 2 from classifier: ", out_2.shape)
     loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = has_answer_ph, logits = out)
     loss = tf.identity(loss, name = "loss_v2_classifier")
-    #loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = has_answer_ph, logits = out, name = "loss_v2_classifier")
     optimizer = tf.train.AdamOptimizer(CONFIG.LEARNING_RATE)
     train_op = optimizer.minimize(loss, name = "train_op_classifier")
 

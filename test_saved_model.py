@@ -22,12 +22,12 @@ padded_data, (max_length_question, max_length_context) = D.load_questions('data/
 print("Loaded data")
 
 config = tf.ConfigProto()
-    if '--noGPU' in sys.argv[1:]:
+if '--noGPU' in sys.argv[1:]:
     print("Not using the GPU...")
     config = tf.ConfigProto(device_count = {'GPU': 0})
 
-model_path = './MODEL'
-results_path = './RESULTS'
+model_path = './model'
+results_path = './results'
 
 for i in range(0, 12):
     path_string = model_path + './saved-' + str(i)
@@ -39,8 +39,6 @@ for i in range(0, 12):
     with tf.Session(config=config) as sess:
         saver.restore(sess, latest_checkpoint_path)
         graph = tf.get_default_graph()
-        #for i in tf.get_default_graph().get_operations():
-        #    print(i.name)
 
         answer_start_batch_predict = graph.get_tensor_by_name("answer_start:0")
         answer_end_batch_predict = graph.get_tensor_by_name("answer_end:0")
@@ -52,7 +50,7 @@ for i in range(0, 12):
         dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
         alphas = graph.get_tensor_by_name("alphas:0")
         betas = graph.get_tensor_by_name("betas:0")
-        loss  = graph.get_tensor_by_name("Sum_2:0")
+        loss  = graph.get_tensor_by_name("loss:0")
 
         f1score = []
         emscore = []
@@ -63,10 +61,6 @@ for i in range(0, 12):
             # running on an example batch to debug encoder
             batch = padded_data[iteration:(iteration + CONFIG.BATCH_SIZE)]
             question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-            #print("First context: ", D.index_to_text(context_batch[0]))
-            #print("First question: ", D.index_to_text(question_batch[0]))
-            #answer = answer_span_to_indices(answer_start_batch_actual[0], answer_end_batch_actual[0], context_batch[0])
-            #print("First answer label: ", D.index_to_text(answer))
 
             losses, estimated_start_index, estimated_end_index, s_logits, e_logits = sess.run([loss, answer_start_batch_predict, answer_end_batch_predict, alphas, betas], feed_dict={
                 question_batch_placeholder: question_batch,
@@ -77,10 +71,7 @@ for i in range(0, 12):
                 dropout_keep_rate: 1
             })
             losses_list.append(np.mean(losses))
-            #print(losses_list)
-            #est_answer = answer_span_to_indices(estimated_start_index[0], estimated_end_index[0], context_batch[0])
-            #print("Predicted answer: ", D.index_to_text(est_answer))
-            
+
             all_answers = np.array(list(map(lambda qas: (qas["all_answers"]), batch))).reshape(CONFIG.BATCH_SIZE)
 
             f1 = 0
@@ -117,8 +108,6 @@ for i in range(0, 12):
 
             print("Current f1 score: ", f1score_curr)
             print("Current em score: ", emscore_curr)
-            print("Current alpha loss: ", alpha_loss_curr)
-            print("Current beta loss: ", beta_loss_curr)
             f1score.append(f1score_curr)
             emscore.append(emscore_curr)
             

@@ -73,7 +73,6 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     # Prepend sentinel vector
     # https://stackoverflow.com/questions/52789457/how-to-perform-np-append-type-operation-on-tensors-in-tensorflow
     sentinel_vec_context = tf.get_variable("sentinel_context", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
-    #sentinel_vec_context = tf.Print(sentinel_vec_context, [sentinel_vec_context[0:7]], "Sentinel context vector")
     sentinel_vec_context_batch = tf.stack([sentinel_vec_context] * batch_size)
     context_encoding = tf.concat([sentinel_vec_context_batch, context_encoding], axis  = 1 )
     print("Extended context encoding shape: ", context_encoding.shape)
@@ -96,11 +95,8 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     b_q_batch = tf.stack([b_q] * batch_size)
     Q = tf.tanh(tf.add(tf.matmul(question_encoding, W_q_batch), b_q_batch))
     Q_bin_mask = get_mask(question_embedding_length + 1, CONFIG.MAX_QUESTION_LENGTH + 1, hidden_unit_size, val_one = 1, val_two = 0)
-    #Q = tf.Print(Q, [Q[0][1]], " Q SHAPE first row before mask")
-    #Q = tf.Print(Q, [Q[0][-1]], " Q SHAPE last row before mask last rows")
     Q = Q * Q_bin_mask
-    #Q = tf.Print(Q, [Q], " Q SHAPE first row after mask", summarize = 500)
-    #Q = tf.Print(Q, [Q[0][-1]], " Q SHAPE last row", summarize = 500)
+
     print("Q shape :", Q.shape) # B,41,200
 
     # assert Q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "Q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)"+ str(Q.shape)
@@ -120,21 +116,17 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     A_d = A_d * A_d_mask
     
     print("A_d.shape ", A_d.shape)
-    # assert A_d.shape == (batch_size, questions.shape[1] + 1, contexts.shape[1] + 1), "A_d shape doesn't match (batch_size, max question length + 1, max context length + 1)" + str(A_d.shape)
     
     # Attention Context C^{Q}
     C_q = tf.matmul(transpose(A_q),context_encoding) # D*Aq
     print("C_q.shape :", C_q.shape)
-    # assert C_q.shape == (batch_size, hidden_unit_size, questions.shape[1] + 1), "C_q shape doesn't match (batch_size, hidden_unit_size, max question length + 1)" + str(C_q)
 
-    # C^{D} = [Q ; C^{Q}] A^{D}
     C_d = tf.matmul(transpose(A_d),tf.concat((Q,C_q), axis=2))
     print("C_d.shape: ",C_d.shape)
     # assert C_d.shape == (batch_size, 2 * hidden_unit_size, contexts.shape[1] + 1), "C_d shape doesn't match (batch_size, 2 * hidden_unit_size, max context length + 1)" + str(C_d)
 
     # Final context. Has no name in the paper, so we call it C
     C = tf.concat((context_encoding,C_d),axis=2)
-    # assert C.shape == (batch_size, 3 * hidden_unit_size, contexts.shape[1] + 1), "C shape doesn't match (batch_size, 3 * hidden_unit_size, max context length + 1)" + str(C)
     
     print("C.shape : ",C.shape)
 
@@ -145,11 +137,7 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
         inputs = C, sequence_length = context_embedding_length + 1)
     print("U1 shape: ", U1.shape)
     U = tf.concat([U1,U2], axis = 2) # 10x633x400
-    #U = tf.Print(U, [U[0,-1,:]], "U word 632")
-    #U = tf.slice(U, begin = [0,1,0], size = [batch_size, contexts.shape[1], 2*hidden_unit_size]) # Make U to 10x632x400
     print("U.shape ", U.shape)
-    #print("U SHAPE AFTER SLICE:", U.shape)
-    #assert U.shape == (batch_size, contexts.shape[1], 2 * hidden_unit_size), "C shape doesn't match (batch_size, 2 * hidden_unit_size, max context length)" + str(U)
     
     return U, context_embedding_length
 

@@ -29,7 +29,7 @@ def build_model(embedding, v2 = False):
 
     # Create encoder. (Encoder will also return the sequence length of the context (i.e. how much of each batch element is unpadded))
     U, context_seq_length = encoder(question_batch_placeholder,context_batch_placeholder, embedding, dropout_keep_rate)
-    if  v2 :
+    if  v2 : # keep sentinel logit
         context_seq_length+=1
         max_context_length+=1
         answer_start+=1
@@ -38,7 +38,6 @@ def build_model(embedding, v2 = False):
         # throw away sentinel
         U = U[:,1:,:]
         
-
     # Create decoder 
     s, e, alphas, betas = decoder(U, context_seq_length,max_context_length, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, pool_size=CONFIG.POOL_SIZE) # Pass also the seq_length from encoder and max_length.
 

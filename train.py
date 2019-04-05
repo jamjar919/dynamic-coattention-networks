@@ -96,8 +96,7 @@ with tf.Session(config=config) as sess:
 
             f1score.append(f1 / len(estimated_end_index))
             emscore.append(em / len(estimated_end_index))
-            #print("f1 score: ", f1/len(estimated_end_index))
-  
+     
         print("F1 mean on validation: ", np.mean(f1score))
         print("EM mean on validation: ", np.mean(emscore))
         print("Mean validation loss on epoch: ", np.mean(validation_losses))
