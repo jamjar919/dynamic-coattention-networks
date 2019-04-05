@@ -41,7 +41,7 @@ To evaluate F1/EM performance on the dev set, the file `test_saved_model.py` is 
 ## Results
 Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the dev set (which we used as our test set) after 7 epochs, compared to the paper’s F1 of 75.9%
 
-![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/master/loss_graph.png?token=AFYtbLdhVAmZilLdFlcjc5oMH0_SQslGks5crPkfwA%3D%3D)
+![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/squad2/loss_graph.png?token=AcE8s1VHHjpy45hDRBTrOiFIVqOe-0Muks5csJLzwA%3D%3D)
 
 ![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/squad2/loss_validation_loss_graph.png?token=AcE8s5NV9kM-hmLJNj7dGz3vSo3Ok4Atks5csJI0wA%3D%3D)
 
