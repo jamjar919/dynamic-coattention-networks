@@ -65,7 +65,7 @@ with tf.Session(config=config) as sess:
         yhat, loss_value = sess.run([answer_predict, loss], 
             get_feed_dict(question_batch,context_batch,answer_actual, 1.0,  index2embedding))
 
-        yhat = np.reshape(yhat, (yhat.shape[0], yhat.shape[1]))
+        #yhat = np.reshape(yhat, (yhat.shape[0], yhat.shape[1]))
         #print(yhat.shape)
         #print("predicted values: ", yhat)
         print("current loss: ", np.mean(loss_value), "(",iteration,"/",len(padded_data),")")
