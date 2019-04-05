@@ -1,7 +1,5 @@
 # Question Answering using Dynamic Coattention Networks
 
-A project by Team 13. (Panos An, Elton Antonis, James Paterson, Vidyaranya Sai)
-
 https://arxiv.org/pdf/1611.01604.pdf
 
 ## Running the program
@@ -41,11 +39,11 @@ The training will automatically test on a validation subset, and log loss, f1, a
 To evaluate F1/EM performance on the dev set, the file `test_saved_model.py` is what you need. You can also use the file `main.py` to see the example output of the network on a random context and question. You can also use `testing.py` to ask a question and obtain a context to search with from wikipedia.
 
 ## Results
-Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the test set after 7 epochs, compared to the paper’s F1 of 75.9%
+Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the dev set (which we used as our test set) after 7 epochs, compared to the paper’s F1 of 75.9%
 
-![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/master/loss_graph.png?token=AFYtbLdhVAmZilLdFlcjc5oMH0_SQslGks5crPkfwA%3D%3D)
+![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/squad2/loss_graph.png?token=AcE8s1VHHjpy45hDRBTrOiFIVqOe-0Muks5csJLzwA%3D%3D)
 
-![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/master/loss_validation_loss_graph.png?token=AFYtbDFLaIc-BqPfHpVwKztj5_yKBoQtks5crPlTwA%3D%3D)
+![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/squad2/loss_validation_loss_graph.png?token=AcE8s5NV9kM-hmLJNj7dGz3vSo3Ok4Atks5csJI0wA%3D%3D)
 
 ### Dataset Statistics
 
