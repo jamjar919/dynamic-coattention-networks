@@ -38,7 +38,7 @@ Run `train.py` to train the model. This loads cached word embeddings from the /d
 The training will automatically test on a validation subset, and log loss, f1, and exact match statistics to CSV in the /results/ folder. The model is also saved every epoch in the /models/ folder.
 
 ### Evaluating
-To evaluate F1/EM performance on the dev set, the file `test_saved_model.py` is what you need. You can also use the file `main.py` to see the example output of the network on a supplied context and question.
+To evaluate F1/EM performance on the dev set, the file `test_saved_model.py` is what you need. You can also use the file `main.py` to see the example output of the network on a random context and question. You can also use `testing.py` to ask a question and obtain a context to search with from wikipedia.
 
 ## Results
 Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the test set after 7 epochs, compared to the paper’s F1 of 75.9%
