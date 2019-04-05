@@ -6,12 +6,10 @@ import pickle
 from functools import reduce
 import os
 # custom imports
-from encoder import encoder
-from decoder import decoder
-from dataset import Dataset
-from config import CONFIG
+from network.config import CONFIG
+from network.build_model import build_model, get_feed_dict, get_batch
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
-from build_model import build_model, get_feed_dict, get_batch
+from dataset import Dataset
 
 tensorboard_filepath = '.'
 
@@ -98,8 +96,7 @@ with tf.Session(config=config) as sess:
 
             f1score.append(f1 / len(estimated_end_index))
             emscore.append(em / len(estimated_end_index))
-            #print("f1 score: ", f1/len(estimated_end_index))
-  
+     
         print("F1 mean on validation: ", np.mean(f1score))
         print("EM mean on validation: ", np.mean(emscore))
         print("Mean validation loss on epoch: ", np.mean(validation_losses))

@@ -1,4 +1,3 @@
-# This file runs the actual question answering program using our trained network
 import sys
 import numpy as np
 import tensorflow as tf
@@ -9,8 +8,8 @@ from preprocessing import answer_span_to_indices
 
 # custom imports
 from dataset import Dataset
-from config import CONFIG
-from build_model import get_batch
+from network.config import CONFIG
+from network.build_model import get_batch
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -22,9 +21,16 @@ index2embedding = D.index2embedding
 padded_data, (max_length_question, max_length_context) = D.load_questions('data/dev.json')
 print("Loaded data")
 
+config = tf.ConfigProto()
+if '--noGPU' in sys.argv[1:]:
+    print("Not using the GPU...")
+    config = tf.ConfigProto(device_count = {'GPU': 0})
+
+model_path = './model'
+results_path = './results'
 
 for i in range(0, 12):
-    path_string = './MODEL/saved-' + str(i)
+    path_string = model_path + './saved-' + str(i)
     latest_checkpoint_path = path_string
 
     print("restoring from "+latest_checkpoint_path)
@@ -38,41 +44,38 @@ for i in range(0, 12):
     with tf.Session(config=config) as sess:
         saver.restore(sess, latest_checkpoint_path)
         graph = tf.get_default_graph()
+        
         answer_start_batch_predict = graph.get_tensor_by_name("answer_start:0")
         answer_end_batch_predict = graph.get_tensor_by_name("answer_end:0")
+        answer_start_true = graph.get_tensor_by_name("answer_start_true_ph:0")
+        answer_end_true = graph.get_tensor_by_name("answer_end_true_ph:0")
         question_batch_placeholder = graph.get_tensor_by_name("question_batch_ph:0")
         context_batch_placeholder = graph.get_tensor_by_name("context_batch_ph:0")
         embedding = graph.get_tensor_by_name("embedding_ph:0")
         dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
         alphas = graph.get_tensor_by_name("alphas:0")
         betas = graph.get_tensor_by_name("betas:0")
-        # loss  = graph.get_tensor_by_name("loss_to_optimize:0")
+        loss  = graph.get_tensor_by_name("loss:0")
 
         f1score = []
         emscore = []
-        loss = []
+        losses_list = []
 
         print("SESSION INITIALIZED")
         for iteration in range(0, len(padded_data) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             # running on an example batch to debug encoder
             batch = padded_data[iteration:(iteration + CONFIG.BATCH_SIZE)]
             question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-            print("First context: ", D.index_to_text(context_batch[0]))
-            print("First question: ", D.index_to_text(question_batch[0]))
-            answer = answer_span_to_indices(answer_start_batch_actual[0], answer_end_batch_actual[0], context_batch[0])
-            print("First answer label: ", D.index_to_text(answer))
 
-            estimated_start_index, estimated_end_index, s_logits, e_logits = sess.run([answer_start_batch_predict, answer_end_batch_predict, alphas, betas], feed_dict={
+            losses, estimated_start_index, estimated_end_index, s_logits, e_logits = sess.run([loss, answer_start_batch_predict, answer_end_batch_predict, alphas, betas], feed_dict={
                 question_batch_placeholder: question_batch,
                 context_batch_placeholder: context_batch,
+                answer_start_true : answer_start_batch_actual,
+                answer_end_true : answer_end_batch_actual,
                 embedding: index2embedding,
                 dropout_keep_rate: 1
             })
-
-
-
-            est_answer = answer_span_to_indices(estimated_start_index[0], estimated_end_index[0], context_batch[0])
-            print("Predicted answer: ", D.index_to_text(est_answer))
+            losses_list.append(np.mean(losses))
 
             all_answers = np.array(list(map(lambda qas: (qas["all_answers"]), batch))).reshape(CONFIG.BATCH_SIZE)
 
