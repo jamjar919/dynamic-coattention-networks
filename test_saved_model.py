@@ -30,7 +30,7 @@ model_path = './model'
 results_path = './results'
 
 for i in range(0, 10):
-    path_string = model_path + './saved-' + str(i)
+    path_string = model_path + '/saved-' + str(i)
     latest_checkpoint_path = path_string
 
     print("restoring from "+latest_checkpoint_path)
@@ -105,7 +105,7 @@ for i in range(0, 10):
 
             f1score_curr = f1/CONFIG.BATCH_SIZE
             emscore_curr = em/CONFIG.BATCH_SIZE
-
+            print("Current loss: ", np.mean(losses) )
             print("Current f1 score: ", f1score_curr)
             print("Current em score: ", emscore_curr)
             f1score.append(f1score_curr)
