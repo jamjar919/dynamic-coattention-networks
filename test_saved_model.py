@@ -105,9 +105,9 @@ for i in range(0, 10):
 
             f1score_curr = f1/CONFIG.BATCH_SIZE
             emscore_curr = em/CONFIG.BATCH_SIZE
-            print("Current loss: ", np.mean(losses) )
-            print("Current f1 score: ", f1score_curr)
-            print("Current em score: ", emscore_curr)
+            #print("Current loss: ", np.mean(losses) )
+            #print("Current f1 score: ", f1score_curr)
+            #print("Current em score: ", emscore_curr)
             f1score.append(f1score_curr)
             emscore.append(emscore_curr)
             
@@ -117,9 +117,9 @@ for i in range(0, 10):
         print("EM mean: ", np.mean(emscore))
         print("Loss mean: ", np.mean(losses_list))
 
-        f1_pickle_file = results_path +'./testing_f1_means.pkl'
-        em_pickle_file = results_path +'./testing_em_means.pkl'
-        loss_pickle_file = results_path +'./testing_loss_means.pkl'
+        f1_pickle_file = results_path +'/testing_f1_means.pkl'
+        em_pickle_file = results_path +'/testing_em_means.pkl'
+        loss_pickle_file = results_path +'/testing_loss_means.pkl'
         
         if os.path.exists(f1_pickle_file):
             append_write = 'ab'  # append if already exists
