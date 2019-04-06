@@ -26,8 +26,8 @@ if '--noGPU' in sys.argv[1:]:
     print("Not using the GPU...")
     config = tf.ConfigProto(device_count = {'GPU': 0})
 
-model_path = './model'
-results_path = './results'
+model_path = './MODEL'
+results_path = './RESULTS'
 
 for i in range(0, 10):
     path_string = model_path + '/saved-' + str(i)
@@ -48,9 +48,7 @@ for i in range(0, 10):
         context_batch_placeholder = graph.get_tensor_by_name("context_batch_ph:0")
         embedding = graph.get_tensor_by_name("embedding_ph:0")
         dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
-        alphas = graph.get_tensor_by_name("alphas:0")
-        betas = graph.get_tensor_by_name("betas:0")
-        loss  = graph.get_tensor_by_name("loss:0")
+        loss  = graph.get_tensor_by_name("Sum_2:0")
 
         f1score = []
         emscore = []
@@ -61,8 +59,11 @@ for i in range(0, 10):
             # running on an example batch to debug encoder
             batch = padded_data[iteration:(iteration + CONFIG.BATCH_SIZE)]
             question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-
-            losses, estimated_start_index, estimated_end_index, s_logits, e_logits = sess.run([loss, answer_start_batch_predict, answer_end_batch_predict, alphas, betas], feed_dict={
+            #print("First context: ", D.index_to_text(context_batch[0]))
+            #print("First question: ", D.index_to_text(question_batch[0]))
+            #answer = answer_span_to_indices(answer_start_batch_actual[0], answer_end_batch_actual[0], context_batch[0])
+            #print("First answer label: ", D.index_to_text(answer))
+            losses, estimated_start_index, estimated_end_index = sess.run([loss, answer_start_batch_predict, answer_end_batch_predict], feed_dict={
                 question_batch_placeholder: question_batch,
                 context_batch_placeholder: context_batch,
                 answer_start_true : answer_start_batch_actual,
