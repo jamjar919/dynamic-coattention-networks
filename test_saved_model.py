@@ -29,7 +29,7 @@ if '--noGPU' in sys.argv[1:]:
 model_path = './model'
 results_path = './results'
 
-for i in range(0, 12):
+for i in range(0, 10):
     path_string = model_path + './saved-' + str(i)
     latest_checkpoint_path = path_string
 
