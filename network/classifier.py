@@ -19,7 +19,15 @@ def get_feed_dict(question_batch, context_batch, answer_batch, dropout_keep_prob
                 graph.get_tensor_by_name("embedding_ph:0"): index2embedding
             }
 
-def build_classifier(embedding):
+
+def build_fully_connected_classifier(embedding):
+    return build_classifier(embedding,classify_fully_connected)
+
+
+def build_cnn_classifier(embedding):
+    return build_classifier(embedding,classify_cnn)
+
+def build_classifier(embedding,classify_fn):
     dropout_keep_rate = tf.placeholder(dtype = tf.float32, name = "dropout_keep_ph")
     question_batch_ph = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_QUESTION_LENGTH], name='question_batch_ph')
     context_batch_ph = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_CONTEXT_LENGTH], name='context_batch_ph')
@@ -29,7 +37,7 @@ def build_classifier(embedding):
     U, _ = encoder(question_batch_ph,context_batch_ph, embedding, dropout_keep_rate)
     U = U[:,0:410,:]
     print("U shape", U.shape)
-    return classify_cnn(U, dropout_keep_rate,has_answer_ph)
+    return classify_fn(U, dropout_keep_rate,has_answer_ph)
 
 
 def classify_cnn(U, dropout_keep_rate, has_answer_ph):
