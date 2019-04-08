@@ -50,7 +50,7 @@ for i in range(0, 7):
     with tf.Session(config=config) as sess:
         saver.restore(sess, latest_checkpoint_path)
         graph = tf.get_default_graph()
-        answer_predict = graph.get_tensor_by_name("classifier_output:0")
+        answer_predict = graph.get_tensor_by_name("Squeeze:0")
         question_batch_placeholder = graph.get_tensor_by_name("question_batch_ph:0")
         context_batch_placeholder = graph.get_tensor_by_name("context_batch_ph:0")
         embedding = graph.get_tensor_by_name("embedding_ph:0")
