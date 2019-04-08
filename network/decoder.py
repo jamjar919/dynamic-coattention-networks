@@ -1,8 +1,8 @@
 # decode the question using the dynamic decoder
 import tensorflow as tf
-from highway_network import highway_network
+from network.highway_network import highway_network
 import numpy as np
-from config import CONFIG
+from network.config import CONFIG
 
 def decoder(U, context_seq_length, max_context_length, dropout_keep_rate, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
     batch_size = U.shape[0]

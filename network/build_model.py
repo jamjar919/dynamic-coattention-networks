@@ -1,8 +1,8 @@
 import tensorflow as tf
 import numpy as np
-from encoder import encoder
-from decoder import decoder
-from config import CONFIG
+from network.encoder import encoder
+from network.decoder import decoder
+from network.config import CONFIG
 
 def get_batch(batch, batch_size = CONFIG.BATCH_SIZE, max_length_question = CONFIG.MAX_QUESTION_LENGTH, max_length_context = CONFIG.MAX_CONTEXT_LENGTH):
     question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size, max_length_question)
