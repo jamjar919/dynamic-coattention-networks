@@ -7,7 +7,7 @@ from functools import reduce
 import os
 # custom imports
 from network.config import CONFIG
-from network.classifier import build_classifier, get_batch, get_feed_dict
+from network.classifier import build_cnn_classifier, get_batch, get_feed_dict
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 from dataset import Dataset
 from score import Score
@@ -21,7 +21,7 @@ print("Loaded data")
 
 tf.reset_default_graph()
 embedding = tf.placeholder(shape = [len(index2embedding), CONFIG.EMBEDDING_DIMENSION], dtype=tf.float32, name='embedding_ph')
-train_op, loss, classifier_out  = build_classifier(embedding)
+train_op, loss, classifier_out  = build_cnn_classifier(embedding)
 
 results_path = './resultsclassifier'
 model_path = './modelclassifier'

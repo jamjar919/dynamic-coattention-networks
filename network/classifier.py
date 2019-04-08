@@ -19,7 +19,15 @@ def get_feed_dict(question_batch, context_batch, answer_batch, dropout_keep_prob
                 graph.get_tensor_by_name("embedding_ph:0"): index2embedding
             }
 
-def build_classifier(embedding):
+
+def build_fully_connected_classifier(embedding):
+    return build_classifier(embedding,classify_fully_connected)
+
+
+def build_cnn_classifier(embedding):
+    return build_classifier(embedding,classify_cnn)
+
+def build_classifier(embedding,classify_fn):
     dropout_keep_rate = tf.placeholder(dtype = tf.float32, name = "dropout_keep_ph")
     question_batch_ph = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_QUESTION_LENGTH], name='question_batch_ph')
     context_batch_ph = tf.placeholder(dtype=tf.int32, shape = [CONFIG.BATCH_SIZE, CONFIG.MAX_CONTEXT_LENGTH], name='context_batch_ph')
@@ -29,6 +37,43 @@ def build_classifier(embedding):
     U, _ = encoder(question_batch_ph,context_batch_ph, embedding, dropout_keep_rate)
     U = U[:,0:410,:]
     print("U shape", U.shape)
+    return classify_fn(U, dropout_keep_rate,has_answer_ph)
+
+
+def classify_cnn(U, dropout_keep_rate, has_answer_ph):
+    WINDOW_SIZE = 3 # Look at a window of 3 words
+    batch_size = U.shape[0]
+    # add extra dimension and transpose so that each column is a word context
+    U_transpose = tf.reshape(U,shape = [U.shape[0], U.shape[2], U.shape[1], 1])
+    conv= tf.layers.conv2d(
+      inputs= U_transpose,
+      filters= CONFIG.POOL_SIZE, # we should use filters = CONFIG.POOL_SIZE
+      kernel_size=[U_transpose.shape[1], WINDOW_SIZE], # this is 2l x 3. Look at a window of 3 words
+      padding="valid",
+      activation=tf.nn.relu)
+    print("conv.shape = ",conv.shape)
+    # add a max pooling layer over filters (get the max activation from each filter)
+    pool = tf.reduce_max(conv, axis = 2)
+    print("pool.shape: ",pool.shape)
+    pool_flat = tf.reshape(pool,[batch_size,pool.shape[1]*pool.shape[2]])
+    print("pool_flat.shape: ",pool_flat.shape)
+    dense = tf.layers.dense(inputs=pool_flat, units= 16, activation=tf.nn.relu)
+    print("dense.shape: ",dense.shape)
+    dropout_layer = tf.nn.dropout(dense, keep_prob= dropout_keep_rate)
+    print("dropout_layer.shape: ", dropout_layer.shape)
+    logit = tf.layers.dense(inputs=dropout_layer, units=1)
+    logit = tf.squeeze(logit, name = 'logit')
+    out = tf.sigmoid(logit, name = 'classifier_output')
+    print("logit.shape: ",logit.shape)
+    loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = has_answer_ph, logits = logit)
+    loss = tf.identity(loss, name = "loss_v2_classifier")
+    optimizer = tf.train.AdamOptimizer(CONFIG.LEARNING_RATE)
+    train_op = optimizer.minimize(loss, name = "train_op_classifier")
+    return train_op, loss, tf.sigmoid(logit)
+
+
+
+def classify_fully_connected(U, dropout_keep_rate, has_answer_ph):
     initer = tf.contrib.layers.xavier_initializer()
     LAYER_SIZE = 20
     W1 = tf.get_variable("W1", shape = [U.shape[2],LAYER_SIZE], initializer = initer, dtype = tf.float32)
