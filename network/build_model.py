@@ -1,8 +1,8 @@
 import tensorflow as tf
 import numpy as np
-from network.encoder import encoder
-from network.decoder import decoder
-from network.config import CONFIG
+from encoder import encoder
+from decoder import decoder
+from config import CONFIG
 
 def get_batch(batch, batch_size = CONFIG.BATCH_SIZE, max_length_question = CONFIG.MAX_QUESTION_LENGTH, max_length_context = CONFIG.MAX_CONTEXT_LENGTH):
     question_batch = np.array(list(map(lambda qas: (qas["question"]), batch))).reshape(batch_size, max_length_question)
@@ -39,7 +39,7 @@ def build_model(embedding, v2 = False):
         U = U[:,1:,:]
         
     # Create decoder 
-    s, e, alphas, betas = decoder(U, context_seq_length,max_context_length, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, pool_size=CONFIG.POOL_SIZE) # Pass also the seq_length from encoder and max_length.
+    s, e, alphas, betas = decoder(U, context_seq_length,max_context_length, dropout_keep_rate, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, pool_size=CONFIG.POOL_SIZE) # Pass also the seq_length from encoder and max_length.
 
     s = tf.identity(s, name='answer_start')
     e = tf.identity(e, name='answer_end')
