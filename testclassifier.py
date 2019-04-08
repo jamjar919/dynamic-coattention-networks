@@ -12,6 +12,14 @@ from network.config import CONFIG
 from network.classifier import get_batch, get_feed_dict
 from network.build_model import get_batch as get_batch_span
 from score import Score
+import math
+
+def sigmoid(array):
+    sigm_array = np.zeros(dtype = float, shape = (array.shape[0]))
+    for i in range(0, array.shape[0]):
+        sigm_array[i] = 1 / (1 + math.exp(-array[i]))
+
+  return sigm_array
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
@@ -76,6 +84,7 @@ for i in range(0, 7):
             yhat, loss_value = sess.run([answer_predict, loss], 
                 get_feed_dict(question_batch,context_batch,answer_actual, 1.0,  index2embedding))
 
+            yhat = sigmoid(yhat)
             print("current loss: ", np.mean(loss_value), "(",iteration,"/",len(padded_data),")")
             for i in range (yhat.shape[0]):
                 predicted_labels.append(yhat[i])
