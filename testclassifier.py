@@ -25,10 +25,10 @@ print("Loaded data")
 model_path = './modelclassifier'
 results_path = './resultsclassifier'
 
-    config = tf.ConfigProto()
-    if '--noGPU' in sys.argv[1:]:
-        print("Not using the GPU...")
-        config = tf.ConfigProto(device_count = {'GPU': 0})
+config = tf.ConfigProto()
+if '--noGPU' in sys.argv[1:]:
+    print("Not using the GPU...")
+    config = tf.ConfigProto(device_count = {'GPU': 0})
 
 score_50 = Score()
 score_67 = Score()
