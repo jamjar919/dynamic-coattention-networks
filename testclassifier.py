@@ -19,7 +19,7 @@ def sigmoid(array):
     for i in range(0, array.shape[0]):
         sigm_array[i] = 1 / (1 + math.exp(-array[i]))
 
-  return sigm_array
+    return sigm_array
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
