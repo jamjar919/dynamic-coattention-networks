@@ -2,7 +2,7 @@
 import numpy as np
 from collections import Counter
 import re, string, sys
-from dataset import Dataset
+from preprocessing.dataset import Dataset
 from network.config import CONFIG
 
 def squad_f1_score( prediction, ground_truth):

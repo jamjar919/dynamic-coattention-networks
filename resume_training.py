@@ -7,7 +7,7 @@ from network.config import CONFIG
 from network.build_model import get_batch, get_feed_dict
 
 # custom imports
-from dataset import Dataset
+from preprocessing.dataset import Dataset
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 
 print("Resumeing training")

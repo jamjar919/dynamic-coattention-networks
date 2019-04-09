@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import os
 
 from network.config import CONFIG
-from dataset import Dataset
-from preprocessing import answer_span_to_indices
+from preprocessing.dataset import Dataset
+from preprocessing.preprocessing import answer_span_to_indices
 
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -19,7 +19,7 @@ def linear(x, x_max):
 def exponential(x):
     return np.exp(np.e * (x - 1))
 
-def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="question.png"):
+def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="results/question.png"):
     path = os.path.dirname(os.path.abspath(__file__))
     plt.clf()
 

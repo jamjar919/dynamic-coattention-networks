@@ -5,9 +5,9 @@ import tensorflow as tf
 from functools import reduce
 import os
 import pickle
-from preprocessing import answer_span_to_indices
+from preprocessing.preprocessing import answer_span_to_indices
 # custom imports
-from dataset import Dataset
+from preprocessing.dataset import Dataset
 from network.config import CONFIG
 from network.classifier import get_batch, get_feed_dict
 from network.build_model import get_batch as get_batch_span

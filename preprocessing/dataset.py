@@ -8,7 +8,7 @@ import sys
 import tensorflow as tf
 
 from network.config import CONFIG
-from preprocessing import text_to_index, load_embedding, pad_data, KnuthMorrisPratt, tokenise, pad_to
+from preprocessing.preprocessing import text_to_index, load_embedding, pad_data, KnuthMorrisPratt, tokenise, pad_to
 
 class Dataset:
 
@@ -160,6 +160,6 @@ if __name__ == '__main__':
     from network.config import CONFIG
     D = Dataset('data/glove.840B.300d.txt')
     index2embedding = D.index2embedding
-    #padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")
+    padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")
 
-    print(D.encode_single_question("hello this is a question", "this is a context with more words than usual", 30, 30))
+    print(D.encode_single_question("What color ($400) is the cat's bed?", "The cat's bed is red, and cost $400. Wow!", 20, 20))

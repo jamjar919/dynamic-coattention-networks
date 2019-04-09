@@ -9,7 +9,7 @@ import os
 from network.config import CONFIG
 from network.classifier import build_cnn_classifier, get_batch, get_feed_dict
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
-from dataset import Dataset
+from preprocessing.dataset import Dataset
 from score import Score
 
 tensorboard_filepath = '.'
