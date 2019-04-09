@@ -26,10 +26,13 @@ if '--noGPU' in sys.argv[1:]:
     print("Not using the GPU...")
     config = tf.ConfigProto(device_count = {'GPU': 0})
 
-model_path = './MODEL'
-results_path = './RESULTS'
+model_path = './model'
+results_path = './results_hmndropout'
 
-for i in range(0, 10):
+f1_epochs = []
+em_epochs = []
+losses_epochs = []
+for i in range(0,10):
     path_string = model_path + '/saved-' + str(i)
     latest_checkpoint_path = path_string
 
@@ -48,7 +51,7 @@ for i in range(0, 10):
         context_batch_placeholder = graph.get_tensor_by_name("context_batch_ph:0")
         embedding = graph.get_tensor_by_name("embedding_ph:0")
         dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
-        loss  = graph.get_tensor_by_name("Sum_2:0")
+        loss  = graph.get_tensor_by_name("loss:0")
 
         f1score = []
         emscore = []
@@ -59,10 +62,6 @@ for i in range(0, 10):
             # running on an example batch to debug encoder
             batch = padded_data[iteration:(iteration + CONFIG.BATCH_SIZE)]
             question_batch, context_batch, answer_start_batch_actual, answer_end_batch_actual = get_batch(batch, CONFIG.BATCH_SIZE, max_length_question, max_length_context)
-            #print("First context: ", D.index_to_text(context_batch[0]))
-            #print("First question: ", D.index_to_text(question_batch[0]))
-            #answer = answer_span_to_indices(answer_start_batch_actual[0], answer_end_batch_actual[0], context_batch[0])
-            #print("First answer label: ", D.index_to_text(answer))
             losses, estimated_start_index, estimated_end_index = sess.run([loss, answer_start_batch_predict, answer_end_batch_predict], feed_dict={
                 question_batch_placeholder: question_batch,
                 context_batch_placeholder: context_batch,
@@ -106,14 +105,16 @@ for i in range(0, 10):
 
             f1score_curr = f1/CONFIG.BATCH_SIZE
             emscore_curr = em/CONFIG.BATCH_SIZE
-            #print("Current loss: ", np.mean(losses) )
-            #print("Current f1 score: ", f1score_curr)
-            #print("Current em score: ", emscore_curr)
+            print("Current loss: ", np.mean(losses) )
+            print("Current f1 score: ", f1score_curr)
+            print("Current em score: ", emscore_curr)
             f1score.append(f1score_curr)
             emscore.append(emscore_curr)
             
             print("Tested (",iteration,"/",len(padded_data),")")
-
+        f1_epochs.append(np.mean(f1score))
+        em_epochs.append(np.mean(emscore))
+        losses_epochs.append(np.mean(losses_list))
         print("F1 mean: ", np.mean(f1score))
         print("EM mean: ", np.mean(emscore))
         print("Loss mean: ", np.mean(losses_list))
@@ -122,13 +123,9 @@ for i in range(0, 10):
         em_pickle_file = results_path +'/testing_em_means.pkl'
         loss_pickle_file = results_path +'/testing_loss_means.pkl'
         
-        if os.path.exists(f1_pickle_file):
-            append_write = 'ab'  # append if already exists
-        else:
-            append_write = 'wb'  # make a new file if not
-        with open(f1_pickle_file, append_write) as f:
-            pickle.dump(np.mean(f1score), f, protocol=3)
-        with open(em_pickle_file, append_write) as f:
-            pickle.dump(np.mean(emscore), f, protocol=3)
-        with open(loss_pickle_file, append_write) as f:
-            pickle.dump(np.mean(losses_list), f, protocol=3)
+        with open(f1_pickle_file, 'wb') as f:
+            pickle.dump(f1_epochs, f, protocol=3)
+        with open(em_pickle_file, 'wb') as f:
+            pickle.dump(em_epochs, f, protocol=3)
+        with open(loss_pickle_file, 'wb') as f:
+            pickle.dump(losses_epochs, f, protocol=3)
