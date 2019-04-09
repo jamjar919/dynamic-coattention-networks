@@ -93,7 +93,12 @@ latest_checkpoint_path = tf.train.latest_checkpoint('./model/')
 print("restoring from "+latest_checkpoint_path)
 saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
 
-with tf.Session() as sess:
+config = tf.ConfigProto()
+if '--noGPU' in sys.argv[1:]:
+    print("Not using the GPU...")
+    config = tf.ConfigProto(device_count = {'GPU': 0})
+
+with tf.Session(config=config) as sess:
     sess.run(init)
     saver.restore(sess, latest_checkpoint_path)
     graph = tf.get_default_graph()
