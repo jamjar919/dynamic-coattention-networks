@@ -32,7 +32,7 @@ results_path = './results_hmndropout'
 f1_epochs = []
 em_epochs = []
 losses_epochs = []
-for i in range(0,10):
+for i in range(0,12):
     path_string = model_path + '/saved-' + str(i)
     latest_checkpoint_path = path_string
 
