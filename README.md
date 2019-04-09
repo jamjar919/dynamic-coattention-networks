@@ -54,7 +54,7 @@ Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the dev set (w
 
 ### Example Context Heatmap (zoom in)
 
-![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/question.png?raw=true)
+![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/results/question.png?raw=true)
 
 
 ### Adaptation to SQuAD 2.0
