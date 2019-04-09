@@ -1,3 +1,4 @@
+import __init__
 import tensorflow as tf
 from network.encoder import encoder
 import numpy as np
