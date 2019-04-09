@@ -40,8 +40,8 @@ with open(validation_loss_file, "rb") as f:
 with open(validation_em_file, "rb") as f:
     validation_em_averages = pickle.load(f)
 
-with open(question_split_file, "rb") as f:
-    question_split_data = pickle.load(f)
+# with open(question_split_file, "rb") as f:
+#     question_split_data = pickle.load(f)
 
 def generate_training_loss_graph():
     plt.clf()
@@ -81,16 +81,16 @@ def generate_training_validation_vs_loss():
     par.set_ylim(0, 1)
     par.axis["right"].toggle(all=True)
     host.set_ylim(0, max(loss_averages) + 1)
-
-    plt.plot(list(range(0, len(loss_averages))), loss_averages, 'b-', label="Training loss")
-    plt.plot(list(range(0, len(loss_averages))), validation_loss_averages, 'r-', label="Validation loss")
-    par.plot(list(range(0, len(loss_averages))), validation_f1_averages, 'y-', label="Validation F1")
-    par.plot(list(range(0, len(loss_averages))), validation_em_averages, 'g-', label="Validation EM")
+    host.set_xlim(0, len(loss_averages))
+    plt.plot(list(range(1, len(loss_averages) + 1)), loss_averages, 'b-', label="Training loss")
+    plt.plot(list(range(1, len(loss_averages) + 1)), validation_loss_averages, 'r-', label="Validation loss")
+    par.plot(list(range(1, len(loss_averages) + 1)), validation_f1_averages, 'y-', label="Validation F1")
+    par.plot(list(range(1, len(loss_averages) + 1)), validation_em_averages, 'g-', label="Validation EM")
     
 
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
-    plt.title("Loss versus Validation Loss")
+    plt.title("Learning Curves for Training and Validation")
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00))
 
     plt.draw()
@@ -127,4 +127,4 @@ def generate_question_split_graph():
 
 generate_training_validation_vs_loss()
 generate_training_loss_graph()
-generate_question_split_graph()
+# generate_question_split_graph()
