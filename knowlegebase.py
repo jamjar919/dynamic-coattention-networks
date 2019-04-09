@@ -66,4 +66,5 @@ with tf.Session(config=config) as sess:
     answer = answer_span_to_indices(s_result, e_result, context_encoding)
 
     print()
+    print(summary[:CONFIG.MAX_CONTEXT_LENGTH - 2])
     print(D.index_to_text(question_encoding), " -> ", D.index_to_text(answer))
