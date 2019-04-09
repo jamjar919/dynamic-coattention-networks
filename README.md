@@ -55,3 +55,13 @@ Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the dev set (w
 ### Example Context Heatmap (zoom in)
 
 ![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/question.png?raw=true)
+
+
+### Adaptation to SQuAD 2.0
+We attempted to adapt the method in the paper to work with SQuAD 2.0 which also contains unanswerable questions.
+
+One approach we attempted was to keep the first row of U (corresponding to the sentinel) and have it predict if a question is unanswerable. To train this modified network run `trainv2.py`. Results were EM 35.5% and F1 47.5% on the dev set.
+
+Another approach is to train a classifier separately. For this we trained a classifier consisting of an encoder followed by a CNN classifier. To train this classifier run `train_classifier.py`. This classifier did not perform particularly well since it achieved 58% classification accuracy on the dev set (which contains an equal split of answerable and unanswerable questions).
+
+
