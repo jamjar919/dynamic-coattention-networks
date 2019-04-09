@@ -38,6 +38,7 @@ for i in range(0,10):
 
     print("restoring from "+latest_checkpoint_path)
     saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
+    print("Epoch: ", i)
 
     with tf.Session(config=config) as sess:
         saver.restore(sess, latest_checkpoint_path)
@@ -57,7 +58,7 @@ for i in range(0,10):
         emscore = []
         losses_list = []
 
-        print("SESSION INITIALIZED")
+        
         for iteration in range(0, len(padded_data) - CONFIG.BATCH_SIZE, CONFIG.BATCH_SIZE):
             # running on an example batch to debug encoder
             batch = padded_data[iteration:(iteration + CONFIG.BATCH_SIZE)]
@@ -105,13 +106,13 @@ for i in range(0,10):
 
             f1score_curr = f1/CONFIG.BATCH_SIZE
             emscore_curr = em/CONFIG.BATCH_SIZE
-            print("Current loss: ", np.mean(losses) )
-            print("Current f1 score: ", f1score_curr)
-            print("Current em score: ", emscore_curr)
+            #print("Current loss: ", np.mean(losses) )
+            #print("Current f1 score: ", f1score_curr)
+            #print("Current em score: ", emscore_curr)
             f1score.append(f1score_curr)
             emscore.append(emscore_curr)
             
-            print("Tested (",iteration,"/",len(padded_data),")")
+            #print("Tested (",iteration,"/",len(padded_data),")")
         f1_epochs.append(np.mean(f1score))
         em_epochs.append(np.mean(emscore))
         losses_epochs.append(np.mean(losses_list))
