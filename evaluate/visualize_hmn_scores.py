@@ -1,4 +1,5 @@
 # This file visualizes the outputs of the HMN on the final iteration
+import __init__
 import tensorflow as tf
 import sys
 import numpy as np
@@ -89,7 +90,7 @@ print("context:", D.index_to_text(random_question["context"]))
 embedding_dimension = 300
 init = tf.global_variables_initializer()
 
-latest_checkpoint_path = tf.train.latest_checkpoint('./model/')
+latest_checkpoint_path = tf.train.latest_checkpoint('../model/')
 print("restoring from "+latest_checkpoint_path)
 saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
 

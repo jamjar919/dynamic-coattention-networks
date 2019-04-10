@@ -1,4 +1,5 @@
 # This file trains the neural network using the encoder and decoder.
+import __init__
 import sys
 import numpy as np
 import tensorflow as tf
@@ -12,7 +13,6 @@ from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 from preprocessing.dataset import Dataset
 from score import Score
 
-tensorboard_filepath = '.'
 
 D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
@@ -23,8 +23,8 @@ tf.reset_default_graph()
 embedding = tf.placeholder(shape = [len(index2embedding), CONFIG.EMBEDDING_DIMENSION], dtype=tf.float32, name='embedding_ph')
 train_op, loss, classifier_out  = build_cnn_classifier(embedding)
 
-results_path = './resultsclassifier'
-model_path = './modelclassifier'
+results_path = '../resultsclassifier'
+model_path = '../modelclassifier'
 
 config = tf.ConfigProto()
 if '--noGPU' in sys.argv[1:]:

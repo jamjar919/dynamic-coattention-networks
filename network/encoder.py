@@ -1,3 +1,4 @@
+import __init__
 import tensorflow as tf
 import numpy as np
 from network.config import CONFIG

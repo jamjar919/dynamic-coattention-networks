@@ -1,4 +1,5 @@
 # decode the question using the dynamic decoder
+import __init__
 import tensorflow as tf
 from network.highway_network import highway_network
 import numpy as np

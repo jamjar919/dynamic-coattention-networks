@@ -1,4 +1,5 @@
 # This file runs the actual question answering program using our trained network
+import __init__
 import sys
 import numpy as np
 import tensorflow as tf
@@ -38,7 +39,7 @@ for key in split_data_pre.keys():
         print(key + ': ' + str(len(split_data_pre[key])))
         split_data[key] = split_data_pre[key]
 
-path_string = './model/saved-7'
+path_string = '../model/saved-7'
 latest_checkpoint_path = path_string
 
 print("restoring from "+latest_checkpoint_path)
@@ -113,5 +114,5 @@ with tf.Session(config=config) as sess:
             f1_results[key] = results
             print("F1 mean for \'"+key+"\': " + str(f1_results[key]))
 
-    with open('./results/test_question_split.pkl', 'wb') as f:
+    with open('../results/test_question_split.pkl', 'wb') as f:
         pickle.dump(f1_results, f, protocol = 3)
