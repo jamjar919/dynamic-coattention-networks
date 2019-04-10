@@ -1,4 +1,4 @@
-# This file runs the actual question answering program using our trained network
+# Test the network where the sentinel predicts if there is no answer
 import __init__
 import sys
 import numpy as np

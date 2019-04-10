@@ -1,4 +1,4 @@
-# This file runs the actual question answering program using our trained network
+# test peformance on different question types
 import __init__
 import sys
 import numpy as np

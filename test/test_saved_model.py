@@ -1,3 +1,5 @@
+# test trained model
+import __init__
 import sys
 import numpy as np
 import tensorflow as tf
