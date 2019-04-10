@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 from network.config import CONFIG
 
-# # Returns two masks. One that will help us get the argmax (ninf_mask) and other to mask logits for the loss function (one_zero_mask)
+# Returns 1D mask for every batch element in order to mask out the HMN output scores. 
 def getMask(seq_length, max_seq_length, val_one, val_two):
     mask =  tf.map_fn(lambda x: tf.concat([val_one * tf.ones([1, x], dtype=tf.float32), val_two * tf.ones([1, max_seq_length - x], dtype = tf.float32)], axis = 1), seq_length, dtype = tf.float32)
     return tf.squeeze(mask)
