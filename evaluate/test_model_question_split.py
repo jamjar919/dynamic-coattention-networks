@@ -39,7 +39,8 @@ for key in split_data_pre.keys():
         print(key + ': ' + str(len(split_data_pre[key])))
         split_data[key] = split_data_pre[key]
 
-path_string = '../model/saved-7'
+root_path = __init__.root_path
+path_string = root_path + '/model/saved-7'
 latest_checkpoint_path = path_string
 
 print("restoring from "+latest_checkpoint_path)

@@ -23,9 +23,9 @@ index2embedding = D.index2embedding
 padded_data, (max_length_question, max_length_context) = D.load_questions('data/dev-v2.0.json')
 print("Loaded data")
 
-model_path = '../modelv2'
-results_path = '../resultsv2'
-#for i in range(0, 1):
+root_path = __init__.root_path
+model_path = root_path+'/modelv2'
+results_path = root_path+'/resultsv2'
 path_string = model_path + '/saved-' + str(4)
 latest_checkpoint_path = path_string
 
