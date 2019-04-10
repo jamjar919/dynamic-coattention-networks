@@ -5,7 +5,7 @@ from network.highway_network import highway_network
 import numpy as np
 from network.config import CONFIG
 
-def decoder(U, context_seq_length, max_context_length, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
+def decoder(U, context_seq_length, max_context_length, dropout_keep_rate, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
     batch_size = U.shape[0]
     iterations = 4
 
@@ -63,17 +63,19 @@ def decoder(U, context_seq_length, max_context_length, hidden_unit_size = CONFIG
         print("usue concat shape", us_ue_concat.shape)
         with tf.variable_scope('HMN_start', reuse = True):
             # Returns argmax  as well as all outputs of the highway network α1,...,α_m   (equation (6))
-            s, s_logits = highway_network(U, h_i, u_s, u_e, context_seq_length, max_context_length, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+            s, s_logits = highway_network(U, h_i, u_s, u_e, context_seq_length, max_context_length, dropout_keep_rate, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
             alphas.append(s_logits)
         with tf.variable_scope('HMN_end', reuse = True):
-            e, e_logits = highway_network(U, h_i, u_s, u_e, context_seq_length, max_context_length, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
+            e, e_logits = highway_network(U, h_i, u_s, u_e, context_seq_length, max_context_length, dropout_keep_rate, hidden_unit_size = hidden_unit_size, pool_size = pool_size)
             betas.append(e_logits)
 
     return s, e, alphas , betas
 
+'''
 if __name__ == "__main__":
     print("Running decoder by itself for debug purposes.")
     U = tf.placeholder(shape=[16, 632, 400], dtype = tf.float32)
     seq_length = tf.placeholder(shape =  [16,], dtype = tf.int32)
     max_length = 632
     decoder(U, seq_length, max_length)
+'''

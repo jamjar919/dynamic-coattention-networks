@@ -40,7 +40,7 @@ def build_model(embedding, v2 = False):
         U = U[:,1:,:]
         
     # Create decoder 
-    s, e, alphas, betas = decoder(U, context_seq_length,max_context_length, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, pool_size=CONFIG.POOL_SIZE) # Pass also the seq_length from encoder and max_length.
+    s, e, alphas, betas = decoder(U, context_seq_length,max_context_length, dropout_keep_rate, hidden_unit_size=CONFIG.HIDDEN_UNIT_SIZE, pool_size=CONFIG.POOL_SIZE) # Pass also the seq_length from encoder and max_length.
 
     s = tf.identity(s, name='answer_start')
     e = tf.identity(e, name='answer_end')

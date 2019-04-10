@@ -63,7 +63,7 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     print("Context embedding length shape: ", context_embedding_length.shape)
     
     lstm_enc = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
-    lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob= dropout_keep_rate)
+    lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_enc, output_keep_prob = dropout_keep_rate)
 
     context_encoding, _ = tf.nn.dynamic_rnn(lstm_cell, context_embedding, sequence_length = context_embedding_length, dtype=tf.float32)
     print("context encoding shape: ",context_encoding.shape)
@@ -128,9 +128,11 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     print("C.shape : ",C.shape)
 
     # Bi-LSTM
-    cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)  
+    cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size) 
+    cell_fw_dropout = tf.contrib.rnn.DropoutWrapper(cell_fw, output_keep_prob = dropout_keep_rate)
     cell_bw = tf.nn.rnn_cell.LSTMCell(hidden_unit_size)
-    (U1,U2), _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw,cell_fw=cell_fw, dtype=tf.float32,
+    cell_bw_dropout = tf.contrib.rnn.DropoutWrapper(cell_bw, output_keep_prob = dropout_keep_rate)
+    (U1,U2), _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw_dropout, cell_fw=cell_fw_dropout, dtype=tf.float32,
         inputs = C, sequence_length = context_embedding_length + 1)
     print("U1 shape: ", U1.shape)
     U = tf.concat([U1,U2], axis = 2) # 10x633x400
