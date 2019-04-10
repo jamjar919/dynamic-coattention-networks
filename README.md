@@ -2,6 +2,9 @@
 
 https://arxiv.org/pdf/1611.01604.pdf
 
+## Results
+Our best model achieved an F1 of 73.5\% and EM of 63.4\% after 9 epochs, compared to the paper's F1 of 75.6\% and EM of 65.4\%.
+
 ## Running the program
 ### Config
 The file located at `network/config.py` supplies the config for most aspects of the model. A sample is attached below.
@@ -41,9 +44,11 @@ To evaluate F1/EM performance on the dev set, the file `test_saved_model.py` is 
 ## Results
 Our standard model achieved a maximum F1 of 71.8% and EM of ?  on the dev set (which we used as our test set) after 7 epochs, compared to the paper’s F1 of 75.9%
 
-![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/squad2/loss_graph.png?token=AcE8s1VHHjpy45hDRBTrOiFIVqOe-0Muks5csJLzwA%3D%3D)
+![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/results/results_hmndropout/loss_graph_hmndropout.png?raw=true)
 
-![](https://raw.githubusercontent.com/jamjar919/dynamic-coattention-networks/squad2/loss_validation_loss_graph.png?token=AcE8s5NV9kM-hmLJNj7dGz3vSo3Ok4Atks5csJI0wA%3D%3D)
+![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/results/results_hmndropout/hmndropout_train.PNG?raw=trueD)
+
+![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/results/results_hmndropout/hmndropout_test.PNG?raw=true)
 
 ![](https://github.com/jamjar919/dynamic-coattention-networks/blob/master/results/question_split_statistics.png?raw=true)
 
