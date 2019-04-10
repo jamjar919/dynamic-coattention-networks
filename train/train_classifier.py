@@ -23,8 +23,9 @@ tf.reset_default_graph()
 embedding = tf.placeholder(shape = [len(index2embedding), CONFIG.EMBEDDING_DIMENSION], dtype=tf.float32, name='embedding_ph')
 train_op, loss, classifier_out  = build_cnn_classifier(embedding)
 
-results_path = '../resultsclassifier'
-model_path = '../modelclassifier'
+root_path = __init__.root_path
+results_path = root_path + '/resultsclassifier'
+model_path = root_path + '/modelclassifier'
 
 config = tf.ConfigProto()
 if '--noGPU' in sys.argv[1:]:
