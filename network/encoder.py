@@ -76,7 +76,7 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     # Prepend sentinel vector 
     sentinel_vec_question = tf.get_variable("sentinel_question", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     sentinel_vec_q_batch = tf.stack([sentinel_vec_question] * batch_size) 
-    question_encoding = tf.concat([sentinel_vec_q_batch, question_encoding], axis = 1, name="Q\'")
+    question_encoding = tf.concat([sentinel_vec_q_batch, question_encoding], axis = 1, name="Qprime")
     print("Extended question encoding shape: ",question_encoding.shape)
 
     # Append "non linear projection layer" on top of the question encoding
@@ -99,7 +99,6 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     A_q_mask = get_mask2D(tf.expand_dims(context_embedding_length + 1, -1), tf.expand_dims(question_embedding_length + 1, -1), CONFIG.MAX_CONTEXT_LENGTH + 1, CONFIG.MAX_QUESTION_LENGTH + 1, val_one = 1, val_two = 0)
     A_q = tf.multiply(A_q, A_q_mask, name = 'A_q')
     A_q = tf.identity(A_q, name='A_q')
-
     print("A_q.shape ", A_q.shape)
     
     A_d = tf.nn.softmax(transpose(L))
