@@ -12,6 +12,7 @@ from preprocessing.preprocessing import answer_span_to_indices
 
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+path = os.path.dirname(os.path.abspath(__file__))
 
 def linear(x, x_max):
     return x/x_max
@@ -20,8 +21,7 @@ def linear(x, x_max):
 def exponential(x):
     return np.exp(np.e * (x - 1))
 
-def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="results/question.png"):
-    path = os.path.dirname(os.path.abspath(__file__))
+def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="../results/question.png"):
     plt.clf()
 
     context = []
@@ -35,7 +35,7 @@ def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="results/ques
     context = D.index_to_text(context).split()
 
     fig, axes = plt.subplots(nrows=1, ncols=len(s_logits_filtered))
-    fig.set_size_inches(len(s_logits_filtered), 2)
+    fig.set_size_inches(len(s_logits_filtered), 5.5)
 
     max_start = np.max(s_logits_filtered)
     max_end = np.max(e_logits_filtered)
@@ -49,22 +49,23 @@ def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="results/ques
     for i in range(0, len(e_logits_filtered)):
         endcolors[i][2] = exponential(linear(e_logits_filtered[i], max_end))
 
-    image_size = 10
-    images = np.zeros((len(e_logits_filtered), image_size, image_size, 3))
+    image_size = 3
+    images = np.zeros((len(e_logits_filtered), image_size*2, image_size, 3))
     for i in range(0, len(e_logits_filtered)):
         for y in range(0, image_size):
-            for x in range(0, int(image_size/2)):
+            for x in range(0, int((image_size*2)/2)):
                 images[i][x][y] = startcolors[i]
-            for x in range(int(image_size/2), image_size):
+            for x in range(int((image_size*2)/2), image_size*2):
                 images[i][x][y] = endcolors[i]
 
     for i in range(0, len(s_logits_filtered)):
         axes[i].imshow(images[i])
-        axes[i].set_xlabel(context[i])
+        axes[i].set_xlabel(context[i], rotation="vertical", x = 0.25)
+        axes[i].set_xticklabels([])
         axes[i].get_yaxis().set_visible(False)
 
     
-    plt.subplots_adjust(wspace = 0)
+    plt.subplots_adjust(wspace = -0.5)
     fig.suptitle(
         D.index_to_text(qas["question"]) + 
         "  ->  " + 
@@ -84,13 +85,13 @@ D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
 padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
 
-random_question = np.random.choice(padded_data)
+random_question = padded_data[0] # np.random.choice(padded_data)
 
 print("context:", D.index_to_text(random_question["context"]))
 embedding_dimension = 300
 init = tf.global_variables_initializer()
 
-latest_checkpoint_path = tf.train.latest_checkpoint('../model/')
+latest_checkpoint_path = tf.train.latest_checkpoint(path + "/../model/")
 print("restoring from "+latest_checkpoint_path)
 saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
 
