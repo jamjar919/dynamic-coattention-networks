@@ -6,7 +6,7 @@ import tensorflow as tf
 from functools import reduce
 import os
 import pickle
-from preprocessing.preprocessing import answer_span_to_indices
+from preprocessing.preprocess import answer_span_to_indices
 
 # custom imports
 from preprocessing.dataset import Dataset
