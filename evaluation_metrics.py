@@ -1,76 +1,66 @@
-
 import numpy as np
 from collections import Counter
 import re, string, sys
 from preprocessing.dataset import Dataset
 from network.config import CONFIG
-
-def squad_f1_score( prediction, ground_truth):
-    """Method copied from the SQuAD Leaderboard: https://rajpurkar.github.io/SQuAD-explorer/"""
-    prediction_tokens = squad_normalize_answer(prediction).split()
-    ground_truth_tokens = squad_normalize_answer(ground_truth).split()
-    common = Counter(prediction_tokens) & Counter(ground_truth_tokens)
-    num_same = sum(common.values())
-    if num_same == 0:
-        return 0
-    precision = 1.0 * num_same / len(prediction_tokens)
-    recall = 1.0 * num_same / len(ground_truth_tokens)
-    f1 = (2 * precision * recall) / (precision + recall)
-
-    return f1
-
-
-""" Lower text and remove punctuation, articles and extra whitespace
-Method copied from the SQuAD Leaderboard: https://rajpurkar.github.io/SQuAD-explorer/  """
-def remove_articles(text):
-    return re.sub(r'\b(a|an|the)\b', ' ', text)
-
-def white_space_fix(text):
-    return ' '.join(text.split())
-
-def remove_punc(text):
-    exclude = set(string.punctuation)
-    return ''.join(ch for ch in text if ch not in exclude)
-
-def lower(text):
-    return text.lower()
-
-def squad_normalize_answer(s):
-    return white_space_fix(remove_articles(remove_punc(lower(s))))
+import collections
 
 def indexToWord(indices, D):
     return D.index_to_text(indices)
 
-def get_f1_from_tokens( yS, yE, ypS, ypE, batch_Xc, D):
-    """
-    Pass yS, yE, ypS and ypE to be indices. batch_Xc is the context indices
-
-    This function doesn't compare the indices, but the tokens behind the indices. This is a bit more forgiving
-    and it is the metric applied on the SQuAD leaderboard."""
+def get_f1_from_tokens( actualStartIndex, actualEndIndex, predictedStartIndex, predictedEndIndex, batch_Xc, D):
     split_context = indexToWord(batch_Xc, D).split()
-    ground_truth = ' '.join(split_context[yS:yE+1])
-    prediction = ' '.join(split_context[ypS:ypE + 1])
-    #prediction = index_list_to_string(batch_Xc[ypS:ypE + 1])
-    f1 = squad_f1_score(prediction, ground_truth)
+    ground_truth = ' '.join(split_context[actualStartIndex:actualEndIndex+1])
+    prediction = ' '.join(split_context[predictedStartIndex:predictedEndIndex + 1])
+    #prediction = index_list_to_string(batch_Xc[predictedStartIndex:predictedEndIndex + 1])
+    f1 = compute_f1(ground_truth, prediction)
     return f1
 
-def squad_exact_match_score( prediction, ground_truth):
-    """Method copied from the SQuAD Leaderboard: https://rajpurkar.github.io/SQuAD-explorer/"""
-    return (squad_normalize_answer(prediction) == squad_normalize_answer(ground_truth))
-
-
-def get_exact_match_from_tokens(yS, yE, ypS, ypE, batch_Xc, D):
-    """This function doesn't compare the indices, but the tokens behind the indices. This is a bit more forgiving
-    and it is the metric applied on the SQuAD leaderboard"""
-
+def get_exact_match_from_tokens(actualStartIndex, actualEndIndex, predictedStartIndex, predictedEndIndex, batch_Xc, D):
     em = 0
     #TODO: Pull ou the code from this and get_f1_from_tokens fn
     split_context = indexToWord(batch_Xc, D).split()
-    ground_truth = ' '.join(split_context[yS:yE+1])
-    prediction = ' '.join(split_context[ypS:ypE + 1])
-    em += squad_exact_match_score(prediction, ground_truth)
+    ground_truth = ' '.join(split_context[actualStartIndex:actualEndIndex+1])
+    prediction = ' '.join(split_context[predictedStartIndex:predictedEndIndex + 1])
+    em += compute_exact(ground_truth, prediction)
     return em
 
+# Methods copied from SQuAD leaderboard
+def normalize_answer(s):
+  """Lower text and remove punctuation, articles and extra whitespace."""
+  def remove_articles(text):
+    regex = re.compile(r'\b(a|an|the)\b', re.UNICODE)
+    return re.sub(regex, ' ', text)
+  def white_space_fix(text):
+    return ' '.join(text.split())
+  def remove_punc(text):
+    exclude = set(string.punctuation)
+    return ''.join(ch for ch in text if ch not in exclude)
+  def lower(text):
+    return text.lower()
+  return white_space_fix(remove_articles(remove_punc(lower(s))))
+
+def get_tokens(s):
+  if not s: return []
+  return normalize_answer(s).split()
+
+def compute_exact(a_gold, a_pred):
+  return int(normalize_answer(a_gold) == normalize_answer(a_pred))
+
+def compute_f1(a_gold, a_pred):
+  gold_toks = get_tokens(a_gold)
+  pred_toks = get_tokens(a_pred)
+  common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
+  num_same = sum(common.values())
+  if len(gold_toks) == 0 or len(pred_toks) == 0:
+    # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
+    return int(gold_toks == pred_toks)
+  if num_same == 0:
+    return 0
+  precision = 1.0 * num_same / len(pred_toks)
+  recall = 1.0 * num_same / len(gold_toks)
+  f1 = (2 * precision * recall) / (precision + recall)
+  return f1
 
 if __name__ == "__main__":
     D = Dataset(CONFIG.EMBEDDING_FILE)
@@ -86,6 +76,7 @@ if __name__ == "__main__":
     # print(get_f1_from_tokens(5, 8, 8, 9,ty, D))
     print(get_exact_match_from_tokens(5, 8, 4, 7,ty, D))
     print(get_exact_match_from_tokens(1, 4, 1, 4, ty, D))
+
 
 
 
