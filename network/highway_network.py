@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 from network.config import CONFIG
 
-# # Returns two masks. One that will help us get the argmax (ninf_mask) and other to mask logits for the loss function (one_zero_mask)
+# Returns 1D mask for every batch element in order to mask out the HMN output scores. 
 def getMask(seq_length, max_seq_length, val_one, val_two):
     mask =  tf.map_fn(lambda x: tf.concat([val_one * tf.ones([1, x], dtype=tf.float32), val_two * tf.ones([1, max_seq_length - x], dtype = tf.float32)], axis = 1), seq_length, dtype = tf.float32)
     return tf.squeeze(mask)
@@ -61,11 +61,11 @@ def highway_network(U, hs, u_s, u_e, context_seq_length, max_context_length, dro
     print ("logits.shape: ", logits.shape)
     ninf_mask = getMask(context_seq_length, max_context_length, val_one = 0., val_two = -10**30) # Get two masks from the sequence length (calculated in encoder)
     print("ninf mask shape: ", ninf_mask.shape)
-    logits_ninf_mask = logits + ninf_mask # Ignore elements which were simply padded on. (element wise multiplication)
+    masked_logits = logits + ninf_mask # Ignore elements which were simply padded on. (element wise multiplication)
 
-    output = tf.argmax(logits_ninf_mask, axis=1) # Take argmax from the mask.
+    output = tf.argmax(masked_logits, axis=1) # Take argmax from the mask.
     print("1st output shape: ", output.shape)
     output = tf.squeeze(tf.cast(output, dtype=tf.int32)) # Remove dimensions of size 1
     print("2nd output shape: ", output.shape)
 
-    return output, logits_ninf_mask
+    return output, masked_logits

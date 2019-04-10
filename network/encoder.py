@@ -5,8 +5,7 @@ from network.config import CONFIG
 
 def masked_matrix(seq_len,m,n,val_one = 1, val_two = 0) :
     val_one_matrix = val_one * tf.ones(shape = [seq_len, n], dtype = tf.float32)
-    val_two_matrix = val_two * tf.ones(shape = [m - seq_len, n], dtype = tf.float32)
-    
+    val_two_matrix = val_two * tf.ones(shape = [m - seq_len, n], dtype = tf.float32)   
     return tf.concat(values = [val_one_matrix, val_two_matrix], axis = 0)
 
 def get_mask(seq_lens, m,n, val_one = 0, val_two = 0):
@@ -28,6 +27,7 @@ def get_mask2D(seq_D, seq_Q, M, N, val_one = 1, val_two = 0):
     fn = lambda seq_len : masked_matrix2d(seq_len, M, N, val_one, val_two)
     return tf.map_fn(fn, seq_lens, dtype = tf.float32)
 
+# https://danijar.com/variable-sequence-lengths-in-tensorflow/
 def length(sequence):
     used = tf.sign(tf.reduce_max(tf.abs(sequence), axis= 2))
     length = tf.reduce_sum(used, axis=1)
@@ -44,9 +44,7 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
         contexts: Tensor of contexts
         embedding: Mappings from encoded questions to GLoVE vectors
     '''
-    #dropout_rate = 0.3 # https://openreview.net/forum?id=rJeKjwvclx Authors claim to use 0.3 rate. 
     batch_size = questions.shape[0].value
-    #contexts_size = contexts.shape[1].value
     questions_size = questions.shape[1].value
     hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE
     embedding_dimension = CONFIG.EMBEDDING_DIMENSION
@@ -57,7 +55,6 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     # Format [batch, length, depth]  
     context_embedding = tf.nn.embedding_lookup(embedding, contexts)
     question_embedding = tf.nn.embedding_lookup(embedding, questions)
-    # https://stackoverflow.com/questions/48238113/tensorflow-dynamic-rnn-state/48239320#48239320
     context_embedding_length = length(context_embedding)
     question_embedding_length = length(question_embedding)
     print("Context embedding length shape: ", context_embedding_length.shape)
@@ -70,8 +67,7 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     # Prepend sentinel vector
     sentinel_vec_context = tf.get_variable("sentinel_context", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     sentinel_vec_context_batch = tf.stack([sentinel_vec_context] * batch_size)
-    context_encoding = tf.concat([sentinel_vec_context_batch, context_encoding], axis  = 1 )
-    context_encoding = tf.identity(context_encoding, name='context_encoding')
+    context_encoding = tf.concat([sentinel_vec_context_batch, context_encoding], axis  = 1 , name = "D")
     print("Extended context encoding shape: ", context_encoding.shape)
 
     
@@ -80,7 +76,7 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     # Prepend sentinel vector 
     sentinel_vec_question = tf.get_variable("sentinel_question", shape = [1, hidden_unit_size], initializer=tf.contrib.layers.xavier_initializer(), dtype = tf.float32)
     sentinel_vec_q_batch = tf.stack([sentinel_vec_question] * batch_size) 
-    question_encoding = tf.concat([sentinel_vec_q_batch, question_encoding], axis = 1)
+    question_encoding = tf.concat([sentinel_vec_q_batch, question_encoding], axis = 1, name="Qprime")
     print("Extended question encoding shape: ",question_encoding.shape)
 
     # Append "non linear projection layer" on top of the question encoding
@@ -98,33 +94,27 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     L = tf.matmul(context_encoding, transpose(Q))
     L_mask = get_mask2D(tf.expand_dims(context_embedding_length + 1, -1), tf.expand_dims(question_embedding_length + 1, -1), CONFIG.MAX_CONTEXT_LENGTH + 1, CONFIG.MAX_QUESTION_LENGTH + 1, val_one = 0, val_two = -10**30)
     print("L.shape : ", L.shape)
-    L = L + L_mask # Add ninf mask
+    L = tf.add(L,L_mask, name = 'L') # Add ninf mask
     A_q = tf.nn.softmax(L) # rowwise on the rows of the matrices in the tensor.
     A_q_mask = get_mask2D(tf.expand_dims(context_embedding_length + 1, -1), tf.expand_dims(question_embedding_length + 1, -1), CONFIG.MAX_CONTEXT_LENGTH + 1, CONFIG.MAX_QUESTION_LENGTH + 1, val_one = 1, val_two = 0)
-    A_q = A_q * A_q_mask
+    A_q = tf.multiply(A_q, A_q_mask, name = 'A_q')
     A_q = tf.identity(A_q, name='A_q')
-
     print("A_q.shape ", A_q.shape)
     
     A_d = tf.nn.softmax(transpose(L))
     A_d_mask = transpose(A_q_mask)
-    A_d = A_d * A_d_mask 
-    A_d = tf.identity(A_d, name='A_d')
+    A_d = tf.multiply(A_d, A_d_mask, name = 'A_d') 
     print("A_d.shape ", A_d.shape)
     
     # Attention Context C^{Q}
-    C_q = tf.matmul(transpose(A_q),context_encoding)
-    C_q = tf.identity(C_q, name='C_q')
+    C_q = tf.matmul(transpose(A_q),context_encoding, name = 'C_q')
     print("C_q.shape :", C_q.shape)
 
-    C_d = tf.matmul(transpose(A_d),tf.concat((Q,C_q), axis=2))
-    C_d = tf.identity(C_d, name='C_d')
+    C_d = tf.matmul(transpose(A_d),tf.concat((Q,C_q), axis=2), name = 'C_d')
     print("C_d.shape: ",C_d.shape)
 
     # Final context before BiLSTM. Has no name in the paper, so we call it C
-    C = tf.concat((context_encoding,C_d),axis=2)
-    C = tf.identity(C, name='C_d')
-    
+    C = tf.concat((context_encoding,C_d),axis=2, name = 'C') 
     print("C.shape : ",C.shape)
 
     # Bi-LSTM
@@ -135,7 +125,7 @@ def encoder(questions,contexts,embedding, dropout_keep_rate):
     (U1,U2), _ = tf.nn.bidirectional_dynamic_rnn(cell_bw=cell_bw_dropout, cell_fw=cell_fw_dropout, dtype=tf.float32,
         inputs = C, sequence_length = context_embedding_length + 1)
     print("U1 shape: ", U1.shape)
-    U = tf.concat([U1,U2], axis = 2) # 10x633x400
+    U = tf.concat([U1,U2], axis = 2, name = 'U') # batch_sizex633x400
     print("U.shape ", U.shape)
     return U, context_embedding_length
 

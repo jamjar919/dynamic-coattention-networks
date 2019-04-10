@@ -116,4 +116,4 @@ if __name__ == "__main__":
                                dtype=tf.float32, name='embedding')
  
 
-    build_classifier(embedding)
+    build_cnn_classifier(embedding)

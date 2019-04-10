@@ -1,4 +1,4 @@
-# decode the question using the dynamic decoder
+# dynamic decoder
 import __init__
 import tensorflow as tf
 from network.highway_network import highway_network
@@ -8,9 +8,8 @@ from network.config import CONFIG
 def decoder(U, context_seq_length, max_context_length, dropout_keep_rate, hidden_unit_size = CONFIG.HIDDEN_UNIT_SIZE, pool_size = CONFIG.POOL_SIZE):
     batch_size = U.shape[0]
     iterations = 4
-
-
     initer = tf.contrib.layers.xavier_initializer()     
+    
     with tf.variable_scope('HMN_start'):
         # wd dim: lx5l
         Wd = tf.get_variable("Wd", shape=[hidden_unit_size, 5 * hidden_unit_size],
@@ -45,17 +44,18 @@ def decoder(U, context_seq_length, max_context_length, dropout_keep_rate, hidden
         b3 = tf.get_variable("b3", shape=[pool_size,1], initializer=tf.zeros_initializer()) #b3 dim: px1
 
 
+    # start and end index estimates
     s = tf.zeros(tf.TensorShape([batch_size]), dtype=tf.int32)
     e = tf.zeros(tf.TensorShape([batch_size]), dtype=tf.int32)
 
     lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units = hidden_unit_size, dtype = tf.float32)
     lstm_state = lstm_cell.zero_state(batch_size, dtype=tf.float32) # Return 0 state filled tensor.
     h_i, _ = lstm_state
-    print("h_i.shape", h_i.shape) # 10x200
+    print("h_i.shape", h_i.shape) # batch_sizex200
    
     alphas, betas = [] , []
     for i in range(iterations):
-        # s is start index
+        # get the rows of U at s and e indexes
         u_s = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),s],axis=1))
         u_e = tf.gather_nd(params=U,indices=tf.stack([tf.range(batch_size,dtype=tf.int32),e],axis=1))
         us_ue_concat = tf.concat([u_s,u_e],axis=1)
@@ -71,11 +71,10 @@ def decoder(U, context_seq_length, max_context_length, dropout_keep_rate, hidden
 
     return s, e, alphas , betas
 
-'''
+
 if __name__ == "__main__":
     print("Running decoder by itself for debug purposes.")
     U = tf.placeholder(shape=[16, 632, 400], dtype = tf.float32)
     seq_length = tf.placeholder(shape =  [16,], dtype = tf.int32)
     max_length = 632
-    decoder(U, seq_length, max_length)
-'''
+    decoder(U, seq_length, max_length, 0.7, CONFIG.HIDDEN_UNIT_SIZE, CONFIG.POOL_SIZE)
