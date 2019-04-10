@@ -1,4 +1,4 @@
-# This file runs the actual question answering program using our trained network
+# Test the classifier for SQuAD 2.0
 import __init__
 import sys
 import numpy as np
@@ -6,7 +6,7 @@ import tensorflow as tf
 from functools import reduce
 import os
 import pickle
-from preprocessing.preprocessing import answer_span_to_indices
+from preprocessing.preprocess import answer_span_to_indices
 # custom imports
 from preprocessing.dataset import Dataset
 from network.config import CONFIG

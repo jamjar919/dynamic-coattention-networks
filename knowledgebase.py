@@ -6,7 +6,7 @@ from preprocessing.dataset import Dataset
 from network.config import CONFIG
 import tensorflow as tf
 import numpy as np
-from preprocessing.preprocessing import answer_span_to_indices
+from preprocessing.preprocess import answer_span_to_indices
 #nltk.download('punkt')
 #nltk.download('averaged_perceptron_tagger')
 
