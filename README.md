@@ -34,11 +34,11 @@ CONFIG = Config()
 ```
 
 ### Training
-Run `python train/train.py` to train the model. This loads cached word embeddings from the /data/ folder, or generates and saves them if they haven't been generated before. You can supply additional parameters:
+Run `python train/train.py` to train the model. This loads cached word embeddings from the `/data/` folder, or generates and saves them if they haven't been generated before. You can supply additional parameters:
  - `--regenerateEmbeddings` to force generating and resaving the cached word embeddings to disk 
  - `--noGPU` to disable running with the GPU.
  
-The training will automatically test on a validation subset, and log loss, f1, and exact match statistics to CSV in the /results/ folder. The model is also saved every epoch in the /models/ folder.
+The training will automatically test on a validation subset, and log loss, f1, and exact match statistics to CSV in the `/results/` folder. The model is also saved every epoch in the `/model/` folder.
 
 ### Evaluating
 To evaluate F1/EM performance on the dev set, the file `test/test_saved_model.py` is what you need.
