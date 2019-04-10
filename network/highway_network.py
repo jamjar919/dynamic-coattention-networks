@@ -24,7 +24,7 @@ def highway_network(U, hs, u_s, u_e, context_seq_length, max_context_length, dro
     print("hs.shape :", hs.shape)
     print("us.shape: ", u_s.shape)
     print("ue.shape: ",u_e.shape)
-    r = tf.nn.tanh(tf.matmul(r,tf.transpose(Wd))) # Product of this is 10x200 (10x1000 * 1000x200)
+    r = tf.nn.tanh(tf.matmul(r,tf.transpose(Wd)))
     print("r.shape: ", r.shape)
 
     ''' Calculate m1 (equation 11)   '''     
