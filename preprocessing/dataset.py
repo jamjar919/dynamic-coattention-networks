@@ -9,7 +9,7 @@ import sys
 import tensorflow as tf
 
 from network.config import CONFIG
-from preprocessing.preprocessing import text_to_index, load_embedding, pad_data, KnuthMorrisPratt, tokenise, pad_to
+from preprocessing.preprocess import text_to_index, load_embedding, pad_data, KnuthMorrisPratt, tokenise, pad_to
 
 class Dataset:
 
