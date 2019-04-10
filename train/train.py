@@ -22,9 +22,10 @@ embedding = tf.placeholder(shape = [len(index2embedding), CONFIG.EMBEDDING_DIMEN
 train_op, loss, s, e  = build_model(embedding)
 
 # Blank csv file
-results_path = '../results'
-model_path = '../model'
-open('../results/training_loss_per_batch.csv', 'w').close()
+root_path = __init__.root_path
+results_path = root_path+'/results'
+model_path = root_path+'/model'
+open(results_path+'/training_loss_per_batch.csv', 'w').close()
 
 # Train now
 saver = tf.train.Saver(max_to_keep = CONFIG.MAX_EPOCHS) 

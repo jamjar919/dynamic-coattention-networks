@@ -26,8 +26,9 @@ if '--noGPU' in sys.argv[1:]:
     print("Not using the GPU...")
     config = tf.ConfigProto(device_count = {'GPU': 0})
 
-model_path = '../model'
-results_path = '../results'
+root_path = __init__.root_path
+model_path = root_path+'/model'
+results_path = root_path+'/results'
 
 f1_epochs = []
 em_epochs = []
