@@ -4,7 +4,7 @@ import tensorflow as tf
 import pickle
 from functools import reduce
 import os
-from preprocessing.preprocessing import answer_span_to_indices
+from preprocessing.preprocess import answer_span_to_indices
 # custom imports
 from preprocessing.dataset import Dataset
 from network.config import CONFIG

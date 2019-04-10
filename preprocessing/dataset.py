@@ -9,14 +9,14 @@ import sys
 import tensorflow as tf
 
 from network.config import CONFIG
-from preprocessing.preprocessing import text_to_index, load_embedding, pad_data, KnuthMorrisPratt, tokenise, pad_to
+from preprocessing.preprocess import text_to_index, load_embedding, pad_data, KnuthMorrisPratt, tokenise, pad_to
 
 class Dataset:
 
     def __init__(self, glove_file):
         self.GLOVE_DATA_FILE = glove_file
         self.PRESAVED_EMBEDDING_FILE_NAME = 'embedding.pickle'
-        self.PRESAVED_DIR = 'generated/'
+        self.PRESAVED_DIR = __init__.root_path+'/generated/'
 
         self.word2index = None
         self.vocab_size = 0
