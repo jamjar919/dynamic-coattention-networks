@@ -8,18 +8,18 @@ import collections
 def indexToWord(indices, D):
     return D.index_to_text(indices)
 
-def get_f1_from_tokens( actualStartIndex, actualEndIndex, predictedStartIndex, predictedEndIndex, batch_Xc, D):
-    split_context = indexToWord(batch_Xc, D).split()
+def get_f1_from_tokens( actualStartIndex, actualEndIndex, predictedStartIndex, predictedEndIndex, context_batch, D):
+    split_context = indexToWord(context_batch, D).split()
     ground_truth = ' '.join(split_context[actualStartIndex:actualEndIndex+1])
     prediction = ' '.join(split_context[predictedStartIndex:predictedEndIndex + 1])
-    #prediction = index_list_to_string(batch_Xc[predictedStartIndex:predictedEndIndex + 1])
+    #prediction = index_list_to_string(context_batch[predictedStartIndex:predictedEndIndex + 1])
     f1 = compute_f1(ground_truth, prediction)
     return f1
 
-def get_exact_match_from_tokens(actualStartIndex, actualEndIndex, predictedStartIndex, predictedEndIndex, batch_Xc, D):
+def get_exact_match_from_tokens(actualStartIndex, actualEndIndex, predictedStartIndex, predictedEndIndex, context_batch, D):
     em = 0
     #TODO: Pull ou the code from this and get_f1_from_tokens fn
-    split_context = indexToWord(batch_Xc, D).split()
+    split_context = indexToWord(context_batch, D).split()
     ground_truth = ' '.join(split_context[actualStartIndex:actualEndIndex+1])
     prediction = ' '.join(split_context[predictedStartIndex:predictedEndIndex + 1])
     em += compute_exact(ground_truth, prediction)
