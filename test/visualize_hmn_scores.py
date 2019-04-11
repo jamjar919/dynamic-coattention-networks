@@ -4,11 +4,12 @@ import tensorflow as tf
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 import os
 
 from network.config import CONFIG
 from preprocessing.dataset import Dataset
-from preprocessing.preprocessing import answer_span_to_indices
+from preprocessing.preprocess import answer_span_to_indices
 
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -35,7 +36,7 @@ def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="../results/q
     context = D.index_to_text(context).split()
 
     fig, axes = plt.subplots(nrows=1, ncols=len(s_logits_filtered))
-    fig.set_size_inches(len(s_logits_filtered), 5.5)
+    fig.set_size_inches(len(s_logits_filtered)/5, 4)
 
     max_start = np.max(s_logits_filtered)
     max_end = np.max(e_logits_filtered)
@@ -50,12 +51,12 @@ def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="../results/q
         endcolors[i][2] = exponential(linear(e_logits_filtered[i], max_end))
 
     image_size = 3
-    images = np.zeros((len(e_logits_filtered), image_size*2, image_size, 3))
+    images = np.zeros((len(e_logits_filtered), image_size*4, image_size, 3))
     for i in range(0, len(e_logits_filtered)):
         for y in range(0, image_size):
-            for x in range(0, int((image_size*2)/2)):
+            for x in range(0, int((image_size*4)/2)):
                 images[i][x][y] = startcolors[i]
-            for x in range(int((image_size*2)/2), image_size*2):
+            for x in range(int((image_size*4)/2), image_size*4):
                 images[i][x][y] = endcolors[i]
 
     for i in range(0, len(s_logits_filtered)):
@@ -72,12 +73,12 @@ def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="../results/q
         D.index_to_text(answer_span_to_indices(s, e, qas["context"])) + 
         "  (real: " +
         D.index_to_text(answer_span_to_indices(qas["answer_start"], qas["answer_end"], qas["context"])) +
-        ")", size=20
+        ")", size=20, y=0.80
     )
     
     print("saving image...")
     plt.draw()
-    plt.savefig(path + '/' +filename)
+    plt.savefig(path + '/' +filename, bbox_inches='tight')
     plt.clf()
     print("done")
 
