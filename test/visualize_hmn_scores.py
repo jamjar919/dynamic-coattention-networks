@@ -73,7 +73,7 @@ def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="../results/q
         D.index_to_text(answer_span_to_indices(s, e, qas["context"])) + 
         "  (real: " +
         D.index_to_text(answer_span_to_indices(qas["answer_start"], qas["answer_end"], qas["context"])) +
-        ")", size=20, y=0.80
+        ")", size=15, y=0.80
     )
     
     print("saving image...")
@@ -84,51 +84,52 @@ def visualise_hwn(s, e, s_logits, e_logits, qas, dataset, filename="../results/q
 
 D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
-padded_data, (max_length_question, max_length_context) = D.load_questions(CONFIG.QUESTION_FILE)
+padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")
 
-random_question = padded_data[0] # np.random.choice(padded_data)
+random_question = padded_data[1200] # np.random.choice(padded_data)
 
 print("context:", D.index_to_text(random_question["context"]))
 embedding_dimension = 300
 init = tf.global_variables_initializer()
 
-latest_checkpoint_path = path + "/../model/saved-0"; #tf.train.latest_checkpoint(path + "/../model/")
-print("restoring from "+latest_checkpoint_path)
-saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
+for model_num in range(0, 12):
+    latest_checkpoint_path = path + "/../model/saved-"+str(model_num); #tf.train.latest_checkpoint(path + "/../model/")
+    print("restoring from "+latest_checkpoint_path)
+    saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
 
-config = tf.ConfigProto()
-if '--noGPU' in sys.argv[1:]:
-    print("Not using the GPU...")
-    config = tf.ConfigProto(device_count = {'GPU': 0})
+    config = tf.ConfigProto()
+    if '--noGPU' in sys.argv[1:]:
+        print("Not using the GPU...")
+        config = tf.ConfigProto(device_count = {'GPU': 0})
 
-with tf.Session(config=config) as sess:
-    sess.run(init)
-    saver.restore(sess, latest_checkpoint_path)
-    graph = tf.get_default_graph()
-    s = graph.get_tensor_by_name("answer_start:0")
-    e = graph.get_tensor_by_name("answer_end:0")
-    alphas = graph.get_tensor_by_name("alphas:0")
-    betas = graph.get_tensor_by_name("betas:0")
-    question_batch_placeholder = graph.get_tensor_by_name("question_batch_ph:0")
-    context_batch_placeholder = graph.get_tensor_by_name("context_batch_ph:0")
-    embedding = graph.get_tensor_by_name("embedding_ph:0")
-    dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
+    with tf.Session(config=config) as sess:
+        sess.run(init)
+        saver.restore(sess, latest_checkpoint_path)
+        graph = tf.get_default_graph()
+        s = graph.get_tensor_by_name("answer_start:0")
+        e = graph.get_tensor_by_name("answer_end:0")
+        alphas = graph.get_tensor_by_name("alphas:0")
+        betas = graph.get_tensor_by_name("betas:0")
+        question_batch_placeholder = graph.get_tensor_by_name("question_batch_ph:0")
+        context_batch_placeholder = graph.get_tensor_by_name("context_batch_ph:0")
+        embedding = graph.get_tensor_by_name("embedding_ph:0")
+        dropout_keep_rate = graph.get_tensor_by_name("dropout_keep_ph:0")
 
-    question = np.array([random_question["question"]] * CONFIG.BATCH_SIZE, dtype = np.int32)
-    context = np.array([random_question["context"]] * CONFIG.BATCH_SIZE, dtype = np.int32)
+        question = np.array([random_question["question"]] * CONFIG.BATCH_SIZE, dtype = np.int32)
+        context = np.array([random_question["context"]] * CONFIG.BATCH_SIZE, dtype = np.int32)
 
-    s_result, e_result, s_logits, e_logits = sess.run([s, e, alphas, betas], feed_dict = {
-        question_batch_placeholder : question,
-        context_batch_placeholder : context,
-        embedding: index2embedding,
-        dropout_keep_rate: 1
-    })
+        s_result, e_result, s_logits, e_logits = sess.run([s, e, alphas, betas], feed_dict = {
+            question_batch_placeholder : question,
+            context_batch_placeholder : context,
+            embedding: index2embedding,
+            dropout_keep_rate: 1
+        })
 
-    s_result = int(np.median(s_result))
-    e_result = int(np.median(e_result))
-    answer = answer_span_to_indices(s_result, e_result, random_question["context"])
+        s_result = int(np.median(s_result))
+        e_result = int(np.median(e_result))
+        answer = answer_span_to_indices(s_result, e_result, random_question["context"])
 
-    print()
-    print(D.index_to_text(random_question["question"]), " -> ", D.index_to_text(answer))
+        print()
+        print(D.index_to_text(random_question["question"]), " -> ", D.index_to_text(answer))
 
-    visualise_hwn(s_result, e_result, s_logits[-1][0], e_logits[-1][0], random_question, D)
+        visualise_hwn(s_result, e_result, s_logits[-1][0], e_logits[-1][0], random_question, D, filename="../results/heatmaps/question-model"+str(model_num)+".png")
