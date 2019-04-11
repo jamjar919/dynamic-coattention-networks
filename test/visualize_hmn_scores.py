@@ -86,7 +86,7 @@ D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
 padded_data, (max_length_question, max_length_context) = D.load_questions("data/dev.json")
 
-random_question = padded_data[1200] # np.random.choice(padded_data)
+random_question = padded_data[1700] # np.random.choice(padded_data)
 
 print("context:", D.index_to_text(random_question["context"]))
 embedding_dimension = 300
