@@ -92,7 +92,7 @@ print("context:", D.index_to_text(random_question["context"]))
 embedding_dimension = 300
 init = tf.global_variables_initializer()
 
-latest_checkpoint_path = tf.train.latest_checkpoint(path + "/../model/")
+latest_checkpoint_path = path + "/../model/saved-0"; #tf.train.latest_checkpoint(path + "/../model/")
 print("restoring from "+latest_checkpoint_path)
 saver = tf.train.import_meta_graph(latest_checkpoint_path+'.meta')
 
