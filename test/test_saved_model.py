@@ -6,10 +6,10 @@ import tensorflow as tf
 from functools import reduce
 import os
 import pickle
-from preprocessing import answer_span_to_indices
+from preprocessing.preprocess import answer_span_to_indices
 
 # custom imports
-from dataset import Dataset
+from preprocessing.dataset import Dataset
 from network.config import CONFIG
 from network.build_model import get_batch
 from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
@@ -36,7 +36,7 @@ f1_epochs = []
 em_epochs = []
 losses_epochs = []
 for i in range(0,12):
-    path_string = model_path + '/saved-' + str(i)
+    path_string = model_path + '/saved-' + str(6)
     latest_checkpoint_path = path_string
 
     print("restoring from "+latest_checkpoint_path)
