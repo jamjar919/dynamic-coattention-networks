@@ -16,11 +16,12 @@ from evaluation_metrics import get_f1_from_tokens, get_exact_match_from_tokens
 # Suppress tensorflow verboseness
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
+root_path = __init__.root_path
 
 print("Starting testing on dev file...")
 D = Dataset(CONFIG.EMBEDDING_FILE)
 index2embedding = D.index2embedding
-padded_data, (max_length_question, max_length_context) = D.load_questions('data/dev.json')
+padded_data, (max_length_question, max_length_context) = D.load_questions(root_path+'/data/dev.json')
 print("Loaded data")
 
 config = tf.ConfigProto()
@@ -28,7 +29,6 @@ if '--noGPU' in sys.argv[1:]:
     print("Not using the GPU...")
     config = tf.ConfigProto(device_count = {'GPU': 0})
 
-root_path = __init__.root_path
 model_path = root_path+'/model'
 results_path = root_path+'/results'
 
