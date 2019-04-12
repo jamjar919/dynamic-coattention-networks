@@ -137,6 +137,7 @@ class Dataset:
         return index2embedding
 
     def load_questions(self, question_file):
+        question_file = __init__.root_path + '/' +  question_file
         if (self.word2index == None):
             raise RuntimeError("Load the embedding file first")
 
